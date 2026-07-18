@@ -363,6 +363,16 @@
     "continue_kakao": "使用Kakao继续",
     "continue_guest": "以访客身份继续",
     "available_without_login": "无需登录即可使用",
-    "guest_features": ["地图与SNS分析", "创建与编辑路线", "设施雷达"]
+    "guest_features": ["地图与SNS分析", "创建与编辑路线", "设施雷达"],
+    "credentials_divider": "或使用账号继续",
+    "username_label": "账号",
+    "password_label": "密码",
+    "email_label": "邮箱",
+    "nationality_label": "国籍",
+    "login_credentials_button": "登录",
+    "signup_button": "注册",
+    "switch_to_signup": "还没有账号? 注册",
+    "switch_to_login": "已有账号? 登录",
+    "credentials_error": "请求失败。请检查账号/密码或backend服务器状态。"
   }
 }

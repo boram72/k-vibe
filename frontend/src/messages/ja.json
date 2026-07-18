@@ -363,6 +363,16 @@
     "continue_kakao": "Kakaoで続ける",
     "continue_guest": "ゲストとして続ける",
     "available_without_login": "ログインなしでも利用可能",
-    "guest_features": ["マップ・SNS分析", "ルートの作成・編集", "施設レーダー"]
+    "guest_features": ["マップ・SNS分析", "ルートの作成・編集", "施設レーダー"],
+    "credentials_divider": "またはユーザー名で続ける",
+    "username_label": "ユーザー名",
+    "password_label": "パスワード",
+    "email_label": "メール",
+    "nationality_label": "国籍",
+    "login_credentials_button": "ログイン",
+    "signup_button": "会員登録",
+    "switch_to_signup": "アカウントをお持ちでないですか? 会員登録",
+    "switch_to_login": "すでにアカウントをお持ちですか? ログイン",
+    "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。"
   }
 }

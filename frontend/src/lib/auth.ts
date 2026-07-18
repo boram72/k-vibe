@@ -1,10 +1,12 @@
+import { apiClient } from '@/api/client'
+
 export type AuthProvider = 'google' | 'apple' | 'kakao'
 
 export interface AuthUser {
   id: string
   name: string
   email: string
-  provider: AuthProvider
+  provider: AuthProvider | 'credentials'
 }
 
 const STORAGE_KEY = 'k-vibe-mock-session'
@@ -40,4 +42,29 @@ export async function loginWithProvider(provider: AuthProvider): Promise<AuthUse
 
 export async function logout(): Promise<void> {
   localStorage.removeItem(STORAGE_KEY)
+}
+
+// ID/PW 하이브리드 로그인 — OAuth와 달리 mock이 아니라 실제 backend(user.py)를
+// 호출한다. frontend→backend→Supabase DB 저장까지 실제로 확인하려는 용도.
+export interface SignupPayload {
+  username: string
+  nationality: string
+  email: string
+  password: string
+}
+
+function toAuthUser(data: { username: string; email: string }): AuthUser {
+  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider: 'credentials' }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  return user
+}
+
+export async function signupWithCredentials(payload: SignupPayload): Promise<AuthUser> {
+  const { data } = await apiClient.post('/user/signup', payload)
+  return toAuthUser(data)
+}
+
+export async function loginWithCredentials(username: string, password: string): Promise<AuthUser> {
+  const { data } = await apiClient.post('/user/login', { username, password })
+  return toAuthUser(data)
 }

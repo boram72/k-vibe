@@ -363,6 +363,16 @@
     "continue_kakao": "Continue with Kakao",
     "continue_guest": "Continue as guest",
     "available_without_login": "Available without signing in",
-    "guest_features": ["Map and SNS Analyzer", "Build and edit routes", "Facility Radar"]
+    "guest_features": ["Map and SNS Analyzer", "Build and edit routes", "Facility Radar"],
+    "credentials_divider": "Or continue with username",
+    "username_label": "Username",
+    "password_label": "Password",
+    "email_label": "Email",
+    "nationality_label": "Nationality",
+    "login_credentials_button": "Log in",
+    "signup_button": "Sign up",
+    "switch_to_signup": "Don't have an account? Sign up",
+    "switch_to_login": "Already have an account? Log in",
+    "credentials_error": "Request failed. Check your username/password or the backend server."
   }
 }

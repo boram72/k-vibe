@@ -1,3 +1,5 @@
+import { syncImmediately } from '@/lib/db-sync'
+
 const STORAGE_KEY = 'k-vibe-route-progress'
 
 export function readRouteProgress(): Set<string> {
@@ -10,5 +12,9 @@ export function readRouteProgress(): Set<string> {
 }
 
 export function saveRouteProgress(completedStopIds: Set<string>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...completedStopIds]))
+  const ids = [...completedStopIds]
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
+  // See DB_INTEGRATION_REQUEST.md — completion toggles are discrete click
+  // events (not continuous), so each one is pushed immediately.
+  syncImmediately('/route-progress', { completedIds: ids })
 }

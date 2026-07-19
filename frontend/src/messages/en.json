@@ -293,22 +293,14 @@
     "view_on_internal_map": "View {{name}} on our map",
     "filters": {
       "all": "All",
-      "hot_spring_sauna_spa": "Hot Spring/Sauna/Spa",
-      "jjimjilbang": "Jjimjilbang",
-      "hanbang_experience": "Hanbang Experience",
-      "healing_meditation": "Healing & Meditation",
-      "beauty_spa": "Beauty Spa",
-      "other_wellness": "Other Wellness",
-      "nature_healing": "Nature Healing"
+      "convenience_store": "Convenience Store",
+      "pharmacy": "Pharmacy",
+      "bank_atm": "Bank/ATM"
     },
     "facility_types": {
-      "hot_spring_sauna_spa": "Hot Spring/Sauna/Spa",
-      "jjimjilbang": "Jjimjilbang",
-      "hanbang_experience": "Hanbang Experience",
-      "healing_meditation": "Healing & Meditation",
-      "beauty_spa": "Beauty Spa",
-      "other_wellness": "Other Wellness",
-      "nature_healing": "Nature Healing"
+      "convenience_store": "Convenience Store",
+      "pharmacy": "Pharmacy",
+      "bank_atm": "Bank/ATM"
     },
     "error_title": "Facilities could not be loaded",
     "retry": "Retry",

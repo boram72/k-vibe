@@ -293,22 +293,14 @@
     "view_on_internal_map": "在我们的地图中查看{{name}}",
     "filters": {
       "all": "全部",
-      "hot_spring_sauna_spa": "温泉/桑拿/水疗",
-      "jjimjilbang": "汗蒸房",
-      "hanbang_experience": "韩方体验",
-      "healing_meditation": "疗愈冥想",
-      "beauty_spa": "美容水疗",
-      "other_wellness": "其他健康设施",
-      "nature_healing": "自然疗愈"
+      "convenience_store": "便利店",
+      "pharmacy": "药店",
+      "bank_atm": "银行/ATM"
     },
     "facility_types": {
-      "hot_spring_sauna_spa": "温泉/桑拿/水疗",
-      "jjimjilbang": "汗蒸房",
-      "hanbang_experience": "韩方体验",
-      "healing_meditation": "疗愈冥想",
-      "beauty_spa": "美容水疗",
-      "other_wellness": "其他健康设施",
-      "nature_healing": "自然疗愈"
+      "convenience_store": "便利店",
+      "pharmacy": "药店",
+      "bank_atm": "银行/ATM"
     },
     "error_title": "无法加载设施信息",
     "retry": "重试",

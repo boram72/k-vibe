@@ -293,22 +293,14 @@
     "view_on_internal_map": "{{name}}をアプリ内マップで見る",
     "filters": {
       "all": "すべて",
-      "hot_spring_sauna_spa": "温泉・サウナ・スパ",
-      "jjimjilbang": "チムジルバン",
-      "hanbang_experience": "韓方体験",
-      "healing_meditation": "ヒーリング瞑想",
-      "beauty_spa": "ビューティースパ",
-      "other_wellness": "その他ウェルネス",
-      "nature_healing": "自然療法"
+      "convenience_store": "コンビニ",
+      "pharmacy": "薬局",
+      "bank_atm": "銀行/ATM"
     },
     "facility_types": {
-      "hot_spring_sauna_spa": "温泉・サウナ・スパ",
-      "jjimjilbang": "チムジルバン",
-      "hanbang_experience": "韓方体験",
-      "healing_meditation": "ヒーリング瞑想",
-      "beauty_spa": "ビューティースパ",
-      "other_wellness": "その他ウェルネス",
-      "nature_healing": "自然療法"
+      "convenience_store": "コンビニ",
+      "pharmacy": "薬局",
+      "bank_atm": "銀行/ATM"
     },
     "error_title": "施設情報を読み込めませんでした",
     "retry": "再試行",

@@ -293,22 +293,14 @@
     "view_on_internal_map": "{{name}} 우리 지도에서 보기",
     "filters": {
       "all": "전체",
-      "hot_spring_sauna_spa": "온천/사우나/스파",
-      "jjimjilbang": "찜질방",
-      "hanbang_experience": "한방 체험",
-      "healing_meditation": "힐링 명상",
-      "beauty_spa": "뷰티 스파",
-      "other_wellness": "기타 웰니스",
-      "nature_healing": "자연 치유"
+      "convenience_store": "편의점",
+      "pharmacy": "약국",
+      "bank_atm": "은행/ATM"
     },
     "facility_types": {
-      "hot_spring_sauna_spa": "온천/사우나/스파",
-      "jjimjilbang": "찜질방",
-      "hanbang_experience": "한방 체험",
-      "healing_meditation": "힐링 명상",
-      "beauty_spa": "뷰티 스파",
-      "other_wellness": "기타 웰니스",
-      "nature_healing": "자연 치유"
+      "convenience_store": "편의점",
+      "pharmacy": "약국",
+      "bank_atm": "은행/ATM"
     },
     "error_title": "편의시설을 불러올 수 없습니다",
     "retry": "다시 시도",

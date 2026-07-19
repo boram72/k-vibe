@@ -25,10 +25,24 @@ def _load_area_codes() -> list[dict]:
 
 
 def find_area_signgu_code(area_nm: str, signgu_nm: str) -> dict | None:
-    """카카오 역지오코딩의 시도/시군구명을 TourAPI 지역코드(areaCd/signguCd)로 변환한다."""
-    for row in _load_area_codes():
+    """카카오 역지오코딩의 시도/시군구명을 TourAPI 지역코드(areaCd/signguCd)로 변환한다.
+
+    화성시 동탄구처럼 행정구역이 구 단위로 쪼개진 시/군은 카카오가 "시 구" 형태의
+    복합명을 반환하지만, TourAPI 지역코드 테이블엔 하위 구 단위 코드가 없는 경우가
+    있다. 완전 일치가 실패하면 마지막 토큰(하위 구)을 떼고 상위 시/군명만으로
+    재시도한다.
+    """
+    rows = _load_area_codes()
+    for row in rows:
         if row["areaNm"] == area_nm and row["signguNm"] == signgu_nm:
             return {"areaCd": row["areaCd"], "signguCd": row["signguCd"]}
+
+    if " " in signgu_nm:
+        parent_signgu_nm = signgu_nm.rsplit(" ", 1)[0]
+        for row in rows:
+            if row["areaNm"] == area_nm and row["signguNm"] == parent_signgu_nm:
+                return {"areaCd": row["areaCd"], "signguCd": row["signguCd"]}
+
     return None
 
 

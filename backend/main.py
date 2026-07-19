@@ -12,6 +12,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://192.168.219.113:5173",
         "https://unlegalised-theresia-answeringly.ngrok-free.dev",
+        "https://k-vibe-psi.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

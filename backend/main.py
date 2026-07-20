@@ -1,7 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from presentation_api import findAmenities, places, playDocentVoice, relatedAttractions, route, showPersona, user
+from presentation_api import (
+    findAmenities,
+    personaPreference,
+    places,
+    playDocentVoice,
+    relatedAttractions,
+    route,
+    routeDraft,
+    routeProgress,
+    savedPlaces,
+    showPersona,
+    user,
+)
 
 app = FastAPI(title="K-Vibe Tracker API")
 
@@ -26,6 +38,10 @@ app.include_router(user.router)
 app.include_router(findAmenities.router)
 app.include_router(relatedAttractions.router)
 app.include_router(places.router)
+app.include_router(savedPlaces.router)
+app.include_router(personaPreference.router)
+app.include_router(routeDraft.router)
+app.include_router(routeProgress.router)
 
 
 @app.get("/health")

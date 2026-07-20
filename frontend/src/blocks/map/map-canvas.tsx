@@ -5,7 +5,7 @@ import { MapPin, Navigation, Search } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { Place } from '@/types/place'
+import { getPlaceCategoryMeta, type Place } from '@/types/place'
 
 interface Coordinates {
   lat: number
@@ -21,15 +21,15 @@ interface MapCanvasProps {
   locationLabel: string
 }
 
-// Hot pink — the map tiles themselves are colorful, so the neutral zinc-theme
-// tokens (bg-popover/bg-primary) used everywhere else in the app blend in and
-// are hard to spot. Pins need a color that doesn't appear elsewhere on the map.
-function pinClassName(selected: boolean) {
+// Icon-badge pins colored per category (types/place.ts PLACE_CATEGORIES.pinBg) —
+// same pattern as radar-map-preview.tsx's facility pins. The map tiles are
+// colorful, so pins need a color that doesn't blend into the neutral
+// zinc-theme tokens used elsewhere; category color also doubles as a legend.
+function pinClassName(selected: boolean, pinBg: string) {
   return cn(
-    'whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-lg transition-colors',
-    selected
-      ? 'border-white bg-pink-600 text-white scale-110'
-      : 'border-pink-600 bg-pink-500 text-white hover:bg-pink-600',
+    'flex h-8 w-8 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105',
+    pinBg,
+    selected && 'scale-110 ring-2 ring-white',
   )
 }
 
@@ -84,15 +84,17 @@ function PercentMapCanvas({ center, places, selectedPlaceId, onSelectPlace, onRe
 
       {places.map((place) => {
         const selected = place.id === selectedPlaceId
+        const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
         return (
           <button
             key={place.id}
             type="button"
             onClick={() => onSelectPlace(place)}
+            title={place.name}
             style={pinPosition(place, center)}
-            className={cn('absolute -translate-x-1/2 -translate-y-1/2', pinClassName(selected))}
+            className={cn('absolute -translate-x-1/2 -translate-y-1/2', pinClassName(selected, pinBg))}
           >
-            {place.name}
+            <Icon className="h-3.75 w-3.75" />
           </button>
         )
       })}
@@ -154,10 +156,16 @@ function KakaoMapCanvas(props: MapCanvasProps) {
       <KakaoMap center={mapCenter} level={4} isPanto className="h-full w-full">
         {places.map((place) => {
           const selected = place.id === selectedPlaceId
+          const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
           return (
             <CustomOverlayMap key={place.id} position={{ lat: place.lat, lng: place.lng }} clickable zIndex={selected ? 2 : 1}>
-              <button type="button" onClick={() => onSelectPlace(place)} className={pinClassName(selected)}>
-                {place.name}
+              <button
+                type="button"
+                onClick={() => onSelectPlace(place)}
+                title={place.name}
+                className={pinClassName(selected, pinBg)}
+              >
+                <Icon className="h-3.75 w-3.75" />
               </button>
             </CustomOverlayMap>
           )

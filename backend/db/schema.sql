@@ -65,6 +65,7 @@ alter table location add column if not exists longitude float8;
 create table if not exists saved_places (
   username text not null references "user"(username),
   place_id text not null,
+  order_index int2 not null,
   name text,
   category text,
   address text,

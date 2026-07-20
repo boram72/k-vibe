@@ -1,6 +1,6 @@
 import { useState, type ComponentType, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Apple, CheckCircle2, MessageCircle } from 'lucide-react'
+import { CheckCircle2, MessageCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAuth } from '@/lib/use-auth'
 import type { AuthProvider } from '@/lib/auth'
@@ -22,7 +22,6 @@ const PROVIDER_BUTTONS: {
   icon: ComponentType<{ className?: string }>
 }[] = [
   { id: 'google', labelKey: 'login.continue_google', className: 'border border-border bg-background text-foreground hover:bg-accent', icon: GoogleIcon },
-  { id: 'apple', labelKey: 'login.continue_apple', className: 'bg-foreground text-background hover:bg-foreground/90', icon: Apple },
   { id: 'kakao', labelKey: 'login.continue_kakao', className: 'bg-[#FEE500] text-black hover:bg-[#FEE500]/90', icon: MessageCircle },
 ]
 

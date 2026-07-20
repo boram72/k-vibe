@@ -1,6 +1,6 @@
 import { apiClient } from '@/api/client'
 
-export type AuthProvider = 'google' | 'apple' | 'kakao'
+export type AuthProvider = 'google' | 'kakao'
 
 export interface AuthUser {
   id: string
@@ -16,7 +16,6 @@ const STORAGE_KEY = 'k-vibe-mock-session'
 // expects to receive (still "an AuthUser shaped by which provider was used").
 const MOCK_USERS: Record<AuthProvider, AuthUser> = {
   google: { id: 'mock-google-1', name: 'Google User', email: 'guest@gmail.com', provider: 'google' },
-  apple: { id: 'mock-apple-1', name: 'Apple User', email: 'guest@icloud.com', provider: 'apple' },
   kakao: { id: 'mock-kakao-1', name: '카카오 사용자', email: 'guest@kakao.com', provider: 'kakao' },
 }
 

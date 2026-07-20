@@ -360,6 +360,7 @@
     "signup_button": "Sign up",
     "switch_to_signup": "Don't have an account? Sign up",
     "switch_to_login": "Already have an account? Log in",
-    "credentials_error": "Request failed. Check your username/password or the backend server."
+    "credentials_error": "Request failed. Check your username/password or the backend server.",
+    "oauth_failed": "Sign-in failed. Please try again."
   }
 }

@@ -360,6 +360,7 @@
     "signup_button": "会員登録",
     "switch_to_signup": "アカウントをお持ちでないですか? 会員登録",
     "switch_to_login": "すでにアカウントをお持ちですか? ログイン",
-    "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。"
+    "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。",
+    "oauth_failed": "ログインに失敗しました。もう一度お試しください。"
   }
 }

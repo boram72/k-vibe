@@ -1,4 +1,4 @@
-import { apiClient } from '@/api/client'
+import { API_BASE_URL, apiClient } from '@/api/client'
 
 export type AuthProvider = 'google' | 'kakao'
 
@@ -33,10 +33,36 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
+// See OAUTH_INTEGRATION_REQUEST.md — backend relays the OAuth flow (frontend
+// never talks to Google/Kakao directly). This callback path must match the
+// route registered in router/index.tsx.
+const OAUTH_CALLBACK_PATH = '/auth/callback'
+
+function buildOAuthStartUrl(provider: AuthProvider): string {
+  const redirectUri = `${window.location.origin}${OAUTH_CALLBACK_PATH}`
+  return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
+}
+
+// No usable API_BASE_URL -> keep working as an instant mock login, same as
+// every other mock-fallback in this codebase. Once there is one (dev's
+// /backend proxy or a real VITE_API_BASE_URL), this navigates the whole page
+// to the backend's OAuth start endpoint instead — the promise below never
+// resolves because the page is leaving; the actual login completes on the
+// /auth/callback route (see completeOAuthLogin).
 export async function loginWithProvider(provider: AuthProvider): Promise<AuthUser> {
-  const user = MOCK_USERS[provider]
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  return user
+  if (!API_BASE_URL) {
+    const user = MOCK_USERS[provider]
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+    return user
+  }
+  window.location.href = buildOAuthStartUrl(provider)
+  return new Promise(() => {})
+}
+
+// Called by the /auth/callback route once the backend redirects back with
+// the logged-in identity in the query string.
+export function completeOAuthLogin(data: { username: string; email: string; provider: AuthProvider }): AuthUser {
+  return toAuthUser({ username: data.username, email: data.email }, data.provider)
 }
 
 export async function logout(): Promise<void> {
@@ -52,8 +78,8 @@ export interface SignupPayload {
   password: string
 }
 
-function toAuthUser(data: { username: string; email: string }): AuthUser {
-  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider: 'credentials' }
+function toAuthUser(data: { username: string; email: string }, provider: AuthUser['provider'] = 'credentials'): AuthUser {
+  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   return user
 }

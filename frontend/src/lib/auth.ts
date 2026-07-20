@@ -43,20 +43,31 @@ function buildOAuthStartUrl(provider: AuthProvider): string {
   return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
-// No usable API_BASE_URL -> keep working as an instant mock login, same as
-// every other mock-fallback in this codebase. Once there is one (dev's
-// /backend proxy or a real VITE_API_BASE_URL), this navigates the whole page
-// to the backend's OAuth start endpoint instead — the promise below never
-// resolves because the page is leaving; the actual login completes on the
-// /auth/callback route (see completeOAuthLogin).
-export async function loginWithProvider(provider: AuthProvider): Promise<AuthUser> {
-  if (!API_BASE_URL) {
-    const user = MOCK_USERS[provider]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    return user
-  }
+// Whether loginWithProvider will redirect (real) vs resolve instantly (mock)
+// — LoginModal checks this to decide whether to route the click through
+// useAuth()'s mutation at all (see redirectToOAuthProvider below for why).
+export function isOAuthBackendConfigured(): boolean {
+  return Boolean(API_BASE_URL)
+}
+
+// Called directly by LoginModal, bypassing useAuth()'s login mutation
+// entirely — a plain navigation, not a tracked async action. Earlier this
+// went through loginWithProvider() with a Promise that intentionally never
+// resolves ("the page is leaving anyway"), but browsers restore the whole JS
+// heap from bfcache on back-navigation — including that still-pending
+// promise — so after a failed round-trip (backend endpoint not built yet)
+// and pressing back, isLoggingIn stayed stuck at `true` forever and the
+// buttons never re-enabled. Keeping this outside the mutation means there's
+// no pending state to get stuck in the first place.
+export function redirectToOAuthProvider(provider: AuthProvider): void {
   window.location.href = buildOAuthStartUrl(provider)
-  return new Promise(() => {})
+}
+
+// Only reached when isOAuthBackendConfigured() is false — always resolves.
+export async function loginWithProvider(provider: AuthProvider): Promise<AuthUser> {
+  const user = MOCK_USERS[provider]
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
+  return user
 }
 
 // Called by the /auth/callback route once the backend redirects back with

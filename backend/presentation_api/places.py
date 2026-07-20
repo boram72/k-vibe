@@ -14,4 +14,4 @@ def find_nearby_places(
     radius: int = 10000,
     locale: str | None = None,
 ):
-    return tourAPI.find_nearby_places(latitude=lat, longitude=lng, radius=radius)
+    return tourAPI.find_nearby_places(latitude=lat, longitude=lng, radius=radius, locale=locale)

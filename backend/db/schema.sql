@@ -55,25 +55,31 @@ create table userroute (
 alter table location add column if not exists latitude float8;
 alter table location add column if not exists longitude float8;
 
+-- TourAPI 검색결과(contentid)를 담을 수 있도록 확장. 기존 name(PK)은 persona/docent가
+-- 참조하는 K팝 루트 큐레이션 장소 도메인이라 그대로 두고, place_id는 TourAPI 검색결과
+-- 전용 별도 unique key로 추가한다(한 장소가 name 기반 큐레이션 행과 place_id 기반
+-- 검색결과 행 둘 다로 존재할 수 있음). route_draft_stop/saved_places가 각자 들고 있던
+-- name/category/address/lat/lng/crowd_level/tags 스냅샷을 여기로 일원화한다 — 동일
+-- 장소가 여러 유저의 행에 중복 저장되면 주소변경/폐업 등 실제 변경사항을 전부 따라가며
+-- 갱신할 수 없어 데이터 정합성이 깨지기 때문(2026-07-21 결정).
+alter table location add column if not exists place_id text unique;
+alter table location add column if not exists address text;
+alter table location add column if not exists category text;
+alter table location add column if not exists image_url text;
+alter table location add column if not exists tags text[];
+alter table location add column if not exists crowd_level text;
+
 -- ============================================================
 -- 로그인 유저의 기기 간 데이터 동기화 (프론트 localStorage -> 서버 이전)
 -- ============================================================
 
--- SAVED_PLACES: 하트로 찜한 장소. TourAPI contentid 기준 place_id를 그대로 저장하고
--- location 테이블은 참조하지 않음(찜한 시점의 이름/주소 스냅샷을 보존하는 목적,
--- TourAPI 결과가 아직 location 테이블에 자동 upsert되지 않아 FK를 걸면 저장 자체가 실패할 수 있음).
+-- SAVED_PLACES: 하트로 찜한 장소. TourAPI contentid 기준 place_id로 location 테이블을
+-- 참조한다(장소 스냅샷은 upsert_place()가 저장 시점에 location에 함께 upsert하므로
+-- FK 저장 실패 걱정 없음 — 정규화 리팩터링, 2026-07-21).
 create table if not exists saved_places (
   username text not null references "user"(username),
-  place_id text not null,
+  place_id text not null references location(place_id),
   order_index int2 not null,
-  name text,
-  category text,
-  address text,
-  lat float8,
-  lng float8,
-  image_url text,
-  crowd_level text,
-  tags text[],
   saved_at timestamptz not null default now(),
   primary key (username, place_id)
 );
@@ -89,20 +95,17 @@ create table if not exists persona_preference (
 
 -- ROUTE_DRAFT_STOP: Map/Analyze/Persona에서 누적한 "루트 초안" 전체.
 -- 기존 USERROUTE(location 테이블 FK, 장소명 하나만 저장)로는 좌표/카테고리/체류시간/
--- anchor 여부 등을 담을 수 없어 신규 테이블로 분리. location 테이블은 참조하지 않고
--- saved_places와 동일하게 스냅샷으로 저장.
+-- anchor 여부 등을 담을 수 없어 신규 테이블로 분리. 장소 스냅샷은 location(place_id)
+-- FK로 참조하고(정규화 리팩터링, 2026-07-21), description(AI 추천 사유 등 스팟별
+-- 코멘트)만 장소 고유 데이터가 아니라 여기 유지한다. stop_id는 프론트의 RouteStop.id로
+-- 같은 place_id가 한 루트에 여러 번(예: Persona 위저드에서 중복 추가) 들어갈 수 있어
+-- place_id와는 별도 식별자다.
 create table if not exists route_draft_stop (
   username text not null references "user"(username),
   stop_id text not null,
   order_index int2 not null,
-  name text,
-  category text,
-  address text,
-  lat float8,
-  lng float8,
-  crowd_level text,
+  place_id text not null references location(place_id),
   description text,
-  tags text[],
   stay_minutes int2,
   start_time text,
   stop_date date,

@@ -100,6 +100,7 @@ def _fetch_related_attractions_page(
 
     return [
         {
+            "attractionContentId": item.get("tAtsCd"),
             "attractionName": item.get("tAtsNm"),
             "relatedContentId": item.get("rlteTatsCd"),
             "relatedName": item.get("rlteTatsNm"),

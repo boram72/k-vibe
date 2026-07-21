@@ -1,9 +1,18 @@
 import type { CrowdLevel } from '@/types/place'
 import type { RoutePlan } from '@/lib/route-timing'
+import { createDebouncedSync } from '@/lib/db-sync'
 
 // Same storage key as the hslee reference (`lib/routes.ts`) so Step 10's
 // RoutePage can read this draft directly once it's built.
 const STORAGE_KEY = 'k-vibe-current-route'
+
+// See DB_INTEGRATION_REQUEST.md — unlike route-progress/persona-preference,
+// edits here can happen continuously (drag reorder), so pushes are debounced
+// to one full-draft PUT after things settle. `flushRouteDraftSync()` is
+// wired up at the app shell (app-layout.tsx) to catch in-flight edits on tab
+// hide/page leave so a debounce window in progress isn't silently dropped.
+const routeDraftSync = createDebouncedSync('/route-draft')
+export const flushRouteDraftSync = routeDraftSync.flush
 // Persists the Persona-generated RoutePlan so RoutePage can show the docent
 // player only for routes that originated from the Persona feature.
 const PERSONA_PLAN_KEY = 'k-vibe-persona-plan'
@@ -41,6 +50,7 @@ export function readRouteDraft(): RouteStop[] {
 export function addStopToRouteDraft(stop: RouteStop): RouteStop[] {
   const next = [...readRouteDraft().filter((s) => s.id !== stop.id), stop]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  routeDraftSync.schedule({ stops: next })
   return next
 }
 
@@ -54,6 +64,7 @@ export function addStopsToRouteDraft(stops: RouteStop[]): RouteStop[] {
   const incomingIds = new Set(stops.map((s) => s.id))
   const next = [...readRouteDraft().filter((s) => !incomingIds.has(s.id)), ...stops]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  routeDraftSync.schedule({ stops: next })
   return next
 }
 
@@ -65,6 +76,7 @@ export function addStopsToRouteDraft(stops: RouteStop[]): RouteStop[] {
  */
 export function saveRouteDraft(stops: RouteStop[]): RouteStop[] {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(stops))
+  routeDraftSync.schedule({ stops })
   return stops
 }
 

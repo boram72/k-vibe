@@ -73,29 +73,33 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           <DialogDescription>{t('login.subtitle')}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2">
-          {PROVIDER_BUTTONS.map(({ id, labelKey, className, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              disabled={isLoggingIn}
-              onClick={() => handleLogin(id)}
-              className={cn(
-                'flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60',
-                className,
-              )}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-              {t(labelKey)}
-            </button>
-          ))}
-        </div>
+        {mode === 'login' && (
+          <>
+            <div className="space-y-2">
+              {PROVIDER_BUTTONS.map(({ id, labelKey, className, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={isLoggingIn}
+                  onClick={() => handleLogin(id)}
+                  className={cn(
+                    'flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60',
+                    className,
+                  )}
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          {t('login.credentials_divider')}
-          <div className="h-px flex-1 bg-border" />
-        </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              {t('login.credentials_divider')}
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleCredentialsSubmit} className="space-y-2">
           <input

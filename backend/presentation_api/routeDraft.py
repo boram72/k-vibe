@@ -11,6 +11,7 @@ router = APIRouter(prefix="/route-draft", tags=["route-draft"])
 
 class RouteStopRequest(BaseModel):
     id: str
+    placeId: str | None = None
     name: str
     category: str
     address: str

@@ -1,5 +1,6 @@
 import { ROUTE_THEME_OPTIONS, type RouteTheme } from '@/types/route-theme'
 import type { PlaceCategory } from '@/types/place'
+import { syncImmediately } from '@/lib/db-sync'
 
 const STORAGE_KEY = 'k-vibe-persona-preference'
 
@@ -16,6 +17,9 @@ function isRouteDetailForTheme(theme: RouteTheme, detail: string): boolean {
 export function savePersonaPreference(theme: RouteTheme, detail: string) {
   const preference: PersonaPreference = { theme, detail, updatedAt: new Date().toISOString() }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(preference))
+  // See DB_INTEGRATION_REQUEST.md — only changes once per wizard completion,
+  // so there's nothing to batch.
+  syncImmediately('/persona-preference', { theme, detail })
 }
 
 export function readPersonaPreference(): PersonaPreference | null {

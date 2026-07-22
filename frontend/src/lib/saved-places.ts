@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth'
+import { syncImmediately } from '@/lib/db-sync'
 import type { Place } from '@/types/place'
 
 const STORAGE_PREFIX = 'k-vibe-saved-places'
@@ -47,6 +48,10 @@ export async function toggleSavedPlace(place: Place): Promise<Place[]> {
     ? current.filter((p) => p.id !== place.id)
     : [...current, place]
   writeBucket(key, next)
+  // See DB_INTEGRATION_REQUEST.md — a heart tap is a discrete click event
+  // (not continuous), so it's pushed immediately, same as route-progress.
+  // No-ops for guests (db-sync skips when there's no logged-in user).
+  syncImmediately('/saved-places', { places: next })
   return next
 }
 
@@ -63,4 +68,5 @@ export async function mergeGuestSavedPlacesIntoUser(userId: string): Promise<voi
   const merged = [...userPlaces, ...guestPlaces.filter((g) => !userPlaces.some((u) => u.id === g.id))]
   writeBucket(userKey, merged)
   localStorage.removeItem(GUEST_KEY)
+  syncImmediately('/saved-places', { places: merged })
 }

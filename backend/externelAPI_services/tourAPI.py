@@ -17,7 +17,20 @@ from config.configure import TOUR_API_KEY
 from externelAPI_services import kakaomap
 
 RELATED_ATTRACTIONS_AREA_BASED_URL = "https://apis.data.go.kr/B551011/TarRlteTarService1/areaBasedList1"
-LOCATION_BASED_LIST_URL = "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
+
+# 프론트 SUPPORTED_LOCALES(ko/en/ja/zh)에 대응하는 TourAPI 언어별 서비스.
+# 인증키(TOUR_API_KEY)는 언어 상관없이 동일한 키를 쓴다. 지원 안 하는 locale은 한국어로 폴백.
+LOCALE_TO_SERVICE = {
+    "ko": "KorService2",
+    "en": "EngService2",
+    "ja": "JpnService2",
+    "zh": "ChsService2",  # 중문간체
+}
+
+
+def _location_based_list_url(locale: str | None) -> str:
+    service = LOCALE_TO_SERVICE.get(locale, "KorService2")
+    return f"https://apis.data.go.kr/B551011/{service}/locationBasedList2"
 
 AREA_CODES_PATH = Path(__file__).parent / "data" / "tour_area_codes.json"
 
@@ -87,6 +100,7 @@ def _fetch_related_attractions_page(
 
     return [
         {
+            "attractionContentId": item.get("tAtsCd"),
             "attractionName": item.get("tAtsNm"),
             "relatedContentId": item.get("rlteTatsCd"),
             "relatedName": item.get("rlteTatsNm"),
@@ -135,7 +149,7 @@ def find_related_attractions(
 
 
 def _fetch_nearby_places_page(
-    latitude: float, longitude: float, radius: int, num_of_rows: int
+    latitude: float, longitude: float, radius: int, num_of_rows: int, locale: str | None
 ) -> list[dict]:
     params = {
         "serviceKey": TOUR_API_KEY,
@@ -149,7 +163,7 @@ def _fetch_nearby_places_page(
         "mapY": latitude,
         "radius": min(radius, 20000),  # locationBasedList2 최대 반경
     }
-    response = httpx.get(LOCATION_BASED_LIST_URL, params=params, timeout=5.0)
+    response = httpx.get(_location_based_list_url(locale), params=params, timeout=5.0)
     response.raise_for_status()
     body = response.json().get("response", {}).get("body", {})
     items = body.get("items", "")
@@ -166,19 +180,21 @@ def find_nearby_places(
     longitude: float,
     radius: int = 10000,
     num_of_rows: int = 30,
+    locale: str | None = None,
 ) -> list[dict]:
     """현위치 좌표 기준 반경 내 관광명소를 조회한다 (K-Vibe지도용).
 
-    프론트엔드 Place 타입(src/types/place.ts)과 필드가 1:1 대응하도록 변환해서
-    반환한다 - 백엔드 응답 형태를 바꾸지 않고 프론트가 이미 호출 중인
-    GET /places 규격을 그대로 채운다.
+    locale(ko/en/ja/zh)에 따라 TourAPI 언어별 서비스로 요청해 장소명/주소를
+    해당 언어로 받는다. 프론트엔드 Place 타입(src/types/place.ts)과 필드가
+    1:1 대응하도록 변환해서 반환한다 - 백엔드 응답 형태를 바꾸지 않고 프론트가
+    이미 호출 중인 GET /places 규격을 그대로 채운다.
     """
     if not TOUR_API_KEY:
         raise RuntimeError(
             "TOUR_API_KEY 환경변수가 설정되지 않았습니다. backend/.env 파일을 확인하세요."
         )
 
-    raw_items = _fetch_nearby_places_page(latitude, longitude, radius, num_of_rows)
+    raw_items = _fetch_nearby_places_page(latitude, longitude, radius, num_of_rows, locale)
 
     places = []
     for item in raw_items:

@@ -33,6 +33,7 @@ def test_find_related_attractions_returns_parsed_list(mock_get, mock_reverse_geo
                     "items": {
                         "item": [
                             {
+                                "tAtsCd": "tats-001",
                                 "tAtsNm": "남산타워",
                                 "rlteTatsCd": "abc123",
                                 "rlteTatsNm": "명동성당",
@@ -54,6 +55,7 @@ def test_find_related_attractions_returns_parsed_list(mock_get, mock_reverse_geo
 
     assert result == [
         {
+            "attractionContentId": "tats-001",
             "attractionName": "남산타워",
             "relatedContentId": "abc123",
             "relatedName": "명동성당",

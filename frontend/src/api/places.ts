@@ -130,7 +130,12 @@ export async function fetchMapPlaces(query: PlaceQuery): Promise<Place[]> {
 
 export async function fetchHomeFeedPlaces(): Promise<Place[]> {
   return withFallback(
-    async () => (await apiClient.get<Place[]>('/places')).data,
+    async () =>
+      (
+        await apiClient.get<Place[]>('/places', {
+          params: { lat: 37.5665, lng: 126.978, radius: DEFAULT_MAP_SEARCH_RADIUS, locale: 'ko' },
+        })
+      ).data,
     () => SEOUL_PLACES,
   )
 }

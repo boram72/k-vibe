@@ -240,7 +240,7 @@
     "stay_suffix": "Stay: {{minutes}}min",
     "start_time_label": "Start: {{time}}",
     "mini_map_title": "Route map preview",
-    "mini_map_subtitle": "Tap a stop number to open it in Google Maps.",
+    "mini_map_subtitle": "View the route on Kakao Map, then tap a stop number to open it in Google Maps.",
     "travel_segment": "Walk {{duration}} · {{distance}}",
     "transit_segment": "Transit {{duration}} · {{distance}}",
     "location_card_title": "Current distance",

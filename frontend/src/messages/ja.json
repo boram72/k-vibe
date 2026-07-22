@@ -240,7 +240,7 @@
     "stay_suffix": "滞在時間: {{minutes}}分",
     "start_time_label": "開始: {{time}}",
     "mini_map_title": "ルートミニマップ",
-    "mini_map_subtitle": "番号をタップするとGoogle Mapsでスポットを開きます。",
+    "mini_map_subtitle": "Kakao地図でルートを確認し、番号をタップするとGoogle Mapsでスポットを開きます。",
     "travel_segment": "徒歩 {{duration}} · {{distance}}",
     "transit_segment": "公共交通 {{duration}} · {{distance}}",
     "location_card_title": "現在距離",

@@ -240,7 +240,7 @@
     "stay_suffix": "停留时间: {{minutes}}分钟",
     "start_time_label": "开始: {{time}}",
     "mini_map_title": "路线小地图",
-    "mini_map_subtitle": "点击编号可在Google Maps中打开该地点。",
+    "mini_map_subtitle": "在Kakao地图查看路线，点击编号可在Google Maps中打开地点。",
     "travel_segment": "步行 {{duration}} · {{distance}}",
     "transit_segment": "公共交通 {{duration}} · {{distance}}",
     "location_card_title": "当前位置距离",

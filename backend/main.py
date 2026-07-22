@@ -15,6 +15,7 @@ from presentation_api import (
     routes,
     savedPlaces,
     showPersona,
+    trending,
     user,
 )
 
@@ -48,6 +49,7 @@ app.include_router(savedPlaces.router)
 app.include_router(personaPreference.router)
 app.include_router(routeDraft.router)
 app.include_router(routeProgress.router)
+app.include_router(trending.router)
 
 
 @app.get("/health")

@@ -240,7 +240,7 @@
     "stay_suffix": "체류시간: {{minutes}}분",
     "start_time_label": "시작시간: {{time}}",
     "mini_map_title": "루트 미니맵",
-    "mini_map_subtitle": "번호를 누르면 Google Maps에서 해당 장소를 열어요.",
+    "mini_map_subtitle": "Kakao 지도에서 루트를 보고, 번호를 누르면 Google Maps가 열려요.",
     "travel_segment": "도보 {{duration}} · {{distance}}",
     "transit_segment": "대중교통 {{duration}} · {{distance}}",
     "location_card_title": "현재 거리",

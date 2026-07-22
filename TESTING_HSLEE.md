@@ -54,28 +54,36 @@ http://localhost:5173/ko/analyze
 http://localhost:5173/ko/route
 ```
 
-로컬 개발에서는 `VITE_API_BASE_URL=/backend`와 `frontend/vite.config.ts` proxy를 통해 `localhost:8000` 백엔드로 연결된다.
+로컬 개발에서는 반드시 `http://localhost:5173`으로 확인한다. Kakao Maps JavaScript 키의 로컬 허용 도메인이 `localhost:5173` 기준이라 `127.0.0.1`이나 다른 포트로 열면 지도 타일이 뜨지 않을 수 있다.
 
-다른 백엔드 포트로 테스트할 때는 프론트 실행 전에 프록시 대상만 바꿀 수 있다.
+`VITE_API_BASE_URL=/backend`와 `frontend/vite.config.ts` proxy를 통해 `localhost:8000` 백엔드로 연결된다.
+
+다른 백엔드 포트로 테스트할 때는 프론트 실행 전에 프록시 대상만 바꿀 수 있다. 단, 지도까지 함께 확인하려면 Kakao 개발자 콘솔의 JavaScript 허용 도메인도 같은 호스트/포트로 맞춘다.
 
 ```bash
-VITE_PROXY_BACKEND_URL=http://127.0.0.1:8001 npm run dev -- --host 127.0.0.1 --port 5174
+VITE_PROXY_BACKEND_URL=http://127.0.0.1:8001 npm run dev
 ```
 
 Windows PowerShell:
 
 ```powershell
 $env:VITE_PROXY_BACKEND_URL = 'http://127.0.0.1:8001'
-npm run dev -- --host 127.0.0.1 --port 5174
+npm run dev
 ```
 
 ## 4. 기능 확인 순서
 
-1. `/ko/persona`에서 BTS뷔, 아이유, 제니, 장원영 중 하나를 선택
-2. 생성 결과에서 `루트에 추가`
-3. `/ko/route`에서 오디오 가이드 버튼 확인
-4. `/ko/analyze`에서 YouTube 예시 URL 분석
-5. 분석 결과를 지도 또는 루트에 추가
+기존 루트 데이터가 남아 있으면 `/ko/route`에서 `루트 초기화` 후 테스트하면 결과를 더 쉽게 볼 수 있다.
+
+1. `/ko` 홈에서 주변 K-스팟과 트렌딩 키워드가 표시되는지 확인
+2. `/ko/map`에서 Kakao 지도 타일과 주변 스팟 목록이 표시되는지 확인
+3. `/ko/persona`에서 BTS뷔, 아이유, 제니, 장원영 중 하나를 선택
+4. 생성 결과에서 `루트에 추가`
+5. `/ko/route`에서 루트 미니맵이 Kakao 지도 위에 번호 핀과 경로선을 표시하는지 확인
+6. `/ko/analyze`에서 YouTube 예시 URL 분석
+7. 분석 결과에서 `루트에 모두 추가`
+8. `/ko/route` 루트 미니맵에 Kakao 지도 타일이 뜨는지 확인
+9. `/ko/radar`에서 편의시설 목록과 레이더 미리보기가 표시되는지 확인
 
 ## 5. 이번 연결 범위
 
@@ -83,3 +91,15 @@ npm run dev -- --host 127.0.0.1 --port 5174
 - `GET /personas`: K-콘텐츠 페르소나 선택 목록
 - `POST /analyze`: YouTube URL 백엔드 분석 흐름
 - `GET /docent/{name}`: 장소별 도슨트 음성 URL 또는 안내 스크립트 조회
+- `GET /places`: 홈/지도 주변 스팟 조회
+- `GET /trending`: 홈 트렌딩 키워드 조회
+- `GET /amenities`: 편의시설 레이더 조회
+
+## 6. 2026-07-23 확인 결과
+
+- 홈(`/ko`): `/places`, `/trending` 백엔드 연결 확인. 콘솔 경고 없음.
+- 지도(`/ko/map`): Kakao 지도 타일 렌더링 확인. 주변 스팟 목록 표시.
+- SNS 분석(`/ko/analyze`): YouTube 예시 URL 분석 시 `Groq AI` 결과 표시 확인.
+- 내 루트(`/ko/route`): `루트에 모두 추가` 후 루트 미니맵에 Kakao 지도 타일, 번호 핀, 경로선 표시 확인. 번호 핀/도보 길찾기 외부 링크는 Google Maps를 유지한다.
+- 페르소나(`/ko/persona`): BTS뷔 선택 후 5개 방문지 루트 생성 확인.
+- 편의시설 레이더(`/ko/radar`): 기본 위치 기준 편의시설 목록과 레이더 미리보기 표시 확인.

@@ -100,6 +100,14 @@ npm run dev
 - 홈(`/ko`): `/places`, `/trending` 백엔드 연결 확인. 콘솔 경고 없음.
 - 지도(`/ko/map`): Kakao 지도 타일 렌더링 확인. 주변 스팟 목록 표시.
 - SNS 분석(`/ko/analyze`): YouTube 예시 URL 분석 시 `Groq AI` 결과 표시 확인.
-- 내 루트(`/ko/route`): `루트에 모두 추가` 후 루트 미니맵에 Kakao 지도 타일, 번호 핀, 경로선 표시 확인. 번호 핀/도보 길찾기 외부 링크는 Google Maps를 유지한다.
+- SNS 분석 `지도에서 모두 보기`: `/ko/map`으로 넘긴 분석 장소가 Kakao 지도 타일 위에 표시되는 것 확인.
+- SNS 분석 `루트에 모두 추가`: `/ko/route` 루트 미니맵에 Kakao 지도 타일, 번호 핀, 경로선 표시 확인.
+- 내 루트(`/ko/route`) `지도에서 보기`: 저장된 전체 루트를 `/ko/map`으로 넘길 때 모든 루트 장소를 기준으로 지도 범위가 맞춰지는 것 확인. 번호 핀/도보 길찾기 외부 링크는 Google Maps를 유지한다.
 - 페르소나(`/ko/persona`): BTS뷔 선택 후 5개 방문지 루트 생성 확인.
 - 편의시설 레이더(`/ko/radar`): 기본 위치 기준 편의시설 목록과 레이더 미리보기 표시 확인.
+
+## 7. 기능 연결 상태
+
+- 유튜브 영상분석: 프론트 `src/api/analyze.ts`에서 백엔드 `POST /analyze`를 호출하고, 백엔드는 `business_services/snsAnalysisService.py`에서 Groq 분석을 우선 사용한다.
+- 페르소나 루트: 프론트 `src/api/personas.ts`에서 백엔드 `GET /personas`, `POST /routes/generate`를 호출하고, 백엔드는 `business_services/personaRouteService.py`로 위임한다.
+- 도슨트/TTS: 프론트 `src/api/docent.ts`에서 백엔드 `GET /docent/{name}`를 호출한다. 현재 연결 범위는 장소별 음성 URL 조회와 안내 스크립트 반환이며, 새 TTS 음성 파일 생성 API는 별도 작업으로 남아 있다.

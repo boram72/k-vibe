@@ -24,7 +24,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
-  const { url, result, setUrl, setResult } = useAnalyzeStore()
+  const { url, result, setUrl, setResult, clearResult } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
 
   useEffect(() => {
@@ -120,6 +120,7 @@ export default function AnalyzePage() {
             url={url}
             onUrlChange={(next) => {
               setUrl(next)
+              clearResult()
               mutation.reset()
             }}
             onAnalyze={() => runAnalysis(url)}

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from presentation_api import (
     analyze,
     findAmenities,
+    personas,
     personaPreference,
     places,
     playDocentVoice,
@@ -35,6 +36,7 @@ app.add_middleware(
 
 app.include_router(route.router)
 app.include_router(routes.router)
+app.include_router(personas.router)
 app.include_router(showPersona.router)
 app.include_router(playDocentVoice.router)
 app.include_router(analyze.router)

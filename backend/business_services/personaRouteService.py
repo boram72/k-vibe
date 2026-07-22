@@ -297,6 +297,8 @@ LOCATIONS = {
 PERSONAS = {
     "BTS뷔": {
         "label": {"ko": "BTS뷔", "en": "BTS V"},
+        "badge": "V",
+        "profileImg": "https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcSVGz6JfFl0_D1sD_25wk6lOy1prLYqWgs4FAAwMI3ku4UQeioKWq8ncDWmFf3mkHevabw3qu7GWtnA8uU",
         "theme": "kpop",
         "description": {
             "ko": "전망, 궁궐, 익선동·성수 감성을 잇는 서울 하루 성지순례 코스.",
@@ -306,6 +308,8 @@ PERSONAS = {
     },
     "아이유": {
         "label": {"ko": "아이유", "en": "IU"},
+        "badge": "IU",
+        "profileImg": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFBRYXIQjeINFYnz5HUcwDGXcthsJQGrZuSzEgZ3NyJaX-4aCiiWz1HZwRUz0EP68jOn4xQXoxhUFBhAmrHlsMx8cGHYJnZMSdARrH0GM&s=10",
         "theme": "mood",
         "description": {
             "ko": "서촌 한식, 감성 카페, 벽화마을과 삼청동을 연결한 차분한 감성 코스.",
@@ -315,6 +319,8 @@ PERSONAS = {
     },
     "제니": {
         "label": {"ko": "제니", "en": "Jennie"},
+        "badge": "JEN",
+        "profileImg": "https://i.namu.wiki/i/enCUBDXgjFR3bLBFx9M3hpGtEq1AYjNPU75fDxYtkEHPoZG1MTORb7haPMG0lZKHMQpHF7CFm3K8krWZTTA5zw.webp",
         "theme": "creator",
         "description": {
             "ko": "청담·압구정 쇼핑, 도산공원, 한남 디저트와 식사를 잇는 스타일 코스.",
@@ -324,6 +330,8 @@ PERSONAS = {
     },
     "장원영": {
         "label": {"ko": "장원영", "en": "Jang Wonyoung"},
+        "badge": "WY",
+        "profileImg": "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcQd_jr6bqPrC7F-u59fAzuyur7EOtQjIS2TQE4uQwDZi9TK1g5NVocxR8FeOl1bAHHWBSAsxYmdF2FmNUY",
         "theme": "kpop",
         "description": {
             "ko": "잠실 전망과 호수, 성수 라이프스타일, 반포 야경을 잇는 화사한 도시 코스.",
@@ -393,8 +401,22 @@ def _persona_for(theme: str, detail: str) -> str:
     return DETAIL_TO_PERSONA.get(detail) or THEME_TO_PERSONA.get(theme, "BTS뷔")
 
 
-def generate_route(theme: str, detail: str, start_time: str, locale: str) -> dict:
-    persona_id = _persona_for(theme, detail)
+def list_personas(locale: str) -> list[dict]:
+    return [
+        {
+            "id": persona_id,
+            "label": _pick(persona["label"], locale),
+            "description": _pick(persona["description"], locale),
+            "badge": persona["badge"],
+            "profileImg": persona["profileImg"],
+            "routeCnt": len(persona["locations"]),
+        }
+        for persona_id, persona in PERSONAS.items()
+    ]
+
+
+def generate_route(theme: str | None, detail: str | None, start_time: str, locale: str, persona_id: str | None = None) -> dict:
+    persona_id = persona_id if persona_id in PERSONAS else _persona_for(theme or "", detail or "")
     persona = PERSONAS[persona_id]
     locations = [LOCATIONS[name] for name in persona["locations"] if name in LOCATIONS]
     cursor = _parse_start_time(start_time)

@@ -54,9 +54,22 @@ http://localhost:5173/ko/route
 
 로컬 개발에서는 `VITE_API_BASE_URL=/backend`와 `frontend/vite.config.ts` proxy를 통해 `localhost:8000` 백엔드로 연결된다.
 
+다른 백엔드 포트로 테스트할 때는 프론트 실행 전에 프록시 대상만 바꿀 수 있다.
+
+```bash
+VITE_PROXY_BACKEND_URL=http://127.0.0.1:8001 npm run dev -- --host 127.0.0.1 --port 5174
+```
+
+Windows PowerShell:
+
+```powershell
+$env:VITE_PROXY_BACKEND_URL = 'http://127.0.0.1:8001'
+npm run dev -- --host 127.0.0.1 --port 5174
+```
+
 ## 4. 기능 확인 순서
 
-1. `/ko/persona`에서 K-pop 또는 무드 선택 후 루트 생성
+1. `/ko/persona`에서 BTS뷔, 아이유, 제니, 장원영 중 하나를 선택
 2. 생성 결과에서 `루트에 추가`
 3. `/ko/route`에서 오디오 가이드 버튼 확인
 4. `/ko/analyze`에서 YouTube 예시 URL 분석
@@ -65,6 +78,6 @@ http://localhost:5173/ko/route
 ## 5. 이번 연결 범위
 
 - `POST /routes/generate`: 페르소나 기반 루트 생성
+- `GET /personas`: K-콘텐츠 페르소나 선택 목록
 - `POST /analyze`: YouTube URL 백엔드 분석 흐름
 - `GET /docent/{name}`: 장소별 도슨트 음성 URL 또는 안내 스크립트 조회
-

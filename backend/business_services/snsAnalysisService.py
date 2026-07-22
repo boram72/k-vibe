@@ -140,7 +140,9 @@ def analyze_sns_url(youtube_url: str, locale: str) -> dict:
 
     return {
         "videoId": video_id,
+        "video_id": video_id,
         "title": title or fallback_title,
         "places": _match_places(title or video_id, safe_locale),
+        "cached": False,
         "source": "worker",
     }

@@ -39,7 +39,7 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
           <p className="truncate text-xs text-muted-foreground">{result.title}</p>
         </div>
         <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
-          {result.source === 'worker' ? t('analyze.source_worker') : t('analyze.source_mock')}
+          {result.source === 'mock' ? t('analyze.source_mock') : t('analyze.source_worker')}
         </span>
       </div>
 

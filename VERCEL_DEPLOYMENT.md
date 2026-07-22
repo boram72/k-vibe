@@ -20,3 +20,13 @@ VITE_API_BASE_URL=https://<render-backend-url>
 ```
 
 Render 백엔드 주소를 아직 확정하지 않았다면 프론트는 실패 시 로컬 후보 데이터로 동작하지만, 팀 공유 테스트에서는 실제 백엔드 주소를 Vercel 환경변수에 넣는 편이 가장 명확하다.
+
+## 백엔드 AI 환경변수
+
+SNS YouTube 분석은 백엔드에서 Groq를 우선 사용하고, 키가 없거나 응답 파싱에 실패하면 후보 분석으로 내려간다. Render 백엔드 환경변수에 아래 값을 추가한다.
+
+```text
+GROQ_API_KEY=gsk_...
+```
+
+실제 키는 `.env`나 Render Dashboard에만 넣고 GitHub에는 올리지 않는다.

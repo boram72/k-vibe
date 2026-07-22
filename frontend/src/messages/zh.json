@@ -103,6 +103,7 @@
     "empty_body": "请尝试旅行Vlog、MV取景地视频，或上方示例URL。",
     "try_example": "试用示例YouTube URL",
     "source_worker": "AI Worker",
+    "source_groq": "Groq AI",
     "source_mock": "Mock",
     "confidence": "置信度",
     "estimated_location": "推测位置",

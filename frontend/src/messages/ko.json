@@ -103,6 +103,7 @@
     "empty_body": "여행 브이로그, MV 촬영지 영상, 또는 위 예시 URL로 다시 시도해보세요.",
     "try_example": "예시 YouTube URL로 시도",
     "source_worker": "AI Worker",
+    "source_groq": "Groq AI",
     "source_mock": "Mock",
     "confidence": "신뢰도",
     "estimated_location": "추정 위치",

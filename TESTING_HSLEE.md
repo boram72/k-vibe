@@ -18,6 +18,8 @@ frontend/.env.example
 backend/.env.example
 ```
 
+YouTube SNS 분석을 Groq로 확인하려면 `backend/.env`에 `GROQ_API_KEY`를 추가한다. 키가 없으면 로컬 후보 분석으로 동작한다.
+
 ## 2. 백엔드 실행
 
 ```bash

@@ -103,6 +103,7 @@
     "empty_body": "Try a travel vlog, MV location clip, or one of the sample URLs above.",
     "try_example": "Try a sample YouTube URL",
     "source_worker": "AI Worker",
+    "source_groq": "Groq AI",
     "source_mock": "Mock",
     "confidence": "confidence",
     "estimated_location": "Estimated location",

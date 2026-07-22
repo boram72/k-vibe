@@ -1,7 +1,16 @@
 import hashlib
+import json
+import math
+import re
 from urllib.parse import parse_qs, urlparse
 
 import httpx
+
+from config.configure import GROQ_API_KEY
+
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_TIMEOUT_SECONDS = 20
 
 ANALYSIS_PLACES = {
     "seongsu": {
@@ -242,6 +251,26 @@ FALLBACK_BUCKETS = [
     ["samcheong", "ihwa", "gwangjang"],
 ]
 
+SPOT_EXTRACTION_PROMPT = """당신은 한국 여행 장소 추천 전문가입니다.
+아래 YouTube 영상 정보에서 등장하거나 강하게 유추할 수 있는 한국의 실제 여행 스팟을 추출하세요.
+
+## 영상 제목
+{title}
+
+## 지시사항
+- 실제 한국 여행 장소를 최대 6개 추출하세요.
+- 서울, 부산처럼 넓은 지역명만 있는 항목은 제외하고 구체적인 장소명을 우선하세요.
+- 각 장소의 category는 cafe, restaurant, landmark, park, shopping, culture, nature, other 중 하나입니다.
+- confidence는 0.0~1.0 숫자입니다.
+- lat, lng는 해당 장소의 실제 위도/경도 좌표입니다. 한국 내 실제 좌표를 소수점 4자리 이상으로 반환하세요.
+- reason은 왜 이 장소로 판단했는지 짧게 설명하세요.
+- 반드시 JSON 배열만 반환하세요. 설명 문장이나 마크다운은 반환하지 마세요.
+
+[
+  {{"name":"장소명","category":"cafe","confidence":0.9,"reason":"제목에서 성수 카페가 언급됨","lat":37.5447,"lng":127.0564}}
+]
+"""
+
 
 def extract_youtube_video_id(url: str) -> str | None:
     parsed = urlparse(url)
@@ -274,6 +303,105 @@ def _fetch_youtube_title(url: str) -> str:
         return title if isinstance(title, str) else ""
     except Exception:
         return ""
+
+
+def _complete_with_groq(prompt: str) -> str:
+    if not GROQ_API_KEY:
+        return ""
+
+    try:
+        response = httpx.post(
+            GROQ_API_URL,
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "max_tokens": 1024,
+            },
+            timeout=GROQ_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        data = response.json()
+        content = data.get("choices", [{}])[0].get("message", {}).get("content")
+        return content if isinstance(content, str) else ""
+    except Exception:
+        return ""
+
+
+def _extract_json_array(text: str) -> list:
+    if not text:
+        return []
+    try:
+        match = re.search(r"```(?:json)?\s*(\[.*?\])\s*```", text, re.DOTALL)
+        payload = match.group(1) if match else text.strip()
+        parsed = json.loads(payload)
+        return parsed if isinstance(parsed, list) else []
+    except json.JSONDecodeError:
+        return []
+
+
+def _to_float(value) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _is_korea_coordinate(lat: float | None, lng: float | None) -> bool:
+    return lat is not None and lng is not None and 33 <= lat <= 39 and 124 <= lng <= 132
+
+
+def _normalize_groq_place(raw: dict, locale: str) -> dict | None:
+    name = raw.get("name")
+    if not isinstance(name, str) or not name.strip():
+        return None
+
+    lat = _to_float(raw.get("lat"))
+    lng = _to_float(raw.get("lng"))
+    if not _is_korea_coordinate(lat, lng):
+        return None
+
+    confidence = _to_float(raw.get("confidence"))
+    if confidence is None:
+        confidence = 0.7
+    confidence = max(0, min(1, confidence))
+
+    reason = raw.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        reason = "Groq가 영상 제목에서 추출한 장소 후보입니다." if locale == "ko" else "Candidate extracted from the video title by Groq."
+
+    return {
+        "name": name.strip(),
+        "lat": round(lat, 6),
+        "lng": round(lng, 6),
+        "confidence": confidence,
+        "reason": reason.strip(),
+        "category": raw.get("category") if isinstance(raw.get("category"), str) else "other",
+    }
+
+
+def _extract_places_with_groq(title: str, locale: str) -> list[dict]:
+    if not title:
+        return []
+
+    prompt = SPOT_EXTRACTION_PROMPT.format(title=title)
+    content = _complete_with_groq(prompt)
+    raw_places = _extract_json_array(content)
+    places: list[dict] = []
+
+    for raw in raw_places:
+        if not isinstance(raw, dict):
+            continue
+        place = _normalize_groq_place(raw, locale)
+        if place:
+            places.append(place)
+
+    return places[:6]
 
 
 def _place_payload(place_id: str, locale: str) -> dict:
@@ -326,6 +454,16 @@ def analyze_sns_url(youtube_url: str, locale: str) -> dict:
     safe_locale = _locale(locale)
     title = _fetch_youtube_title(youtube_url)
     fallback_title = "백엔드 K-콘텐츠 스팟 분석" if safe_locale == "ko" else "Backend K-content spot analysis"
+    groq_places = _extract_places_with_groq(title or video_id, safe_locale)
+    if groq_places:
+        return {
+            "videoId": video_id,
+            "video_id": video_id,
+            "title": title or fallback_title,
+            "places": groq_places,
+            "cached": False,
+            "source": "groq",
+        }
 
     return {
         "videoId": video_id,

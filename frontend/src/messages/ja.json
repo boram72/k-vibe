@@ -103,6 +103,7 @@
     "empty_body": "旅行Vlog、MVロケ地動画、または上のサンプルURLで再試行してください。",
     "try_example": "サンプルYouTube URLを試す",
     "source_worker": "AI Worker",
+    "source_groq": "Groq AI",
     "source_mock": "Mock",
     "confidence": "信頼度",
     "estimated_location": "推定位置",

@@ -13,6 +13,10 @@ export default defineConfig({
     },
   },
   server: {
+    // Keep local map tests on the browser domain approved for the Kakao Maps key.
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
     allowedHosts: true,
     proxy: {
       '/backend': {

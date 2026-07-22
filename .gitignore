@@ -7,6 +7,9 @@
 # macOS
 .DS_Store
 
+# Local Codex run logs
+.codex-logs/
+
 # Environment variables and local secrets
 .env
 .env.*

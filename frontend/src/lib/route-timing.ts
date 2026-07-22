@@ -20,6 +20,7 @@ export interface ScheduledRoute {
   walkingMinutes: number
   stayMinutes: number
   totalMinutes: number
+  summary?: string
 }
 
 // Title/summary aren't computed here — they're i18n text built by the caller

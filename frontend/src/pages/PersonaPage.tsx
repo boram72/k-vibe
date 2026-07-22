@@ -44,7 +44,7 @@ export default function PersonaPage() {
       const result: RoutePlan = {
         ...scheduled,
         title,
-        summary: '',
+        summary: scheduled.summary ?? '',
         shareText: `${title}: ${scheduled.stops.map((s) => s.name).join(' -> ')}`,
       }
       return result

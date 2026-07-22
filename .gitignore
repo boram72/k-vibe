@@ -6,3 +6,14 @@
 
 # macOS
 .DS_Store
+
+# Environment variables and local secrets
+.env
+.env.*
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
+!.env.example
+!frontend/.env.example
+!backend/.env.example

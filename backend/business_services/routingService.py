@@ -21,7 +21,9 @@ def _ensure_coordinates(name: str) -> dict:
     if coords is None:
         raise ValueError(f"'{name}' 장소의 좌표를 찾을 수 없습니다.")
 
-    data = {**(location or {"name": name}), **coords}
+    # location에 신규 insert되는 경우 place_id(PK)가 반드시 있어야 한다.
+    # 이 경로(나만의 루트)는 TourAPI place_id가 없으므로 name을 그대로 대체 식별자로 쓴다.
+    data = {**(location or {"name": name, "place_id": name}), **coords}
     return locationinfo.upsert_location(data)
 
 

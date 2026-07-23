@@ -1,4 +1,11 @@
-import { Map, Wand2, Route, Radar, Home, type LucideIcon } from "lucide-react";
+import {
+  Map,
+  Wand2,
+  Route,
+  Radar,
+  ScanSearch,
+  type LucideIcon,
+} from "lucide-react";
 
 export interface NavItem {
   key: string;
@@ -12,9 +19,14 @@ export interface NavItem {
  * Add/remove/reorder tabs here — BottomNav and SidebarNav both render from this array.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { key: "home", path: "", icon: Home, labelKey: "home.title" },
+  // { key: "home", path: "", icon: Home, labelKey: "home.title" },
   { key: "map", path: "map", icon: Map, labelKey: "map.title" },
-  // { key: 'analyze', path: 'analyze', icon: ScanSearch, labelKey: 'analyze.nav_title' },
+  {
+    key: "analyze",
+    path: "analyze",
+    icon: ScanSearch,
+    labelKey: "analyze.nav_title",
+  },
   {
     key: "persona",
     path: "persona",

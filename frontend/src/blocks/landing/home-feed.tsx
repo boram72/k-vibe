@@ -14,7 +14,7 @@ import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { cn } from '@/lib/utils'
 
 export function HomeFeed() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [personaPreference] = useState(() => readPersonaPreference())
   const [category, setCategory] = useState<PlaceCategory>('all')
   const [activeStory, setActiveStory] = useState<StoryTopic | null>(null)
@@ -43,8 +43,8 @@ export function HomeFeed() {
   }
 
   const { data: places = [], isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['home-feed-places'],
-    queryFn: fetchHomeFeedPlaces,
+    queryKey: ['home-feed-places', i18n.language],
+    queryFn: () => fetchHomeFeedPlaces(i18n.language),
   })
 
   const filtered = places.filter((place) => category === 'all' || place.category === category)

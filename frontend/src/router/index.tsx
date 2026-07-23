@@ -4,7 +4,7 @@ import { AppLayout } from '@/blocks/layout/app-layout'
 import { SUPPORTED_LOCALES, type Locale } from '@/i18n'
 import LandingPage from '@/pages/LandingPage'
 import MapPage from '@/pages/MapPage'
-// import AnalyzePage from '@/pages/AnalyzePage'
+import AnalyzePage from '@/pages/AnalyzePage'
 import PersonaPage from '@/pages/PersonaPage'
 import RoutePage from '@/pages/RoutePage'
 import RadarPage from '@/pages/RadarPage'
@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: 'map', element: <MapPage /> },
-          // { path: 'analyze', element: <AnalyzePage /> },
+          { path: 'analyze', element: <AnalyzePage /> },
           { path: 'persona', element: <PersonaPage /> },
           { path: 'route', element: <RoutePage /> },
           { path: 'radar', element: <RadarPage /> },

@@ -77,7 +77,7 @@ export default function PersonaPage() {
     savePersonaRoutePlan(plan)
     const ts = Date.now()
     addStopsToRouteDraft(
-      plan.stops.map((s) => ({ ...s, id: `${s.id}-${ts}`, fromPersona: true })),
+      plan.stops.map((s) => ({ ...s, id: `${s.id}-${ts}`, placeId: s.id, fromPersona: true })),
     )
     toast.success(t('persona.route_saved'))
     navigate('../route')

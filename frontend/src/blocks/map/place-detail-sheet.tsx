@@ -43,6 +43,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
     if (!place) return
     addStopToRouteDraft({
       id: place.id,
+      placeId: place.id,
       name: place.name,
       category: place.category,
       address: place.address,
@@ -51,6 +52,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
       crowdLevel: place.crowdLevel,
     })
     toast.success(t('placeDetail.added_to_route'))
+    onClose()
   }
 
   async function handleShare() {

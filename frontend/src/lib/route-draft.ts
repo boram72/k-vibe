@@ -19,6 +19,11 @@ const PERSONA_PLAN_KEY = 'k-vibe-persona-plan'
 
 export interface RouteStop {
   id: string
+  // TourAPI contentid — the actual place's identity, distinct from `id`
+  // (a stop *instance* identifier). Needed wherever `id` gets a suffix
+  // (e.g. PersonaPage's `${s.id}-${ts}` for repeat adds) so the backend can
+  // still FK the stop to the right `location` row. See FRONTEND_TODO_placeId.md.
+  placeId?: string
   name: string
   category: string
   address: string

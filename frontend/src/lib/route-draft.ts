@@ -19,6 +19,11 @@ const PERSONA_PLAN_KEY = 'k-vibe-persona-plan'
 
 export interface RouteStop {
   id: string
+  // TourAPI contentid — the actual place's identity, distinct from `id`
+  // (a stop *instance* identifier). Needed wherever `id` gets a suffix
+  // (e.g. PersonaPage's `${s.id}-${ts}` for repeat adds) so the backend can
+  // still FK the stop to the right `location` row. See FRONTEND_TODO_placeId.md.
+  placeId?: string
   name: string
   category: string
   address: string
@@ -38,6 +43,13 @@ export interface RouteStop {
   fromPersona?: boolean
 }
 
+// Backend's PUT /route-draft/{username} takes {stops, plan} together (see
+// backend/presentation_api/routeDraft.py) — plan is stored in a separate
+// table (route_draft_meta) but sent in the same request as stops.
+function scheduleDraftSync(stops: RouteStop[]): void {
+  routeDraftSync.schedule({ stops, plan: readPersonaRoutePlan() })
+}
+
 export function readRouteDraft(): RouteStop[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -50,7 +62,7 @@ export function readRouteDraft(): RouteStop[] {
 export function addStopToRouteDraft(stop: RouteStop): RouteStop[] {
   const next = [...readRouteDraft().filter((s) => s.id !== stop.id), stop]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  routeDraftSync.schedule({ stops: next })
+  scheduleDraftSync(next)
   return next
 }
 
@@ -64,7 +76,7 @@ export function addStopsToRouteDraft(stops: RouteStop[]): RouteStop[] {
   const incomingIds = new Set(stops.map((s) => s.id))
   const next = [...readRouteDraft().filter((s) => !incomingIds.has(s.id)), ...stops]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  routeDraftSync.schedule({ stops: next })
+  scheduleDraftSync(next)
   return next
 }
 
@@ -76,12 +88,13 @@ export function addStopsToRouteDraft(stops: RouteStop[]): RouteStop[] {
  */
 export function saveRouteDraft(stops: RouteStop[]): RouteStop[] {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(stops))
-  routeDraftSync.schedule({ stops })
+  scheduleDraftSync(stops)
   return stops
 }
 
 export function savePersonaRoutePlan(plan: RoutePlan): void {
   localStorage.setItem(PERSONA_PLAN_KEY, JSON.stringify(plan))
+  scheduleDraftSync(readRouteDraft())
 }
 
 export function readPersonaRoutePlan(): RoutePlan | null {
@@ -95,4 +108,5 @@ export function readPersonaRoutePlan(): RoutePlan | null {
 
 export function clearPersonaRoutePlan(): void {
   localStorage.removeItem(PERSONA_PLAN_KEY)
+  scheduleDraftSync(readRouteDraft())
 }

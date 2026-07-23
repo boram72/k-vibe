@@ -1,16 +1,16 @@
-import { apiClient } from '@/api/client'
+import { API_BASE_URL, apiClient } from '@/api/client'
 import { getCurrentUser } from '@/lib/auth'
 
 // Best-effort background push to the backend, for logged-in users only (DB
 // rows are keyed by username — guests have nothing to sync). No-ops if
-// VITE_API_BASE_URL isn't set, and silently warns on failure instead of
+// there's no usable API_BASE_URL, and silently warns on failure instead of
 // throwing: these endpoints don't exist yet (see DB_INTEGRATION_REQUEST.md
 // at the repo root), so this previews the real wiring without disrupting the
 // localStorage-first behavior that already fully works today. Once the
 // backend implements a matching endpoint, this starts working with no
-// frontend change beyond setting VITE_API_BASE_URL.
+// frontend change (dev already proxies to localhost:8000 — see client.ts).
 async function pushToServer(path: string, payload: unknown): Promise<void> {
-  if (!import.meta.env.VITE_API_BASE_URL) return
+  if (!API_BASE_URL) return
   const user = await getCurrentUser()
   if (!user) return
   try {

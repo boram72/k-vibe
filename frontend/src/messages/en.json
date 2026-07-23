@@ -347,7 +347,6 @@
     "title": "Sign in",
     "subtitle": "Sync your saved places and routes across devices.",
     "continue_google": "Continue with Google",
-    "continue_apple": "Continue with Apple",
     "continue_kakao": "Continue with Kakao",
     "continue_guest": "Continue as guest",
     "available_without_login": "Available without signing in",
@@ -361,6 +360,7 @@
     "signup_button": "Sign up",
     "switch_to_signup": "Don't have an account? Sign up",
     "switch_to_login": "Already have an account? Log in",
-    "credentials_error": "Request failed. Check your username/password or the backend server."
+    "credentials_error": "Request failed. Check your username/password or the backend server.",
+    "oauth_failed": "Sign-in failed. Please try again."
   }
 }

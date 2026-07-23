@@ -1,6 +1,10 @@
 import { apiClient, withFallback } from '@/api/client'
 
 export interface RelatedAttraction {
+  // TourAPI contentid for the attraction itself (added in TarRlteTarService1
+  // v4.1's tAtsCd) — not yet used anywhere, kept for future code-based
+  // lookup/linking instead of matching by attractionName text.
+  attractionContentId?: string
   attractionName: string
   relatedContentId: string
   relatedName: string
@@ -18,6 +22,7 @@ export interface RelatedAttraction {
 // the real district from lat/lng without the same reverse-geocoding the backend does.
 const MOCK_RELATED_ATTRACTIONS: RelatedAttraction[] = [
   {
+    attractionContentId: 'mock-namsan',
     attractionName: '남산서울타워',
     relatedContentId: 'mock-1',
     relatedName: '명동성당',
@@ -29,6 +34,7 @@ const MOCK_RELATED_ATTRACTIONS: RelatedAttraction[] = [
     rank: 1,
   },
   {
+    attractionContentId: 'mock-namsan',
     attractionName: '남산서울타워',
     relatedContentId: 'mock-2',
     relatedName: '을지로 노가리골목',
@@ -40,6 +46,7 @@ const MOCK_RELATED_ATTRACTIONS: RelatedAttraction[] = [
     rank: 2,
   },
   {
+    attractionContentId: 'mock-namsan',
     attractionName: '남산서울타워',
     relatedContentId: 'mock-3',
     relatedName: '광장시장',

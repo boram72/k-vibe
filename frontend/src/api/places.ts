@@ -134,3 +134,32 @@ export async function fetchHomeFeedPlaces(): Promise<Place[]> {
     () => SEOUL_PLACES,
   )
 }
+
+// See PLACE_DETAIL_INTEGRATION_REQUEST.md — phone/hours/tags aren't in the
+// list response (TourAPI's locationBasedList2 doesn't have them; Kakao Local
+// API doesn't have them at all), so they're fetched on demand only when the
+// detail sheet actually opens for one place, not for every list item. `tags`
+// here is TourAPI's cat3 subcategory name (e.g. "고궁") standing in for the
+// free-text tags mock data had — real APIs have no such field, and this is
+// a category label, not a filterable tag (clicking it doesn't filter the
+// list — that would need cat3 on every list item, out of scope for now).
+export interface PlaceDetail {
+  phone?: string
+  businessHours?: string
+  overview?: string
+  tags?: string[]
+}
+
+const MOCK_PLACE_DETAIL: PlaceDetail = {
+  phone: '02-1234-5678',
+  businessHours: '10:00~18:00 (월요일 휴무)',
+  overview: '설명 정보가 준비 중입니다.',
+  tags: ['고궁'],
+}
+
+export async function fetchPlaceDetail(contentId: string): Promise<PlaceDetail> {
+  return withFallback(
+    async () => (await apiClient.get<PlaceDetail>(`/places/${contentId}`)).data,
+    () => MOCK_PLACE_DETAIL,
+  )
+}

@@ -1,6 +1,6 @@
-import { apiClient } from '@/api/client'
+import { API_BASE_URL, apiClient } from '@/api/client'
 
-export type AuthProvider = 'google' | 'apple' | 'kakao'
+export type AuthProvider = 'google' | 'kakao'
 
 export interface AuthUser {
   id: string
@@ -16,7 +16,6 @@ const STORAGE_KEY = 'k-vibe-mock-session'
 // expects to receive (still "an AuthUser shaped by which provider was used").
 const MOCK_USERS: Record<AuthProvider, AuthUser> = {
   google: { id: 'mock-google-1', name: 'Google User', email: 'guest@gmail.com', provider: 'google' },
-  apple: { id: 'mock-apple-1', name: 'Apple User', email: 'guest@icloud.com', provider: 'apple' },
   kakao: { id: 'mock-kakao-1', name: '카카오 사용자', email: 'guest@kakao.com', provider: 'kakao' },
 }
 
@@ -34,10 +33,47 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
+// See OAUTH_INTEGRATION_REQUEST.md — backend relays the OAuth flow (frontend
+// never talks to Google/Kakao directly). This callback path must match the
+// route registered in router/index.tsx.
+const OAUTH_CALLBACK_PATH = '/auth/callback'
+
+function buildOAuthStartUrl(provider: AuthProvider): string {
+  const redirectUri = `${window.location.origin}${OAUTH_CALLBACK_PATH}`
+  return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
+}
+
+// Whether loginWithProvider will redirect (real) vs resolve instantly (mock)
+// — LoginModal checks this to decide whether to route the click through
+// useAuth()'s mutation at all (see redirectToOAuthProvider below for why).
+export function isOAuthBackendConfigured(): boolean {
+  return Boolean(API_BASE_URL)
+}
+
+// Called directly by LoginModal, bypassing useAuth()'s login mutation
+// entirely — a plain navigation, not a tracked async action. Earlier this
+// went through loginWithProvider() with a Promise that intentionally never
+// resolves ("the page is leaving anyway"), but browsers restore the whole JS
+// heap from bfcache on back-navigation — including that still-pending
+// promise — so after a failed round-trip (backend endpoint not built yet)
+// and pressing back, isLoggingIn stayed stuck at `true` forever and the
+// buttons never re-enabled. Keeping this outside the mutation means there's
+// no pending state to get stuck in the first place.
+export function redirectToOAuthProvider(provider: AuthProvider): void {
+  window.location.href = buildOAuthStartUrl(provider)
+}
+
+// Only reached when isOAuthBackendConfigured() is false — always resolves.
 export async function loginWithProvider(provider: AuthProvider): Promise<AuthUser> {
   const user = MOCK_USERS[provider]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   return user
+}
+
+// Called by the /auth/callback route once the backend redirects back with
+// the logged-in identity in the query string.
+export function completeOAuthLogin(data: { username: string; email: string; provider: AuthProvider }): AuthUser {
+  return toAuthUser({ username: data.username, email: data.email }, data.provider)
 }
 
 export async function logout(): Promise<void> {
@@ -53,8 +89,8 @@ export interface SignupPayload {
   password: string
 }
 
-function toAuthUser(data: { username: string; email: string }): AuthUser {
-  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider: 'credentials' }
+function toAuthUser(data: { username: string; email: string }, provider: AuthUser['provider'] = 'credentials'): AuthUser {
+  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   return user
 }

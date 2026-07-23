@@ -9,6 +9,7 @@ import PersonaPage from '@/pages/PersonaPage'
 import RoutePage from '@/pages/RoutePage'
 import RadarPage from '@/pages/RadarPage'
 import ProfilePage from '@/pages/ProfilePage'
+import OAuthCallbackPage from '@/pages/OAuthCallbackPage'
 
 const LOCALE_KEY = 'k-vibe-locale'
 
@@ -47,6 +48,13 @@ export const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    // Backend's OAuth redirect target (see OAUTH_INTEGRATION_REQUEST.md) —
+    // locale-agnostic on purpose so lib/auth.ts's redirect_uri doesn't need
+    // to know the user's locale before login has even completed.
+    path: '/auth/callback',
+    element: <OAuthCallbackPage />,
   },
   {
     path: '*',

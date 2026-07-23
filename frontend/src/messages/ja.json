@@ -347,7 +347,6 @@
     "title": "ログイン",
     "subtitle": "保存した場所やルートを他のデバイスと同期しましょう。",
     "continue_google": "Googleで続ける",
-    "continue_apple": "Appleで続ける",
     "continue_kakao": "Kakaoで続ける",
     "continue_guest": "ゲストとして続ける",
     "available_without_login": "ログインなしでも利用可能",
@@ -361,6 +360,7 @@
     "signup_button": "会員登録",
     "switch_to_signup": "アカウントをお持ちでないですか? 会員登録",
     "switch_to_login": "すでにアカウントをお持ちですか? ログイン",
-    "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。"
+    "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。",
+    "oauth_failed": "ログインに失敗しました。もう一度お試しください。"
   }
 }

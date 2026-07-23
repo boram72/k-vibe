@@ -10,3 +10,8 @@ router = APIRouter(prefix="/docent", tags=["docent"])
 @router.get("/{name}")
 def get_docent(name: str, language: str = "korean"):
     return docentService.get_docent_guide(name, language)
+
+
+@router.post("/{name}/voice")
+def create_docent_voice(name: str, language: str = "korean"):
+    return docentService.create_docent_voice(name, language)

@@ -91,6 +91,7 @@ npm run dev
 - `GET /personas`: K-콘텐츠 페르소나 선택 목록
 - `POST /analyze`: YouTube URL 백엔드 분석 흐름
 - `GET /docent/{name}`: 장소별 도슨트 음성 URL 또는 안내 스크립트 조회
+- `POST /docent/{name}/voice`: TTS 음성 생성 요청 진입점. provider 미설정 시 `tts-pending`으로 응답
 - `GET /places`: 홈/지도 주변 스팟 조회
 - `GET /trending`: 홈 트렌딩 키워드 조회
 - `GET /amenities`: 편의시설 레이더 조회
@@ -108,6 +109,6 @@ npm run dev
 
 ## 7. 기능 연결 상태
 
-- 유튜브 영상분석: 프론트 `src/api/analyze.ts`에서 백엔드 `POST /analyze`를 호출하고, 백엔드는 `business_services/snsAnalysisService.py`에서 Groq 분석을 우선 사용한다.
-- 페르소나 루트: 프론트 `src/api/personas.ts`에서 백엔드 `GET /personas`, `POST /routes/generate`를 호출하고, 백엔드는 `business_services/personaRouteService.py`로 위임한다.
-- 도슨트/TTS: 프론트 `src/api/docent.ts`에서 백엔드 `GET /docent/{name}`를 호출한다. 현재 연결 범위는 장소별 음성 URL 조회와 안내 스크립트 반환이며, 새 TTS 음성 파일 생성 API는 별도 작업으로 남아 있다.
+- 유튜브 영상분석: 프론트 `src/api/analyze.ts`에서 백엔드 `POST /analyze`를 호출한다. 백엔드는 `presentation_api/analyze.py`가 요청을 받고, `business_services/snsAnalysisService.py`가 흐름을 조율한다. YouTube 제목 조회는 `externelAPI_services/youtube.py`, Groq 호출은 `ai_services/groq_client.py`, 프롬프트는 `ai_services/prompttemplate.py`, 기본 후보 매칭은 `data_repositories/analysisCandidateInfo.py`로 분리했다.
+- 페르소나 루트: 프론트 `src/api/personas.ts`에서 백엔드 `GET /personas`, `POST /routes/generate`를 호출한다. 백엔드는 `presentation_api/personas.py`, `presentation_api/routes.py`가 요청을 받고, `business_services/personaRouteService.py`가 DB/기본 카탈로그를 조율한다. 페르소나/장소 기본 카탈로그는 `data_repositories/personaCatalogInfo.py`, 이동시간과 스케줄 계산은 `business_services/routingService.py`로 분리했다.
+- 도슨트/TTS: 프론트 `src/api/docent.ts`에서 백엔드 `GET /docent/{name}`를 호출한다. 백엔드는 `presentation_api/playDocentVoice.py`가 요청을 받고, `business_services/docentService.py`가 저장된 음성 URL 조회와 스크립트 반환을 조율한다. TTS 생성 요청 진입점은 `POST /docent/{name}/voice`이고, 생성 흐름은 `business_services/createDocentVoice.py`, 외부 TTS 어댑터는 `externelAPI_services/tts.py`, 저장된 음성 URL 조회/업데이트는 `data_repositories/docentinfo.py`로 분리했다.

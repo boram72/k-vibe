@@ -7,8 +7,8 @@ from main import app
 client = TestClient(app)
 
 
-@patch("business_services.snsAnalysisService._fetch_youtube_title")
-@patch("business_services.snsAnalysisService._complete_with_groq", return_value="")
+@patch("externelAPI_services.youtube.fetch_youtube_title")
+@patch("ai_services.groq_client.complete", return_value="")
 def test_analyze_youtube_url_returns_backend_places(mock_groq, mock_title):
     mock_title.return_value = "성수 카페 브이로그"
 
@@ -25,8 +25,8 @@ def test_analyze_youtube_url_returns_backend_places(mock_groq, mock_title):
     mock_groq.assert_called_once()
 
 
-@patch("business_services.snsAnalysisService._fetch_youtube_title")
-@patch("business_services.snsAnalysisService._complete_with_groq", return_value="")
+@patch("externelAPI_services.youtube.fetch_youtube_title")
+@patch("ai_services.groq_client.complete", return_value="")
 def test_analyze_uses_video_id_specific_fallbacks(_, mock_title):
     mock_title.return_value = ""
 
@@ -42,8 +42,8 @@ def test_analyze_uses_video_id_specific_fallbacks(_, mock_title):
     assert [place["name"] for place in first["places"]] != [place["name"] for place in second["places"]]
 
 
-@patch("business_services.snsAnalysisService._fetch_youtube_title")
-@patch("business_services.snsAnalysisService._complete_with_groq", return_value="")
+@patch("externelAPI_services.youtube.fetch_youtube_title")
+@patch("ai_services.groq_client.complete", return_value="")
 def test_analyze_matches_title_keywords_before_fallback(_, mock_title):
     mock_title.return_value = "잠실 롯데타워 서울 여행 브이로그"
 
@@ -71,8 +71,8 @@ def test_analyze_uses_groq_when_places_are_parseable():
     ]
     """
     with (
-        patch("business_services.snsAnalysisService._fetch_youtube_title", return_value="성수 여행 브이로그"),
-        patch("business_services.snsAnalysisService._complete_with_groq", return_value=groq_payload),
+        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 여행 브이로그"),
+        patch("ai_services.groq_client.complete", return_value=groq_payload),
     ):
         response = client.post(
             "/analyze",

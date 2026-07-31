@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+import logging
+
+import httpx
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from presentation_api import (
     analyze,
@@ -19,7 +23,21 @@ from presentation_api import (
     user,
 )
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="K-Vibe Tracker API")
+
+
+@app.exception_handler(httpx.HTTPError)
+async def external_api_error_handler(request: Request, exc: httpx.HTTPError):
+    # TourAPI/카카오 같은 외부 API가 타임아웃/장애나면 라우트마다 따로 처리하지 않아도
+    # 여기서 한 번에 잡아 500 스택트레이스 대신 깔끔한 503으로 응답한다. (find_nearby_places가
+    # 타임아웃을 못 잡아 500으로 죽던 문제 재발 방지 — 앞으로 추가되는 외부 API 호출도 자동 적용)
+    logger.warning("외부 API 호출 실패 (%s): %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "외부 서비스 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요."},
+    )
 
 app.add_middleware(
     CORSMiddleware,

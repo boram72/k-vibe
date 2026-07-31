@@ -4,7 +4,7 @@
 #   검색으로 노출된 결과는 (내 루트 추가/찜하기 여부와 무관하게) 여기서 바로 캐싱한다.
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from data_repositories import locationinfo
 from externelAPI_services import tourAPI
@@ -28,3 +28,12 @@ def find_nearby_places(
         # 캐싱 실패가 지도 검색 응답 자체를 막으면 안 된다.
         logger.exception("장소 검색결과 location 캐싱 실패")
     return places
+
+
+@router.get("/{content_id}")
+def get_place_detail(content_id: str):
+    """장소 상세시트 온디맨드 조회(전화번호/영업시간/카테고리 태그). 클릭 시에만 호출됨."""
+    detail = tourAPI.get_place_detail(content_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다.")
+    return detail

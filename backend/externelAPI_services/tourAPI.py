@@ -9,6 +9,7 @@
 #   조회한다 -> externelAPI_services/amenities.py 참고.
 import json
 from datetime import date, timedelta
+from functools import lru_cache
 from pathlib import Path
 
 import httpx
@@ -17,6 +18,19 @@ from config.configure import TOUR_API_KEY
 from externelAPI_services import kakaomap
 
 RELATED_ATTRACTIONS_AREA_BASED_URL = "https://apis.data.go.kr/B551011/TarRlteTarService1/areaBasedList1"
+DETAIL_COMMON_URL = "https://apis.data.go.kr/B551011/KorService2/detailCommon2"
+DETAIL_INTRO_URL = "https://apis.data.go.kr/B551011/KorService2/detailIntro2"
+CATEGORY_CODE_URL = "https://apis.data.go.kr/B551011/KorService2/categoryCode2"
+
+# PLACE_DETAIL_INTEGRATION_REQUEST.md 참고 — contentTypeId별로 영업시간/휴무일
+# 필드명이 다르다. 체크인/체크아웃(32)·공연시간(15)은 이 2필드 패턴과 달라 별도 처리.
+BUSINESS_HOURS_FIELD_MAP = {
+    "12": ("usetime", "restdate"),  # 관광지
+    "14": ("usetimeculture", "restdateculture"),  # 문화시설
+    "28": ("usetimeleports", "restdateleports"),  # 레포츠
+    "38": ("opentime", "restdateshopping"),  # 쇼핑
+    "39": ("opentimefood", "restdatefood"),  # 음식점
+}
 
 # 프론트 SUPPORTED_LOCALES(ko/en/ja/zh)에 대응하는 TourAPI 언어별 서비스.
 # 인증키(TOUR_API_KEY)는 언어 상관없이 동일한 키를 쓴다. 지원 안 하는 locale은 한국어로 폴백.
@@ -218,3 +232,99 @@ def find_nearby_places(
             }
         )
     return places
+
+
+def _tour_api_common_params() -> dict:
+    return {
+        "serviceKey": TOUR_API_KEY,
+        "MobileOS": "ETC",
+        "MobileApp": "KVibe",
+        "_type": "json",
+    }
+
+
+def _first_item(body: dict) -> dict | None:
+    items = body.get("items", "")
+    if not items:
+        return None
+    item = items["item"]
+    return item[0] if isinstance(item, list) else item
+
+
+def _fetch_detail_common(content_id: str) -> dict | None:
+    params = {**_tour_api_common_params(), "contentId": content_id, "defaultYN": "Y", "overviewYN": "Y"}
+    response = httpx.get(DETAIL_COMMON_URL, params=params, timeout=5.0)
+    response.raise_for_status()
+    return _first_item(response.json().get("response", {}).get("body", {}))
+
+
+def _fetch_detail_intro(content_id: str, content_type_id: str) -> dict:
+    params = {**_tour_api_common_params(), "contentId": content_id, "contentTypeId": content_type_id}
+    response = httpx.get(DETAIL_INTRO_URL, params=params, timeout=5.0)
+    response.raise_for_status()
+    return _first_item(response.json().get("response", {}).get("body", {})) or {}
+
+
+@lru_cache(maxsize=256)
+def _fetch_category_name(cat1: str, cat2: str, cat3: str) -> str | None:
+    """cat3(소분류) 코드 -> 한글 카테고리명. 자주 조회되는 값이라 프로세스 내 캐싱."""
+    params = {**_tour_api_common_params(), "cat1": cat1, "cat2": cat2, "cat3": cat3}
+    response = httpx.get(CATEGORY_CODE_URL, params=params, timeout=5.0)
+    response.raise_for_status()
+    item = _first_item(response.json().get("response", {}).get("body", {}))
+    return item.get("name") if item else None
+
+
+def _normalize_business_hours(content_type_id: str | None, intro: dict) -> str | None:
+    if content_type_id == "32":  # 숙박: 체크인/체크아웃
+        checkin, checkout = intro.get("checkintime"), intro.get("checkouttime")
+        if checkin and checkout:
+            return f"체크인 {checkin} · 체크아웃 {checkout}"
+        return checkin or checkout or None
+
+    if content_type_id == "15":  # 축제공연행사: 공연시간
+        return intro.get("playtime") or intro.get("usetimefestival") or None
+
+    fields = BUSINESS_HOURS_FIELD_MAP.get(content_type_id)
+    if not fields:
+        return None
+    hours_field, closed_field = fields
+    hours = intro.get(hours_field)
+    if not hours:
+        return None
+    closed = intro.get(closed_field)
+    return f"{hours} ({closed} 휴무)" if closed else hours
+
+
+def get_place_detail(content_id: str) -> dict | None:
+    """장소 상세시트(전화번호/영업시간/카테고리 태그) 온디맨드 조회.
+
+    detailCommon2(전화번호/개요/분류코드) + detailIntro2(콘텐츠 타입별 영업시간,
+    정규화 필요) + categoryCode2(cat3 코드 -> 한글명) 세 개를 조합한다.
+    PLACE_DETAIL_INTEGRATION_REQUEST.md 참고.
+    """
+    if not TOUR_API_KEY:
+        raise RuntimeError(
+            "TOUR_API_KEY 환경변수가 설정되지 않았습니다. backend/.env 파일을 확인하세요."
+        )
+
+    common = _fetch_detail_common(content_id)
+    if common is None:
+        return None
+
+    content_type_id = common.get("contenttypeid")
+    intro = _fetch_detail_intro(content_id, content_type_id) if content_type_id else {}
+
+    cat1, cat2, cat3 = common.get("cat1"), common.get("cat2"), common.get("cat3")
+    tags = []
+    if cat1 and cat2 and cat3:
+        category_name = _fetch_category_name(cat1, cat2, cat3)
+        if category_name:
+            tags = [category_name]
+
+    return {
+        "phone": common.get("tel") or None,
+        "businessHours": _normalize_business_hours(content_type_id, intro),
+        "overview": common.get("overview") or None,
+        "tags": tags,
+    }

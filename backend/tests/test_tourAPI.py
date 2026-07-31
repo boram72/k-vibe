@@ -184,3 +184,103 @@ def test_find_nearby_places_returns_parsed_list(mock_get):
 def test_find_nearby_places_raises_when_api_key_missing():
     with pytest.raises(RuntimeError, match="TOUR_API_KEY"):
         tourAPI.find_nearby_places(latitude=37.5, longitude=127.0)
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_returns_phone_hours_and_tag(mock_get):
+    common_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {
+                            "tel": "02-3700-3900",
+                            "overview": "경복궁은 조선의 법궁이다.",
+                            "contenttypeid": "12",
+                            "cat1": "A02",
+                            "cat2": "A0202",
+                            "cat3": "A02020100",
+                        }
+                    }
+                }
+            }
+        }
+    )
+    intro_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {"usetime": "09:00~18:00", "restdate": "매주 화요일"}
+                    }
+                }
+            }
+        }
+    )
+    category_response = _mock_response(
+        {"response": {"body": {"items": {"item": {"name": "고궁"}}}}}
+    )
+    mock_get.side_effect = [common_response, intro_response, category_response]
+    tourAPI._fetch_category_name.cache_clear()
+
+    result = tourAPI.get_place_detail("126508")
+
+    assert result == {
+        "phone": "02-3700-3900",
+        "businessHours": "09:00~18:00 (매주 화요일 휴무)",
+        "overview": "경복궁은 조선의 법궁이다.",
+        "tags": ["고궁"],
+    }
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_normalizes_checkin_checkout_for_stay(mock_get):
+    common_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {
+                            "tel": "",
+                            "overview": "",
+                            "contenttypeid": "32",
+                            "cat1": "",
+                            "cat2": "",
+                            "cat3": "",
+                        }
+                    }
+                }
+            }
+        }
+    )
+    intro_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {"item": {"checkintime": "15:00", "checkouttime": "11:00"}}
+                }
+            }
+        }
+    )
+    mock_get.side_effect = [common_response, intro_response]
+
+    result = tourAPI.get_place_detail("888888")
+
+    assert result["businessHours"] == "체크인 15:00 · 체크아웃 11:00"
+    assert result["tags"] == []
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_returns_none_when_content_id_not_found(mock_get):
+    mock_get.return_value = _mock_response({"response": {"body": {"items": ""}}})
+
+    assert tourAPI.get_place_detail("no-such-id") is None
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", None)
+def test_get_place_detail_raises_when_api_key_missing():
+    with pytest.raises(RuntimeError, match="TOUR_API_KEY"):
+        tourAPI.get_place_detail("126508")

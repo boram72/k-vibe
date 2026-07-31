@@ -14,7 +14,23 @@ export interface AnalysisResult {
   videoId: string
   title: string
   places: AnalysisPlace[]
-  source: 'mock' | 'worker'
+  source: string
+}
+
+interface RawAnalysisPlace {
+  name?: unknown
+  lat?: unknown
+  lng?: unknown
+  confidence?: unknown
+  reason?: unknown
+}
+
+interface RawAnalysisResult {
+  videoId?: unknown
+  video_id?: unknown
+  title?: unknown
+  places?: unknown
+  source?: unknown
 }
 
 const MOCK_ANALYSIS_BY_LOCALE: Record<Locale, Omit<AnalysisResult, 'videoId' | 'source'>> = {
@@ -126,13 +142,49 @@ const MOCK_ANALYSIS_BY_LOCALE: Record<Locale, Omit<AnalysisResult, 'videoId' | '
 
 const MOCK_DELAY_MS = 2200
 
+function toFiniteNumber(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizePlace(place: RawAnalysisPlace): AnalysisPlace | null {
+  if (typeof place.name !== 'string') return null
+  const lat = toFiniteNumber(place.lat)
+  const lng = toFiniteNumber(place.lng)
+  if (lat === null || lng === null) return null
+
+  const confidence = toFiniteNumber(place.confidence)
+  return {
+    name: place.name,
+    lat,
+    lng,
+    confidence: confidence ?? 0.5,
+    reason: typeof place.reason === 'string' ? place.reason : '',
+  }
+}
+
+function normalizeAnalysisResult(raw: RawAnalysisResult, fallbackVideoId: string): AnalysisResult {
+  const videoId = typeof raw.videoId === 'string' ? raw.videoId : typeof raw.video_id === 'string' ? raw.video_id : fallbackVideoId
+  const rawPlaces = Array.isArray(raw.places) ? raw.places : []
+
+  return {
+    videoId,
+    title: typeof raw.title === 'string' && raw.title.trim() ? raw.title : 'K-content spot analysis',
+    places: rawPlaces.map((place) => normalizePlace(place as RawAnalysisPlace)).filter((place): place is AnalysisPlace => Boolean(place)),
+    source: typeof raw.source === 'string' ? raw.source : 'worker',
+  }
+}
+
 // Takes the raw URL (not a pre-parsed videoId) to match the real backend's
 // contract — it needs the full URL to do its own parsing (and to eventually
 // support Instagram, which can't be reduced to a YouTube-style video ID).
 export async function fetchAnalysis(url: string, locale: Locale): Promise<AnalysisResult> {
   const videoId = extractVideoId(url) ?? url
   return withFallback(
-    async () => (await apiClient.post<AnalysisResult>('/analyze', { youtube_url: url, locale })).data,
+    async () => {
+      const response = await apiClient.post<RawAnalysisResult>('/analyze', { youtube_url: url, locale })
+      return normalizeAnalysisResult(response.data, videoId)
+    },
     async () => {
       await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
       const localized = MOCK_ANALYSIS_BY_LOCALE[locale]

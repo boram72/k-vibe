@@ -6,6 +6,7 @@ interface AnalyzeState {
   result: AnalysisResult | null;
   setUrl: (url: string) => void;
   setResult: (result: AnalysisResult) => void;
+  clearResult: () => void;
 }
 
 // Keeps the last URL/result in memory across navigation (e.g. Analyze -> Map -> back
@@ -16,4 +17,5 @@ export const useAnalyzeStore = create<AnalyzeState>((set) => ({
   result: null,
   setUrl: (url) => set({ url }),
   setResult: (result) => set({ result }),
+  clearResult: () => set({ result: null }),
 }));

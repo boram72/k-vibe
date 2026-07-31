@@ -1,5 +1,6 @@
 import { apiClient, withFallback } from '@/api/client'
 import { haversineKm } from '@/lib/haversine'
+import { SEOUL_CENTER } from '@/lib/use-current-location'
 import type { Place } from '@/types/place'
 
 export const SEOUL_PLACES: Place[] = [
@@ -128,9 +129,19 @@ export async function fetchMapPlaces(query: PlaceQuery): Promise<Place[]> {
   )
 }
 
-export async function fetchHomeFeedPlaces(): Promise<Place[]> {
+// GET /places requires lat/lng (no default on the backend) — calling it with
+// no params 422s once a real backend is connected, which withFallback()
+// silently swallows into a permanent mock fallback (looks fine, never
+// actually hits the backend). Home feed has no location UI of its own, so it
+// always queries around Seoul, same as the map's fallback center.
+export async function fetchHomeFeedPlaces(locale: string): Promise<Place[]> {
   return withFallback(
-    async () => (await apiClient.get<Place[]>('/places')).data,
+    async () =>
+      (
+        await apiClient.get<Place[]>('/places', {
+          params: { lat: SEOUL_CENTER.lat, lng: SEOUL_CENTER.lng, radius: DEFAULT_MAP_SEARCH_RADIUS, locale },
+        })
+      ).data,
     () => SEOUL_PLACES,
   )
 }

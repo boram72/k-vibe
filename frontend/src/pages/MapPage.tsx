@@ -23,6 +23,10 @@ export interface MapFocusState {
   openDetail?: boolean
 }
 
+function hasValidCoordinates(place: Place): boolean {
+  return Number.isFinite(place.lat) && Number.isFinite(place.lng)
+}
+
 export default function MapPage() {
   const { t, i18n } = useTranslation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
@@ -31,6 +35,7 @@ export default function MapPage() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const routerLocation = useLocation()
   const focusState = routerLocation.state as MapFocusState | null
+  const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
 
   const [categories, setCategories] = useState<PlaceCategory[]>(['all'])
   const [search, setSearch] = useState('')
@@ -38,15 +43,15 @@ export default function MapPage() {
   // available synchronously at first render (it's router state, not async),
   // so there's no need to "react" to it after the fact.
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(() =>
-    focusState?.focusPlaces?.length === 1 && focusState.openDetail ? focusState.focusPlaces[0] : null,
+    focusPlaces.length === 1 && focusState?.openDetail ? focusPlaces[0] : null,
   )
   const [showSavedOnly, setShowSavedOnly] = useState(false)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
-  const effectiveCoords = focusState?.focusPlaces?.[0]
-    ? { lat: focusState.focusPlaces[0].lat, lng: focusState.focusPlaces[0].lng }
+  const effectiveCoords = focusPlaces[0]
+    ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng }
     : coords
 
   const { data: places = [], isLoading } = useQuery({
@@ -82,7 +87,7 @@ export default function MapPage() {
   // across that synthetic remount, so the second invocation is a no-op.
   const didRequestLocationRef = useRef(false)
   useEffect(() => {
-    if (!focusState?.focusPlaces?.length && !didRequestLocationRef.current) {
+    if (!focusPlaces.length && !didRequestLocationRef.current) {
       didRequestLocationRef.current = true
       requestLocation()
     }
@@ -90,13 +95,13 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const effectiveLocationLabel = focusState?.focusPlaces?.length ? t('map.analysis_result') : locationLabel
+  const effectiveLocationLabel = focusPlaces.length ? t('map.analysis_result') : locationLabel
 
   const candidates = useMemo(() => {
-    if (!focusState?.focusPlaces?.length) return places
-    const focusIds = new Set(focusState.focusPlaces.map((p) => p.id))
-    return [...focusState.focusPlaces, ...places.filter((p) => !focusIds.has(p.id))]
-  }, [places, focusState])
+    if (!focusPlaces.length) return places
+    const focusIds = new Set(focusPlaces.map((p) => p.id))
+    return [...focusPlaces, ...places.filter((p) => !focusIds.has(p.id))]
+  }, [places, focusPlaces])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -128,6 +133,7 @@ export default function MapPage() {
         <MapCanvas
           center={effectiveCoords}
           places={filtered}
+          fitPlaces={focusPlaces}
           selectedPlaceId={selectedPlace?.id}
           onSelectPlace={setSelectedPlace}
           onRequestLocation={requestLocation}

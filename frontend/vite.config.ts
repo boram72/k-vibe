@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+const backendTarget = process.env.VITE_PROXY_BACKEND_URL || 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -11,10 +13,14 @@ export default defineConfig({
     },
   },
   server: {
+    // Keep local map tests on the browser domain approved for the Kakao Maps key.
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
     allowedHosts: true,
     proxy: {
       '/backend': {
-        target: 'http://localhost:8000',
+        target: backendTarget,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/backend/, ''),
       },

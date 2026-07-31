@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { Plus, RotateCcw, Share2 } from 'lucide-react'
+import { Clock, MapPin, Plus, RotateCcw, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
-import type { RoutePlan } from '@/lib/route-timing'
+import { formatDuration, type RoutePlan } from '@/lib/route-timing'
 
 interface RouteResultProps {
   plan: RoutePlan
@@ -20,6 +20,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
         <div className="min-w-0">
           <p className="text-xs font-semibold text-primary">{t('persona.preview_eyebrow')}</p>
           <h2 className="mt-0.5 text-lg font-bold text-foreground">{plan.title}</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{plan.summary}</p>
         </div>
         <button
           type="button"
@@ -30,6 +31,20 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
         >
           <RotateCcw className="h-4 w-4" />
         </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: t('persona.stops'), value: String(plan.stops.length), icon: MapPin },
+          { label: t('persona.walking'), value: formatDuration(plan.walkingMinutes), icon: Clock },
+          { label: t('persona.total'), value: formatDuration(plan.totalMinutes), icon: Sparkles },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="rounded-xl bg-muted p-3 text-center">
+            <Icon className="mx-auto mb-1 h-3.5 w-3.5 text-primary" />
+            <p className="text-sm font-bold text-foreground">{value}</p>
+            <p className="text-[10px] text-muted-foreground">{label}</p>
+          </div>
+        ))}
       </div>
 
       <div className="space-y-3">
@@ -46,6 +61,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
               <div className="flex flex-wrap items-center gap-1.5">
                 <p className="text-sm font-semibold text-foreground">{stop.name}</p>
                 <CrowdBadge level={stop.crowdLevel} />
+                <span className="ml-auto text-xs font-semibold text-primary">{stop.startTime}</span>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">{stop.address}</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground/90">{stop.description}</p>

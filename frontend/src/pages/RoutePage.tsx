@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -21,15 +21,16 @@ import type { RoutePlan } from '@/lib/route-timing'
 interface MinimapBounds { minLat: number; maxLat: number; minLng: number; maxLng: number }
 
 function buildMinimapBounds(stops: RouteStop[]): MinimapBounds | null {
-  if (stops.length === 0) return null
-  return stops.reduce<MinimapBounds>(
+  const validStops = stops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng))
+  if (validStops.length === 0) return null
+  return validStops.reduce<MinimapBounds>(
     (b, s) => ({
       minLat: Math.min(b.minLat, s.lat),
       maxLat: Math.max(b.maxLat, s.lat),
       minLng: Math.min(b.minLng, s.lng),
       maxLng: Math.max(b.maxLng, s.lng),
     }),
-    { minLat: stops[0].lat, maxLat: stops[0].lat, minLng: stops[0].lng, maxLng: stops[0].lng },
+    { minLat: validStops[0].lat, maxLat: validStops[0].lat, minLng: validStops[0].lng, maxLng: validStops[0].lng },
   )
 }
 
@@ -54,7 +55,7 @@ export default function RoutePage() {
 
   const [initialRoute] = useState(() => loadInitialRoute(searchParams))
   const [stops, setStops] = useState<RouteStop[]>(initialRoute.stops)
-  const [minimapBounds] = useState<MinimapBounds | null>(() => buildMinimapBounds(initialRoute.stops))
+  const minimapBounds = useMemo<MinimapBounds | null>(() => buildMinimapBounds(stops), [stops])
   const completedIds = useRouteProgressStore((s) => s.completedIds)
   const toggleCompleteProgress = useRouteProgressStore((s) => s.toggleComplete)
   const removeStopProgress = useRouteProgressStore((s) => s.removeStop)

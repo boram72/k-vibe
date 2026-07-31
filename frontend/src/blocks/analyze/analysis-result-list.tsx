@@ -15,6 +15,12 @@ interface AnalysisResultListProps {
 // or add just this one to the route) — see AnalyzePage's `choicePlace` dialog.
 export function AnalysisResultList({ result, onSelectPlace, onTryExample }: AnalysisResultListProps) {
   const { t } = useTranslation()
+  const sourceLabel =
+    result.source === 'mock'
+      ? t('analyze.source_mock')
+      : result.source === 'groq'
+        ? t('analyze.source_groq')
+        : t('analyze.source_worker')
 
   if (result.places.length === 0) {
     return (
@@ -39,7 +45,7 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
           <p className="truncate text-xs text-muted-foreground">{result.title}</p>
         </div>
         <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
-          {result.source === 'worker' ? t('analyze.source_worker') : t('analyze.source_mock')}
+          {sourceLabel}
         </span>
       </div>
 

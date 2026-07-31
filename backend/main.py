@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from presentation_api import (
+    analyze,
     findAmenities,
+    personas,
     personaPreference,
     places,
     playDocentVoice,
@@ -10,8 +12,10 @@ from presentation_api import (
     route,
     routeDraft,
     routeProgress,
+    routes,
     savedPlaces,
     showPersona,
+    trending,
     user,
 )
 
@@ -32,8 +36,11 @@ app.add_middleware(
 )
 
 app.include_router(route.router)
+app.include_router(routes.router)
+app.include_router(personas.router)
 app.include_router(showPersona.router)
 app.include_router(playDocentVoice.router)
+app.include_router(analyze.router)
 app.include_router(user.router)
 app.include_router(findAmenities.router)
 app.include_router(relatedAttractions.router)
@@ -42,6 +49,7 @@ app.include_router(savedPlaces.router)
 app.include_router(personaPreference.router)
 app.include_router(routeDraft.router)
 app.include_router(routeProgress.router)
+app.include_router(trending.router)
 
 
 @app.get("/health")

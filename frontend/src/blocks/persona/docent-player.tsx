@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { fetchDocentGuide, type DocentGuide } from '@/api/docent'
 import { cn } from '@/lib/utils'
 import type { RoutePlan } from '@/lib/route-timing'
 
@@ -11,9 +13,11 @@ interface DocentPlayerProps {
 }
 
 export function DocentPlayer({ open, onClose, plan }: DocentPlayerProps) {
+  const { i18n } = useTranslation()
   const [trackIndex, setTrackIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [guide, setGuide] = useState<DocentGuide | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Reset when dialog opens — "adjusting state during render" pattern avoids
@@ -58,13 +62,29 @@ export function DocentPlayer({ open, onClose, plan }: DocentPlayerProps) {
     }
   }, [playing])
 
+  const stop = plan.stops[trackIndex]
+
+  useEffect(() => {
+    if (!open || !stop) return
+
+    let cancelled = false
+    fetchDocentGuide(stop.name, i18n.language)
+      .then((nextGuide) => {
+        if (!cancelled) setGuide(nextGuide)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, stop, i18n.language])
+
   function goTo(index: number) {
     setTrackIndex(index)
     setProgress(0)
   }
 
-  const stop = plan.stops[trackIndex]
   if (!stop) return null
+  const activeGuide = guide?.name === stop.name ? guide : null
 
   const elapsed = Math.round((progress / 100) * (stop.stayMinutes ?? 60))
   const total = stop.stayMinutes ?? 60
@@ -91,6 +111,17 @@ export function DocentPlayer({ open, onClose, plan }: DocentPlayerProps) {
           <div className="mt-5 text-center">
             <p className="text-base font-bold text-foreground">{stop.name}</p>
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{stop.address}</p>
+          </div>
+
+          <div className="mt-4 rounded-xl bg-background/70 p-3 text-left">
+            <p className="line-clamp-3 text-xs leading-5 text-muted-foreground">
+              {activeGuide ? activeGuide.script : 'Loading audio guide...'}
+            </p>
+            {activeGuide?.audioUrl && (
+              <audio className="mt-3 w-full" controls src={activeGuide.audioUrl}>
+                <track kind="captions" />
+              </audio>
+            )}
           </div>
 
           <div className="mt-4 space-y-1.5">

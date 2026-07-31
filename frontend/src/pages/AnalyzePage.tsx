@@ -24,7 +24,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
-  const { url, result, setUrl, setResult } = useAnalyzeStore()
+  const { url, result, setUrl, setResult, clearResult } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
 
   useEffect(() => {
@@ -113,9 +113,7 @@ export default function AnalyzePage() {
     <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-2xl">
       <div className="flex-1 space-y-4 py-4">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">  
-            {t('analyze.title')}
-          </h2>
+          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">{t('analyze.title')}</h2>
           <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.subtitle')}</p>
         </div>
 
@@ -124,6 +122,7 @@ export default function AnalyzePage() {
             url={url}
             onUrlChange={(next) => {
               setUrl(next)
+              clearResult()
               mutation.reset()
             }}
             onAnalyze={() => runAnalysis(url)}
@@ -185,7 +184,7 @@ export default function AnalyzePage() {
             <DialogTitle>{choicePlace?.name}</DialogTitle>
             <DialogDescription>{t('analyze.choose_action_hint')}</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-3 mt-2">
+          <div className="mt-2 grid grid-cols-2 gap-3">
             <Button variant="outline" onClick={() => choicePlace && viewOneOnMap(choicePlace)}>
               <MapPin className="h-3.5 w-3.5" />
               {t('analyze.view_on_map')}

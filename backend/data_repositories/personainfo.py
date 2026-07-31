@@ -7,15 +7,23 @@ TABLE = "persona"
 def get_persona_route(name: str) -> list[dict]:
     """페르소나 스타 이름으로 저장된 이동경로를 순서(order)대로 조회한다."""
     client = get_supabase_client()
-    result = (
-        client.table(TABLE)
-        .select("*")
-        .eq("name", name)
-        .eq("isuse", True)
-        .order("order")
-        .execute()
-    )
-    return result.data
+    result = client.table(TABLE).select("*").eq("name", name).execute()
+    rows = result.data or []
+
+    def is_enabled(row: dict) -> bool:
+        value = row.get("isuse", row.get("ISUSE", True))
+        if isinstance(value, str):
+            return value.upper() in {"Y", "TRUE", "1"}
+        return bool(value)
+
+    def order_key(row: dict) -> int:
+        value = row.get("order_seq", row.get("ORDER_SEQ", row.get("order", 0)))
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    return sorted([row for row in rows if is_enabled(row)], key=order_key)
 
 
 def create_persona_stop(
@@ -26,9 +34,9 @@ def create_persona_stop(
     payload = {
         "id": persona_id,
         "name": name,
-        "isuse": True,
+        "isuse": "Y",
         "routecnt": routecnt,
-        "order": order,
+        "order_seq": order,
         "locationname": location_name,
     }
     result = client.table(TABLE).upsert(payload, on_conflict="id").execute()

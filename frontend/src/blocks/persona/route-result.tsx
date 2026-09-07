@@ -1,14 +1,32 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Clock, MapPin, Plus, RotateCcw, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
-import { formatDuration, type RoutePlan } from '@/lib/route-timing'
+import { formatDuration, type RoutePlan, type RouteStop } from '@/lib/route-timing'
 
 interface RouteResultProps {
   plan: RoutePlan
   onReset: () => void
   onAddToRoute: () => void
   onShare: () => void
+}
+
+// stop.characterImageUrl은 실제 스타 초상권 대신 "이 장소의 무드"를 전달하는
+// 생성형 캐릭터 이미지 — 값이 없거나 로드에 실패하면(onError) 아무것도 렌더링하지
+// 않아 레이아웃이 전혀 변하지 않는다(이미지 생성 파이프라인이 준비되기 전에도 안전).
+function StopCharacterImage({ stop }: { stop: RouteStop }) {
+  const [imageFailed, setImageFailed] = useState(false)
+  if (!stop.characterImageUrl || imageFailed) return null
+
+  return (
+    <img
+      src={stop.characterImageUrl}
+      alt={stop.name}
+      onError={() => setImageFailed(true)}
+      className="h-16 w-16 shrink-0 rounded-lg object-cover"
+    />
+  )
 }
 
 export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResultProps) {
@@ -57,14 +75,17 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
               {index < plan.stops.length - 1 && <div className="my-1 min-h-4 w-px flex-1 bg-border" />}
             </div>
 
-            <div className="mb-1 flex-1 rounded-xl border border-border bg-muted p-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p className="text-sm font-semibold text-foreground">{stop.name}</p>
-                <CrowdBadge level={stop.crowdLevel} />
-                <span className="ml-auto text-xs font-semibold text-primary">{stop.startTime}</span>
+            <div className="mb-1 flex flex-1 gap-3 rounded-xl border border-border bg-muted p-3">
+              <StopCharacterImage stop={stop} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-sm font-semibold text-foreground">{stop.name}</p>
+                  <CrowdBadge level={stop.crowdLevel} />
+                  <span className="ml-auto text-xs font-semibold text-primary">{stop.startTime}</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{stop.address}</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground/90">{stop.description}</p>
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">{stop.address}</p>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground/90">{stop.description}</p>
             </div>
           </div>
         ))}

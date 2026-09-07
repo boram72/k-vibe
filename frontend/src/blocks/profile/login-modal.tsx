@@ -10,6 +10,11 @@ import { GoogleIcon } from '@/assets/google-icon'
 const inputClassName =
   'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary'
 
+// 2026-09 팀 결정: 로그인은 SNS(OAuth)만 노출하고 ID/PW 로그인·회원가입은 숨긴다.
+// signupWithCredentials/loginWithCredentials(lib/auth.ts)는 실제 backend(user.py)를
+// 호출하는 진짜 기능이라 코드는 그대로 두고 UI만 숨김 — 나중에 필요해지면 이 상수만 true로.
+const SHOW_CREDENTIALS_LOGIN = false
+
 interface LoginModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -100,70 +105,75 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               ))}
             </div>
 
+          </>
+        )}
+
+        {SHOW_CREDENTIALS_LOGIN && (
+          <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="h-px flex-1 bg-border" />
               {t('login.credentials_divider')}
               <div className="h-px flex-1 bg-border" />
             </div>
+
+            <form onSubmit={handleCredentialsSubmit} className="space-y-2">
+              <input
+                className={inputClassName}
+                placeholder={t('login.username_label')}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              {mode === 'signup' && (
+                <>
+                  <input
+                    className={inputClassName}
+                    placeholder={t('login.nationality_label')}
+                    value={nationality}
+                    onChange={(e) => setNationality(e.target.value)}
+                    required
+                  />
+                  <input
+                    className={inputClassName}
+                    type="email"
+                    placeholder={t('login.email_label')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </>
+              )}
+              <input
+                className={inputClassName}
+                type="password"
+                placeholder={t('login.password_label')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+
+              {credentialsError && (
+                <p className="text-xs text-destructive">{t('login.credentials_error')}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+              >
+                {mode === 'signup' ? t('login.signup_button') : t('login.login_credentials_button')}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
+                className="w-full text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {mode === 'signup' ? t('login.switch_to_login') : t('login.switch_to_signup')}
+              </button>
+            </form>
           </>
         )}
-
-        <form onSubmit={handleCredentialsSubmit} className="space-y-2">
-          <input
-            className={inputClassName}
-            placeholder={t('login.username_label')}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          {mode === 'signup' && (
-            <>
-              <input
-                className={inputClassName}
-                placeholder={t('login.nationality_label')}
-                value={nationality}
-                onChange={(e) => setNationality(e.target.value)}
-                required
-              />
-              <input
-                className={inputClassName}
-                type="email"
-                placeholder={t('login.email_label')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </>
-          )}
-          <input
-            className={inputClassName}
-            type="password"
-            placeholder={t('login.password_label')}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          {credentialsError && (
-            <p className="text-xs text-destructive">{t('login.credentials_error')}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {mode === 'signup' ? t('login.signup_button') : t('login.login_credentials_button')}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
-            className="w-full text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {mode === 'signup' ? t('login.switch_to_login') : t('login.switch_to_signup')}
-          </button>
-        </form>
 
         <button
           type="button"

@@ -17,6 +17,7 @@ from presentation_api import (
     routeDraft,
     routeProgress,
     routes,
+    reviews,
     savedPlaces,
     showPersona,
     trending,
@@ -67,6 +68,7 @@ app.include_router(savedPlaces.router)
 app.include_router(personaPreference.router)
 app.include_router(routeDraft.router)
 app.include_router(routeProgress.router)
+app.include_router(reviews.router)
 app.include_router(trending.router)
 
 

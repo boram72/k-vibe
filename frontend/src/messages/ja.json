@@ -73,7 +73,14 @@
     "add_to_route": "ルートに追加",
     "added_to_route": "ルートに追加しました",
     "share": "共有",
-    "share_copied": "リンクをコピーしました"
+    "share_copied": "リンクをコピーしました",
+    "tab_detail": "詳細",
+    "tab_reviews": "レビュー",
+    "review_placeholder": "この場所はいかがでしたか？",
+    "review_login_required": "ログイン後にご利用いただけます。",
+    "review_submit": "レビューを投稿",
+    "review_submitted": "レビューを投稿しました",
+    "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！"
   },
   "analyze": {
     "title": "SNSスポット分析",

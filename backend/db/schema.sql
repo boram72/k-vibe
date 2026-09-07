@@ -152,3 +152,22 @@ create table if not exists route_progress (
   stop_id text not null,
   primary key (username, stop_id)
 );
+
+-- ============================================================
+-- 장소 리뷰 (지도 상세 팝업의 "리뷰" 탭)
+-- ============================================================
+
+-- REVIEWS: 장소별 사용자 리뷰. 조회는 비로그인 사용자도 가능(공개), 작성은 로그인
+-- 사용자만 가능하도록 프론트에서 게이팅한다(백엔드는 saved_places 등 다른 테이블과
+-- 동일하게 username을 그대로 신뢰하는 현재 구조를 따름 — 별도 세션/토큰 검증 없음).
+-- 장소 스냅샷(name/address 등)은 location(place_id)에 이미 정규화되어 있으므로
+-- 여기서는 리뷰 고유 데이터(평점/본문/작성자/시각)만 저장한다.
+create table if not exists reviews (
+  id text primary key,
+  place_id text not null references location(place_id),
+  username text not null references "user"(username),
+  rating int2 not null,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists reviews_place_id_created_at_idx on reviews (place_id, created_at desc);

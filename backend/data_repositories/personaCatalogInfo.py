@@ -299,6 +299,7 @@ PERSONAS = {
             "ko": "전망, 궁궐, 익선동·성수 감성을 잇는 서울 하루 성지순례 코스.",
             "en": "A Seoul day route linking views, palace scenery, Ikseon-dong, and Seongsu.",
         },
+        "moods": {"ko": ["탁트인", "전통있는", "여유로운"], "en": ["Scenic", "Traditional", "Relaxed"]},
         "locations": ["남산타워", "경복궁", "익선동 온천집", "성수동 대림창고", "뚝섬한강공원"],
     },
     "아이유": {
@@ -310,6 +311,7 @@ PERSONAS = {
             "ko": "서촌 한식, 감성 카페, 벽화마을과 삼청동을 연결한 차분한 감성 코스.",
             "en": "A mellow Seoul route through Seochon food, cafes, murals, and Samcheong-dong.",
         },
+        "moods": {"ko": ["조용한", "감성적인", "아늑한"], "en": ["Quiet", "Aesthetic", "Cozy"]},
         "locations": ["체부동잔치집", "도산공원", "이화동 벽화마을", "청수당", "삼청동수제비"],
     },
     "제니": {
@@ -321,6 +323,7 @@ PERSONAS = {
             "ko": "청담·압구정 쇼핑, 도산공원, 한남 디저트와 식사를 잇는 스타일 코스.",
             "en": "A style-led route through Cheongdam, Apgujeong, Dosan Park, Hannam dessert, and dinner.",
         },
+        "moods": {"ko": ["힙한", "세련된", "트렌디한"], "en": ["Hip", "Chic", "Trendy"]},
         "locations": ["10 꼬르소꼬모 서울", "나이키 압구정", "도산공원", "패션5 한남점", "장진우식당"],
     },
     "장원영": {
@@ -332,6 +335,7 @@ PERSONAS = {
             "ko": "잠실 전망과 호수, 성수 라이프스타일, 반포 야경을 잇는 화사한 도시 코스.",
             "en": "A bright city route through Jamsil views, Seongsu lifestyle spots, and Banpo night scenery.",
         },
+        "moods": {"ko": ["화사한", "활기찬", "힐링되는"], "en": ["Bright", "Lively", "Healing"]},
         "locations": ["서울스카이", "석촌호수", "성수연방", "반포 세빛섬"],
     },
 }
@@ -365,6 +369,10 @@ def pick_text(text: dict, locale: str) -> str:
     return text["ko"] if locale == "ko" else text["en"]
 
 
+def pick_tags(tags: dict, locale: str) -> list[str]:
+    return tags["ko"] if locale == "ko" else tags["en"]
+
+
 def resolve_persona_id(theme: str | None = None, detail: str | None = None, persona_id: str | None = None) -> str:
     if persona_id in PERSONAS:
         return persona_id
@@ -380,6 +388,7 @@ def list_personas(locale: str) -> list[dict]:
             "badge": persona["badge"],
             "profileImg": persona["profileImg"],
             "routeCnt": len(persona["locations"]),
+            "moods": pick_tags(persona["moods"], locale),
         }
         for persona_id, persona in PERSONAS.items()
     ]

@@ -14,3 +14,4 @@ def test_list_personas_returns_k_content_selector_data():
     assert body[0]["label"] == "BTS뷔"
     assert body[0]["routeCnt"] == 5
     assert body[0]["profileImg"].startswith("https://")
+    assert body[0]["moods"] == ["탁트인", "전통있는", "여유로운"]

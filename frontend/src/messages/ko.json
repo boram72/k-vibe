@@ -61,7 +61,6 @@
     "seoul_fallback": "서울 (기본값)",
     "location_unavailable": "위치를 가져올 수 없어 서울을 표시합니다",
     "refresh_location": "위치 새로고침",
-    "open_analyzer": "SNS 분석기 열기",
     "analysis_result": "분석 결과",
     "show_saved": "저장한 곳만 보기",
     "collapse_panel": "패널 접기",

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { RatingBadge } from '@/blocks/common/rating-badge'
 import { PlaceReviewTab } from '@/blocks/map/place-review-tab'
 import { addStopToRouteDraft } from '@/lib/route-draft'
 import { useMediaQuery } from '@/lib/use-media-query'
@@ -161,7 +162,10 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
           {media}
           <DialogHeader>
             <DialogTitle>{place.name}</DialogTitle>
-            <DialogDescription>{place.address}</DialogDescription>
+            <DialogDescription className="flex flex-wrap items-center gap-2">
+              <span>{place.address}</span>
+              <RatingBadge placeId={place.id} />
+            </DialogDescription>
           </DialogHeader>
           {tabsSection}
           <DialogFooter className="flex-row gap-2 sm:justify-stretch">
@@ -178,7 +182,10 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         {media}
         <SheetHeader>
           <SheetTitle>{place.name}</SheetTitle>
-          <SheetDescription>{place.address}</SheetDescription>
+          <SheetDescription className="flex flex-wrap items-center gap-2">
+            <span>{place.address}</span>
+            <RatingBadge placeId={place.id} />
+          </SheetDescription>
         </SheetHeader>
         {tabsSection}
         <SheetFooter className="flex-row gap-2">{footer}</SheetFooter>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MapPin, Navigation, Search } from 'lucide-react'
+import { LocateFixed, MapPin } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -65,32 +64,31 @@ function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[]) {
   map.setBounds(bounds, 48, 48, 48, 48)
 }
 
-function LocationOverlay({ locationLabel, center }: { locationLabel: string; center: Coordinates }) {
+// Tapping the badge itself recenters the map on the user's current location —
+// no need to also parse the raw lat/lng it used to show underneath.
+function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: string; onRequestLocation: () => void }) {
+  const { t } = useTranslation()
   return (
-    <div className="absolute left-3 top-3 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur">
-      <p className="text-xs font-semibold text-popover-foreground">{locationLabel}</p>
-      <p className="font-mono text-[10px] text-muted-foreground">
-        {center.lat.toFixed(4)}, {center.lng.toFixed(4)}
-      </p>
-    </div>
+    <button
+      type="button"
+      onClick={onRequestLocation}
+      title={t('map.refresh_location')}
+      className="absolute left-3 top-3 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
+    >
+      <LocateFixed className="h-3.5 w-3.5 text-primary" />
+      <span className="text-xs font-semibold text-popover-foreground">{locationLabel}</span>
+    </button>
   )
 }
 
+// Standalone "open the analyzer" shortcut was removed — SNS 분석기 already has
+// its own bottom-nav/sidebar tab, so this was a redundant second entry point.
 function MapActionButtons({ onRequestLocation }: { onRequestLocation: () => void }) {
   const { t } = useTranslation()
   return (
     <div className="absolute bottom-3 right-3 flex flex-col gap-2">
-      <Button
-        size="icon"
-        variant="secondary"
-        nativeButton={false}
-        render={<Link to="analyze" />}
-        aria-label={t('map.open_analyzer')}
-      >
-        <Search className="h-4 w-4" />
-      </Button>
-      <Button size="icon" onClick={onRequestLocation} aria-label={t('map.refresh_location')}>
-        <Navigation className="h-4 w-4" />
+      <Button size="icon" onClick={onRequestLocation} title={t('map.refresh_location')} aria-label={t('map.refresh_location')}>
+        <LocateFixed className="h-4 w-4" />
       </Button>
     </div>
   )
@@ -150,7 +148,7 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
         )
       })}
 
-      <LocationOverlay locationLabel={locationLabel} center={center} />
+      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} />
       <MapActionButtons onRequestLocation={onRequestLocation} />
     </div>
   )
@@ -236,7 +234,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
         })}
       </KakaoMap>
 
-      <LocationOverlay locationLabel={locationLabel} center={center} />
+      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} />
       <MapActionButtons onRequestLocation={onRequestLocation} />
     </div>
   )

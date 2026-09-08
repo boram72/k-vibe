@@ -5,6 +5,7 @@ import { CategoryFilter } from '@/blocks/map/category-filter'
 import { RelatedAttractionsList } from '@/blocks/map/related-attractions-list'
 import { LoadingSkeleton } from '@/blocks/common/loading-skeleton'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { RatingBadge } from '@/blocks/common/rating-badge'
 import { Button } from '@/components/ui/button'
 import { getCategoryLabelKey, type Place, type PlaceCategory } from '@/types/place'
 import { cn } from '@/lib/utils'
@@ -95,7 +96,10 @@ export function SpotListPanel({
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
       >
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{place.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-foreground">{place.name}</p>
+            <RatingBadge placeId={place.id} />
+          </div>
           <p className="truncate text-xs text-muted-foreground">{place.address}</p>
           <p className="text-xs text-muted-foreground">{t(getCategoryLabelKey(place.category))}</p>
         </div>

@@ -2,7 +2,7 @@ import httpx
 
 from config.configure import GEMINI_API_KEY
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-3.5-flash-lite"  # was "gemini-2.0-flash" (deprecated by Google, 404 model_not_found)
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 GEMINI_TIMEOUT_SECONDS = 20
 GEMINI_VIDEO_TIMEOUT_SECONDS = 60

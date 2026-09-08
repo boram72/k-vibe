@@ -73,7 +73,14 @@
     "add_to_route": "添加到路线",
     "added_to_route": "已添加到路线",
     "share": "分享",
-    "share_copied": "链接已复制"
+    "share_copied": "链接已复制",
+    "tab_detail": "详情",
+    "tab_reviews": "评论",
+    "review_placeholder": "这个地方怎么样？",
+    "review_login_required": "登录后才能使用。",
+    "review_submit": "发表评论",
+    "review_submitted": "评论已发布",
+    "review_empty": "还没有评论，来写第一条吧！"
   },
   "analyze": {
     "title": "SNS地点分析",

@@ -73,7 +73,14 @@
     "add_to_route": "루트에 추가",
     "added_to_route": "루트에 추가됐어요",
     "share": "공유",
-    "share_copied": "링크가 복사됐어요"
+    "share_copied": "링크가 복사됐어요",
+    "tab_detail": "상세",
+    "tab_reviews": "리뷰",
+    "review_placeholder": "이 장소는 어떠셨나요?",
+    "review_login_required": "로그인 후 이용이 가능합니다.",
+    "review_submit": "리뷰 등록",
+    "review_submitted": "리뷰가 등록됐어요",
+    "review_empty": "아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!"
   },
   "analyze": {
     "title": "SNS 스팟 분석",

@@ -11,8 +11,10 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { PlaceReviewTab } from '@/blocks/map/place-review-tab'
 import { addStopToRouteDraft } from '@/lib/route-draft'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { fetchPlaceDetail } from '@/api/places'
@@ -77,7 +79,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
   )
 
   const badges = (
-    <div className="flex flex-wrap items-center gap-2 px-4">
+    <div className="flex flex-wrap items-center gap-2">
       {place.crowdLevel && <CrowdBadge level={place.crowdLevel} />}
       <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
         {t(getCategoryLabelKey(place.category))}
@@ -96,7 +98,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
   // useQuery above), so this section is empty while loading or if the
   // backend has nothing for this place, not shown as an error.
   const info = (isDetailLoading || detail?.phone || detail?.businessHours) && (
-    <div className="space-y-1.5 px-4 text-sm">
+    <div className="space-y-1.5 text-sm">
       {isDetailLoading && <div className="h-4 w-40 animate-pulse rounded bg-muted" />}
       {detail?.phone && (
         <a href={`tel:${detail.phone}`} className="flex items-center gap-2 text-foreground hover:underline">
@@ -111,6 +113,29 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         </p>
       )}
     </div>
+  )
+
+  // 상세(기존 정보/뱃지)와 리뷰를 탭으로 분리 — 요청 순서대로 "상세"가 먼저, "리뷰"가
+  // 다음. 리뷰는 비로그인 사용자도 볼 수 있어야 해서 탭 자체는 항상 노출하고, 작성
+  // 폼만 PlaceReviewTab 내부에서 로그인 여부로 게이팅한다.
+  const tabsSection = (
+    <Tabs defaultValue="detail" className="px-4">
+      <TabsList className="w-full">
+        <TabsTrigger value="detail" className="flex-1">
+          {t('placeDetail.tab_detail')}
+        </TabsTrigger>
+        <TabsTrigger value="reviews" className="flex-1">
+          {t('placeDetail.tab_reviews')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="detail" className="space-y-1.5 pt-3">
+        {info}
+        {badges}
+      </TabsContent>
+      <TabsContent value="reviews" className="max-h-[45vh] overflow-y-auto pt-3">
+        <PlaceReviewTab placeId={place.id} />
+      </TabsContent>
+    </Tabs>
   )
 
   const footer = (
@@ -138,8 +163,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
             <DialogTitle>{place.name}</DialogTitle>
             <DialogDescription>{place.address}</DialogDescription>
           </DialogHeader>
-          {info}
-          {badges}
+          {tabsSection}
           <DialogFooter className="flex-row gap-2 sm:justify-stretch">
             {footer}
           </DialogFooter>
@@ -156,8 +180,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
           <SheetTitle>{place.name}</SheetTitle>
           <SheetDescription>{place.address}</SheetDescription>
         </SheetHeader>
-        {info}
-        {badges}
+        {tabsSection}
         <SheetFooter className="flex-row gap-2">{footer}</SheetFooter>
       </SheetContent>
     </Sheet>

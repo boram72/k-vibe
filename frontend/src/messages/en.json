@@ -73,7 +73,14 @@
     "add_to_route": "Add to Route",
     "added_to_route": "Added to your route",
     "share": "Share",
-    "share_copied": "Link copied"
+    "share_copied": "Link copied",
+    "tab_detail": "Details",
+    "tab_reviews": "Reviews",
+    "review_placeholder": "How was this place?",
+    "review_login_required": "Log in to write a review.",
+    "review_submit": "Post review",
+    "review_submitted": "Review posted",
+    "review_empty": "No reviews yet. Be the first to write one!"
   },
   "analyze": {
     "title": "SNS Spot Analyzer",

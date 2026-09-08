@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 export interface MapFocusState {
   focusPlaces?: Place[]
   openDetail?: boolean
+  initialSearch?: string
 }
 
 function hasValidCoordinates(place: Place): boolean {
@@ -38,7 +39,10 @@ export default function MapPage() {
   const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
 
   const [categories, setCategories] = useState<PlaceCategory[]>(['all'])
-  const [search, setSearch] = useState('')
+  // Lazy initializer for the same reason as `selectedPlace` below — the
+  // trending-keyword handoff (LandingPage → `navigate('../map', { state })`)
+  // is router state available synchronously at first render.
+  const [search, setSearch] = useState(() => focusState?.initialSearch ?? '')
   // Lazy initializer instead of an effect+setState — focusState is already
   // available synchronously at first render (it's router state, not async),
   // so there's no need to "react" to it after the fact.

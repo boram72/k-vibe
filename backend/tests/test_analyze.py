@@ -7,9 +7,15 @@ from main import app
 client = TestClient(app)
 
 
+def _kakao_coords(query: str):
+    return {"성수연방": {"latitude": 37.543, "longitude": 127.0547}}.get(query)
+
+
+@patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="")
+@patch("ai_services.gemini_client.analyze_video", return_value="")
 @patch("externelAPI_services.youtube.fetch_youtube_title")
 @patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_youtube_url_returns_backend_places(mock_groq, mock_title):
+def test_analyze_falls_back_to_worker_when_no_places_extracted(_, mock_title, mock_analyze_video, ___):
     mock_title.return_value = "성수 카페 브이로그"
 
     response = client.post(
@@ -22,12 +28,14 @@ def test_analyze_youtube_url_returns_backend_places(mock_groq, mock_title):
     assert body["videoId"] == "BKorP55Aqvg"
     assert body["source"] == "worker"
     assert body["places"][0]["name"] == "성수 카페거리"
-    mock_groq.assert_called_once()
+    mock_analyze_video.assert_called_once()
 
 
+@patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="")
+@patch("ai_services.gemini_client.analyze_video", return_value="")
 @patch("externelAPI_services.youtube.fetch_youtube_title")
 @patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_uses_video_id_specific_fallbacks(_, mock_title):
+def test_analyze_uses_video_id_specific_fallbacks(_, mock_title, __, ___):
     mock_title.return_value = ""
 
     first = client.post(
@@ -42,9 +50,11 @@ def test_analyze_uses_video_id_specific_fallbacks(_, mock_title):
     assert [place["name"] for place in first["places"]] != [place["name"] for place in second["places"]]
 
 
+@patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="")
+@patch("ai_services.gemini_client.analyze_video", return_value="")
 @patch("externelAPI_services.youtube.fetch_youtube_title")
 @patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_matches_title_keywords_before_fallback(_, mock_title):
+def test_analyze_matches_title_keywords_before_fallback(_, mock_title, __, ___):
     mock_title.return_value = "잠실 롯데타워 서울 여행 브이로그"
 
     response = client.post(
@@ -57,22 +67,12 @@ def test_analyze_matches_title_keywords_before_fallback(_, mock_title):
     assert body["places"][0]["name"] == "서울스카이"
 
 
-def test_analyze_uses_groq_when_places_are_parseable():
-    groq_payload = """
-    [
-      {
-        "name": "성수연방",
-        "category": "culture",
-        "confidence": 0.91,
-        "reason": "영상 제목에서 성수 여행 맥락을 추출",
-        "lat": 37.543,
-        "lng": 127.0547
-      }
-    ]
-    """
+def test_analyze_uses_groq_when_transcript_places_are_parseable():
     with (
         patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 여행 브이로그"),
-        patch("ai_services.groq_client.complete", return_value=groq_payload),
+        patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="오늘은 성수연방에 다녀왔어요"),
+        patch("ai_services.groq_client.complete", return_value='["성수연방"]'),
+        patch("externelAPI_services.kakaomap.search_coordinates", side_effect=_kakao_coords),
     ):
         response = client.post(
             "/analyze",
@@ -87,23 +87,13 @@ def test_analyze_uses_groq_when_places_are_parseable():
 
 
 def test_analyze_falls_back_to_gemini_when_groq_is_empty():
-    gemini_payload = """
-    [
-      {
-        "name": "낙산공원",
-        "category": "nature",
-        "confidence": 0.8,
-        "reason": "영상 제목에서 낙산 야경 언급",
-        "lat": 37.5807,
-        "lng": 127.0086
-      }
-    ]
-    """
     with (
-        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="낙산공원 야경 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 여행 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="오늘은 성수연방에 다녀왔어요"),
         patch("ai_services.groq_client.complete", return_value=""),
-        patch("ai_services.gemini_client.complete", return_value=gemini_payload),
+        patch("ai_services.gemini_client.complete", return_value='["성수연방"]'),
         patch("ai_services.openai_client.complete", return_value=""),
+        patch("externelAPI_services.kakaomap.search_coordinates", side_effect=_kakao_coords),
     ):
         response = client.post(
             "/analyze",
@@ -113,27 +103,17 @@ def test_analyze_falls_back_to_gemini_when_groq_is_empty():
     assert response.status_code == 200
     body = response.json()
     assert body["source"] == "gemini"
-    assert body["places"][0]["name"] == "낙산공원"
+    assert body["places"][0]["name"] == "성수연방"
 
 
 def test_analyze_falls_back_to_openai_when_groq_and_gemini_are_empty():
-    openai_payload = """
-    [
-      {
-        "name": "을지로 노가리골목",
-        "category": "restaurant",
-        "confidence": 0.75,
-        "reason": "영상 제목에서 을지로 노포 탐방 언급",
-        "lat": 37.5663,
-        "lng": 126.9915
-      }
-    ]
-    """
     with (
-        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="을지로 노포 탐방 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 여행 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="오늘은 성수연방에 다녀왔어요"),
         patch("ai_services.groq_client.complete", return_value=""),
         patch("ai_services.gemini_client.complete", return_value=""),
-        patch("ai_services.openai_client.complete", return_value=openai_payload),
+        patch("ai_services.openai_client.complete", return_value='["성수연방"]'),
+        patch("externelAPI_services.kakaomap.search_coordinates", side_effect=_kakao_coords),
     ):
         response = client.post(
             "/analyze",
@@ -143,7 +123,48 @@ def test_analyze_falls_back_to_openai_when_groq_and_gemini_are_empty():
     assert response.status_code == 200
     body = response.json()
     assert body["source"] == "openai"
-    assert body["places"][0]["name"] == "을지로 노가리골목"
+    assert body["places"][0]["name"] == "성수연방"
+
+
+def test_analyze_falls_back_to_video_analysis_when_transcript_has_no_places():
+    with (
+        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="부산 여행 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value=""),
+        patch("ai_services.groq_client.complete", return_value=""),
+        patch("ai_services.gemini_client.complete", return_value=""),
+        patch("ai_services.openai_client.complete", return_value=""),
+        patch("ai_services.gemini_client.analyze_video", return_value='["성수연방"]'),
+        patch("externelAPI_services.kakaomap.search_coordinates", side_effect=_kakao_coords),
+    ):
+        response = client.post(
+            "/analyze",
+            json={"youtube_url": "https://www.youtube.com/watch?v=BKorP55Aqvg", "locale": "ko"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "gemini"
+    assert body["places"][0]["name"] == "성수연방"
+
+
+def test_analyze_falls_back_to_worker_when_geocoding_fails():
+    with (
+        patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 카페 브이로그"),
+        patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="오늘은 어딘가에 다녀왔어요"),
+        patch("ai_services.groq_client.complete", return_value='["존재하지않는장소"]'),
+        patch("ai_services.gemini_client.complete", return_value=""),
+        patch("ai_services.gemini_client.analyze_video", return_value=""),
+        patch("externelAPI_services.kakaomap.search_coordinates", return_value=None),
+    ):
+        response = client.post(
+            "/analyze",
+            json={"youtube_url": "https://www.youtube.com/watch?v=BKorP55Aqvg", "locale": "ko"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source"] == "worker"
+    assert body["places"][0]["name"] == "성수 카페거리"
 
 
 def test_analyze_rejects_non_youtube_url():

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { fetchKContentPersonas, type KContentPersona } from '@/api/personas'
-import { ZoomableImage } from '@/blocks/common/zoomable-image'
 import type { Locale } from '@/i18n'
 
 // Home-screen entry point for the persona feature (2026-09 redesign — this
@@ -17,7 +16,7 @@ function PersonaAvatar({ persona }: { persona: KContentPersona }) {
 
   if (persona.profileImg && !imageFailed) {
     return (
-      <ZoomableImage
+      <img
         src={persona.profileImg}
         alt={`${persona.label} profile`}
         referrerPolicy="no-referrer"

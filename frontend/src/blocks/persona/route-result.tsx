@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, ImageOff, MapPin, Plus, RotateCcw, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { ZoomableImage } from '@/blocks/common/zoomable-image'
 import { formatDuration, type RoutePlan, type RouteStop } from '@/lib/route-timing'
 
 interface RouteResultProps {
@@ -16,13 +17,15 @@ interface RouteResultProps {
 // 생성형 캐릭터 이미지 — 아직 이미지 생성 파이프라인(GEMINI_API_KEY/OPENAI_API_KEY)이
 // 연동 전이라 항상 비어있다. 값이 없거나 로드에 실패하면(onError) 자리 자체가
 // 사라지던 것을, 이미지가 들어올 자리라는 걸 알 수 있도록 빈 이미지 아이콘
-// 플레이스홀더로 항상 표시하도록 변경(2026-09, 사용자 요청).
+// 플레이스홀더로 항상 표시하도록 변경(2026-09, 사용자 요청). 이미지가 있을 때는
+// 64px로 작게 보여서 잘 안 보이므로 ZoomableImage로 감싸 클릭 시 팝업으로 크게
+// 볼 수 있게 한다(PR #23).
 function StopCharacterImage({ stop }: { stop: RouteStop }) {
   const [imageFailed, setImageFailed] = useState(false)
 
   if (stop.characterImageUrl && !imageFailed) {
     return (
-      <img
+      <ZoomableImage
         src={stop.characterImageUrl}
         alt={stop.name}
         onError={() => setImageFailed(true)}

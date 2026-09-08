@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Video } from 'lucide-react'
+import { AlertCircle, Sparkles, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 
@@ -9,18 +9,25 @@ interface AnalysisResultListProps {
   onTryExample: () => void
 }
 
+// AI(모델)가 실제로 추론해서 만든 결과인 소스들 — worker(규칙기반 매칭)/mock은
+// 제외. "AI로 분석한 루트라 부정확할 수 있다"는 면책 문구는 이 소스일 때만 보여줌.
+const AI_SOURCES = new Set(['groq', 'gemini', 'openai'])
+
+const SOURCE_LABEL_KEYS: Record<string, string> = {
+  groq: 'analyze.source_groq',
+  gemini: 'analyze.source_gemini',
+  openai: 'analyze.source_openai',
+  mock: 'analyze.source_mock',
+}
+
 // Note: bulk "View All on Map" / "Add All to Route" actions live in AnalyzePage as a
 // sticky footer (so they stay reachable while this list scrolls), not in here.
 // Tapping an individual place card opens a choice popup (view this one on the map,
 // or add just this one to the route) — see AnalyzePage's `choicePlace` dialog.
 export function AnalysisResultList({ result, onSelectPlace, onTryExample }: AnalysisResultListProps) {
   const { t } = useTranslation()
-  const sourceLabel =
-    result.source === 'mock'
-      ? t('analyze.source_mock')
-      : result.source === 'groq'
-        ? t('analyze.source_groq')
-        : t('analyze.source_worker')
+  const sourceLabel = t(SOURCE_LABEL_KEYS[result.source] ?? 'analyze.source_worker')
+  const showAiDisclaimer = AI_SOURCES.has(result.source)
 
   if (result.places.length === 0) {
     return (
@@ -48,6 +55,13 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
           {sourceLabel}
         </span>
       </div>
+
+      {showAiDisclaimer && (
+        <div className="flex items-start gap-2 rounded-lg bg-crowd-mid/10 px-3 py-2">
+          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-crowd-mid" />
+          <p className="text-[11px] leading-4 text-crowd-mid">{t('analyze.ai_disclaimer')}</p>
+        </div>
+      )}
 
       {result.places.map((place, idx) => {
         const confidencePercent = Math.max(0, Math.min(100, Math.round(place.confidence * 100)))

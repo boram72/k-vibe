@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { RouteResult } from '@/blocks/persona/route-result'
 import { Button } from '@/components/ui/button'
+import { ZoomableImage } from '@/blocks/common/zoomable-image'
 import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona } from '@/api/personas'
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
@@ -26,7 +27,7 @@ function PersonaAvatar({ persona }: { persona: KContentPersona }) {
 
   if (persona.profileImg && !imageFailed) {
     return (
-      <img
+      <ZoomableImage
         src={persona.profileImg}
         alt={`${persona.label} profile`}
         referrerPolicy="no-referrer"

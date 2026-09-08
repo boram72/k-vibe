@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Clock, MapPin, Plus, RotateCcw, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { ZoomableImage } from '@/blocks/common/zoomable-image'
 import { formatDuration, type RoutePlan, type RouteStop } from '@/lib/route-timing'
 
 interface RouteResultProps {
@@ -15,12 +16,14 @@ interface RouteResultProps {
 // stop.characterImageUrl은 실제 스타 초상권 대신 "이 장소의 무드"를 전달하는
 // 생성형 캐릭터 이미지 — 값이 없거나 로드에 실패하면(onError) 아무것도 렌더링하지
 // 않아 레이아웃이 전혀 변하지 않는다(이미지 생성 파이프라인이 준비되기 전에도 안전).
+// 이미지가 있을 때는 64px로 작게 보여서 잘 안 보이므로 ZoomableImage로 감싸
+// 클릭 시 팝업으로 크게 볼 수 있게 한다.
 function StopCharacterImage({ stop }: { stop: RouteStop }) {
   const [imageFailed, setImageFailed] = useState(false)
   if (!stop.characterImageUrl || imageFailed) return null
 
   return (
-    <img
+    <ZoomableImage
       src={stop.characterImageUrl}
       alt={stop.name}
       onError={() => setImageFailed(true)}

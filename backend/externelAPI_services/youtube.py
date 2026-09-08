@@ -30,3 +30,13 @@ def fetch_youtube_title(url: str) -> str:
         return title if isinstance(title, str) else ""
     except Exception:
         return ""
+
+
+def fetch_youtube_transcript(video_id: str) -> str:
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+
+        transcript = YouTubeTranscriptApi().fetch(video_id, languages=["ko", "en"])
+        return " ".join(snippet.text for snippet in transcript.snippets)
+    except Exception:
+        return ""

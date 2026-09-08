@@ -158,11 +158,11 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
     return (
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-md">
-          {media}
           <DialogHeader>
             <DialogTitle>{place.name}</DialogTitle>
             <DialogDescription>{place.address}</DialogDescription>
           </DialogHeader>
+          {media}
           {tabsSection}
           <DialogFooter className="flex-row gap-2 sm:justify-stretch">
             {footer}
@@ -175,11 +175,11 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="mx-auto max-w-md rounded-t-2xl">
-        {media}
         <SheetHeader>
           <SheetTitle>{place.name}</SheetTitle>
           <SheetDescription>{place.address}</SheetDescription>
         </SheetHeader>
+        {media}
         {tabsSection}
         <SheetFooter className="flex-row gap-2">{footer}</SheetFooter>
       </SheetContent>

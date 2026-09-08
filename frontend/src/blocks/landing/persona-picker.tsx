@@ -53,9 +53,6 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
   return (
     <section className="w-full space-y-3">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-          {t('persona.k_content_eyebrow')}
-        </p>
         <h2 className="mt-0.5 flex items-center gap-1.5 text-lg font-bold text-foreground">
           <Sparkles className="h-4.5 w-4.5 text-primary" />
           {t('persona.k_content_title')}

@@ -43,11 +43,23 @@ function buildOAuthStartUrl(provider: AuthProvider): string {
   return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
+// 2026-09: backend has no /auth/{provider}/start|callback routes yet (see
+// OAUTH_INTEGRATION_REQUEST.md — still open). isOAuthBackendConfigured() used
+// to key off API_BASE_URL alone, which is true in every deployed environment
+// (VITE_API_BASE_URL is always set), so it would send users to a redirect
+// URL the backend 404s on — a real login failure, not a graceful mock
+// fallback. Hard-pinned to false until those routes ship; flip this back to
+// `Boolean(API_BASE_URL)` (and delete this flag) once the backend redirect
+// flow is live — nothing else here needs to change, redirectToOAuthProvider/
+// completeOAuthLogin/OAuthCallbackPage are already fully implemented and
+// waiting.
+const OAUTH_BACKEND_READY = false
+
 // Whether loginWithProvider will redirect (real) vs resolve instantly (mock)
 // — LoginModal checks this to decide whether to route the click through
 // useAuth()'s mutation at all (see redirectToOAuthProvider below for why).
 export function isOAuthBackendConfigured(): boolean {
-  return Boolean(API_BASE_URL)
+  return OAUTH_BACKEND_READY && Boolean(API_BASE_URL)
 }
 
 // Called directly by LoginModal, bypassing useAuth()'s login mutation

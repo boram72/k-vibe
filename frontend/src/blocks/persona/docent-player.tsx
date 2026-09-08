@@ -13,7 +13,7 @@ interface DocentPlayerProps {
 }
 
 export function DocentPlayer({ open, onClose, plan }: DocentPlayerProps) {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [trackIndex, setTrackIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -115,7 +115,7 @@ export function DocentPlayer({ open, onClose, plan }: DocentPlayerProps) {
 
           <div className="mt-4 rounded-xl bg-background/70 p-3 text-left">
             <p className="line-clamp-3 text-xs leading-5 text-muted-foreground">
-              {activeGuide ? activeGuide.script : 'Loading audio guide...'}
+              {activeGuide ? activeGuide.script : t('persona.docent_loading')}
             </p>
             {activeGuide?.audioUrl && (
               <audio className="mt-3 w-full" controls src={activeGuide.audioUrl}>

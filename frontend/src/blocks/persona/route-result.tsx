@@ -18,6 +18,7 @@ interface RouteResultProps {
 // 사라지던 것을, 이미지가 들어올 자리라는 걸 알 수 있도록 빈 이미지 아이콘
 // 플레이스홀더로 항상 표시하도록 변경(2026-09, 사용자 요청).
 function StopCharacterImage({ stop }: { stop: RouteStop }) {
+  const { t } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
 
   if (stop.characterImageUrl && !imageFailed) {
@@ -34,7 +35,7 @@ function StopCharacterImage({ stop }: { stop: RouteStop }) {
   return (
     <div
       className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-background text-muted-foreground/40"
-      title="캐릭터 이미지 준비 중"
+      title={t('persona.character_image_pending')}
     >
       <ImageOff className="h-6 w-6" />
     </div>

@@ -26,8 +26,8 @@
     }
   },
   "landing": {
-    "headline": "用专属人设，打造你的K-内容一日路线",
-    "subtitle": "把SNS上看到的地点，变成你自己的旅行路线！",
+    "headline": "K-内容一日路线",
+    "subtitle": "把SNS上看到的明星到访地点，变成你自己的旅行路线！",
     "trending_now": "韩国当下热门",
     "help_title": "欢迎来到 K-Vibe",
     "help_body": "看看韩国当下的热门关键词，然后点击「探索K-Vibe」在地图上发现更多地点。",
@@ -132,6 +132,8 @@
     "title": "创建K-content一日路线",
     "nav_title": "角色",
     "help_title": "制定一日计划",
+    "character_image_pending": "角色图片准备中",
+    "docent_loading": "正在加载语音导览...",
     "help_body": "选择一个K-content角色，即可生成已计算时间的一日路线，可直接编辑或分享。",
     "generator_eyebrow": "路线生成器",
     "subtitle": "选择一个K-content角色，就能立即生成一日路线。",

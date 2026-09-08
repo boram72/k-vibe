@@ -26,8 +26,8 @@
     }
   },
   "landing": {
-    "headline": "Your Persona, Your K-Content Day Route",
-    "subtitle": "Saw it on social? Turn it into your own travel route!",
+    "headline": "K-Content Day Route",
+    "subtitle": "Star-visited spots you saw on social, turned into your own route!",
     "trending_now": "Trending in Korea",
     "help_title": "Welcome to K-Vibe",
     "help_body": "Check out what's trending in Korea right now, then tap \"Explore K-Vibe\" to start discovering spots on the map.",
@@ -132,6 +132,8 @@
     "title": "Build a K-content day plan",
     "nav_title": "Persona",
     "help_title": "Plan Your Day",
+    "character_image_pending": "Character image coming soon",
+    "docent_loading": "Loading audio guide...",
     "help_body": "Pick a K-content persona to generate a timed one-day route, ready to edit or share.",
     "generator_eyebrow": "Route generator",
     "subtitle": "Pick a K-content persona to build a one-day route instantly.",

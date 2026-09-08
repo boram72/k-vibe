@@ -91,6 +91,9 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
                   {persona.routeCnt}
                   {t('persona.stops_suffix')}
                 </span>
+                <p className="truncate text-[10px] font-medium text-primary">
+                  {persona.moods.map((mood) => `#${mood}`).join(' ')}
+                </p>
                 <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{persona.description}</p>
               </div>
             </button>

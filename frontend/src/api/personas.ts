@@ -9,14 +9,19 @@ export interface KContentPersona {
   badge: string
   profileImg: string
   routeCnt: number
+  // Short "#mood" hashtags for the home-screen card (e.g. #조용한 #힙한) —
+  // a quick vibe read at a glance, separate from the longer route description.
+  moods: string[]
 }
 
 type LocalizedText = Record<'ko' | 'en' | 'ja' | 'zh', string>
+type LocalizedTags = Record<'ko' | 'en' | 'ja' | 'zh', string[]>
 
 interface PersonaFallback {
   id: string
   label: LocalizedText
   description: LocalizedText
+  moods: LocalizedTags
   badge: string
   profileImg: string
   locations: StopTemplate[]
@@ -36,6 +41,12 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
       en: 'A Seoul day route linking views, palace scenery, Ikseon-dong, and Seongsu.',
       ja: '展望、宮殿、益善洞・聖水の雰囲気をつなぐソウル1日コース。',
       zh: '串联观景、宫殿、益善洞与圣水氛围的首尔一日路线。',
+    },
+    moods: {
+      ko: ['탁트인', '전통있는', '여유로운'],
+      en: ['Scenic', 'Traditional', 'Relaxed'],
+      ja: ['開放的', '伝統的', 'のんびり'],
+      zh: ['开阔', '传统', '悠闲'],
     },
     locations: [
       {
@@ -112,6 +123,12 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
       ja: '西村の韓国料理、感性カフェ、壁画村と三清洞を結ぶ落ち着いたコース。',
       zh: '连接西村韩餐、氛围咖啡、壁画村与三清洞的舒缓路线。',
     },
+    moods: {
+      ko: ['조용한', '감성적인', '아늑한'],
+      en: ['Quiet', 'Aesthetic', 'Cozy'],
+      ja: ['静か', 'エモい', '居心地良い'],
+      zh: ['安静', '有格调', '惬意'],
+    },
     locations: [
       {
         id: '아이유-체부동잔치집',
@@ -185,6 +202,12 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
       en: 'A style-led route through Cheongdam, Apgujeong, Dosan Park, Hannam dessert, and dinner.',
       ja: '清潭・狎鴎亭のショッピング、島山公園、漢南のデザートと食事をつなぐスタイルコース。',
       zh: '串联清潭、狎鸥亭购物、岛山公园、汉南甜点与餐厅的时尚路线。',
+    },
+    moods: {
+      ko: ['힙한', '세련된', '트렌디한'],
+      en: ['Hip', 'Chic', 'Trendy'],
+      ja: ['ヒップ', 'おしゃれ', 'トレンディ'],
+      zh: ['时髦', '精致', '潮流'],
     },
     locations: [
       {
@@ -261,6 +284,12 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
       ja: '蚕室の展望と湖、聖水のライフスタイル、盤浦の夜景をつなぐ明るい都市コース。',
       zh: '连接蚕室展望与湖景、圣水生活方式、盘浦夜景的明亮城市路线。',
     },
+    moods: {
+      ko: ['화사한', '활기찬', '힐링되는'],
+      en: ['Bright', 'Lively', 'Healing'],
+      ja: ['華やか', '活気ある', '癒される'],
+      zh: ['明媚', '活力', '疗愈'],
+    },
     locations: [
       {
         id: '장원영-서울스카이',
@@ -318,11 +347,16 @@ function pickText(text: LocalizedText, locale: Locale): string {
   return text[locale] ?? text.en
 }
 
+function pickTags(tags: LocalizedTags, locale: Locale): string[] {
+  return tags[locale] ?? tags.en
+}
+
 function toPersona(persona: PersonaFallback, locale: Locale): KContentPersona {
   return {
     id: persona.id,
     label: pickText(persona.label, locale),
     description: pickText(persona.description, locale),
+    moods: pickTags(persona.moods, locale),
     badge: persona.badge,
     profileImg: persona.profileImg,
     routeCnt: persona.locations.length,

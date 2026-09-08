@@ -19,6 +19,8 @@ export interface NavItem {
  * Add/remove/reorder tabs here — BottomNav and SidebarNav both render from this array.
  */
 export const NAV_ITEMS: NavItem[] = [
+  // Home 탭은 홈/랜딩과 별개 메뉴 항목 — 사이드바/하단바에 6개가 들어가면
+  // 항목이 너무 많아진다는 판단으로 숨김(인덱스 라우트 자체는 그대로 홈).
   // { key: "home", path: "", icon: Home, labelKey: "home.title" },
   { key: "map", path: "map", icon: Map, labelKey: "map.title" },
   {
@@ -27,9 +29,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: ScanSearch,
     labelKey: "analyze.nav_title",
   },
-  // 2026-09: 페르소나 카드가 홈 화면 핵심 진입점(PersonaPicker)으로 옮겨가면서
-  // 사이드바/하단바 메뉴에서는 숨김. 라우트(/persona)와 로직은 그대로 남겨서
-  // 홈 카드 클릭 시 이동은 계속 동작하고, 필요해지면 이 줄만 복구하면 됨.
+  // 2026-09 서비스 컨셉 변경(PR #11): 페르소나 카드가 홈 화면 핵심 진입점
+  // (PersonaPicker)으로 옮겨가면서 사이드바/하단바 메뉴에서는 숨김. 라우트
+  // (/persona)와 로직은 그대로 남겨서 홈 카드 클릭 시 이동은 계속 동작하고,
+  // 필요해지면 이 줄만 복구하면 됨.
   // {
   //   key: "persona",
   //   path: "persona",
@@ -37,7 +40,9 @@ export const NAV_ITEMS: NavItem[] = [
   //   labelKey: "persona.nav_title",
   // },
   { key: "route", path: "route", icon: Route, labelKey: "route.title" },
-  // 2026-09: 페르소나(K-pop 팬 여행) 중심 정체성과 맞지 않는다는 팀 의견으로 내비게이션에서만
-  // 숨김. RadarPage/라우트/API 연동은 그대로 남겨둬서 필요해지면 이 줄만 복구하면 됨.
+  // 2026-09 서비스 컨셉 변경(PR #16): 편의시설 레이더의 실데이터 정확도가 낮고,
+  // "스타의 루트를 따라가보자"는 서비스 컨셉과 기능 자체가 동떨어진다는 판단으로
+  // 내비게이션에서만 숨김. RadarPage/라우트/API 연동은 그대로 남겨둬서 필요해지면
+  // 이 줄만 복구하면 됨.
   // { key: "radar", path: "radar", icon: Radar, labelKey: "radar.title" },
 ];

@@ -13,6 +13,11 @@ export interface RouteStop {
   startTime: string
   description: string
   tags: string[]
+  // 실제 스타의 얼굴/초상권을 쓰지 않기 위한 대체: 이 장소의 "무드"를 전달하는
+  // 생성형(AI) 캐릭터 이미지 URL. 선택 필드라 없으면 RouteResult가 이미지 없이도
+  // 레이아웃이 깨지지 않게 렌더링한다 — 아직 이미지 생성 파이프라인이 없어 현재
+  // PERSONA_FALLBACKS(api/personas.ts)의 모든 위치는 이 값이 비어 있다.
+  characterImageUrl?: string
 }
 
 export interface ScheduledRoute {

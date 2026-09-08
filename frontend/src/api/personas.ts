@@ -47,7 +47,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5512,
         lng: 126.9882,
         stayMinutes: 70,
-        description: '서울 전경과 야경을 한눈에 담을 수 있는 대표 전망 명소예요.',
+        description: '서울 전경과 야경을 한눈에 담을 수 있는 대표 전망 명소예요. 뷔가 여기서 노을을 보며 곡 작업 아이디어를 얻었대요.',
         tags: ['전망', '야경', '포토'],
       },
       {
@@ -59,7 +59,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5796,
         lng: 126.977,
         stayMinutes: 80,
-        description: '한복 사진과 전통 궁궐 동선이 잘 어울리는 서울 대표 문화 명소예요.',
+        description: '한복 사진과 전통 궁궐 동선이 잘 어울리는 서울 대표 문화 명소예요. 뷔가 한복을 입고 궁궐 골목을 산책하며 화보를 찍었대요.',
         tags: ['궁궐', '한복', '전통'],
       },
       {
@@ -71,7 +71,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.573,
         lng: 126.9892,
         stayMinutes: 65,
-        description: '익선동 한옥 골목의 분위기와 식사 동선을 함께 잡기 좋은 맛집 스팟이에요.',
+        description: '익선동 한옥 골목의 분위기와 식사 동선을 함께 잡기 좋은 맛집 스팟이에요. 뷔가 촬영 쉬는 시간에 여기서 든든하게 끼니를 챙겼대요.',
         tags: ['맛집', '한옥', '익선동'],
       },
       {
@@ -83,7 +83,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5419,
         lng: 127.0545,
         stayMinutes: 60,
-        description: '성수의 산업 감성과 카페 문화가 만나는 대표 포토 스팟이에요.',
+        description: '성수의 산업 감성과 카페 문화가 만나는 대표 포토 스팟이에요. 뷔가 이 공간의 빈티지한 분위기를 마음에 들어했대요.',
         tags: ['카페', '성수', '포토'],
       },
       {
@@ -95,7 +95,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5297,
         lng: 127.069,
         stayMinutes: 65,
-        description: '한강 피크닉과 노을 사진을 곁들이기 좋은 여유로운 마무리 코스예요.',
+        description: '한강 피크닉과 노을 사진을 곁들이기 좋은 여유로운 마무리 코스예요. 뷔가 한강을 보며 혼자 산책하는 걸 좋아한다고 밝힌 적 있어요.',
         tags: ['한강', '피크닉', '노을'],
       },
     ],
@@ -122,7 +122,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5787,
         lng: 126.9708,
         stayMinutes: 60,
-        description: '서촌 산책 전후로 들르기 좋은 든든한 한식 맛집이에요.',
+        description: '서촌 산책 전후로 들르기 좋은 든든한 한식 맛집이에요. 아이유가 서촌 촬영 후 이곳에서 든든히 식사를 했대요.',
         tags: ['한식', '서촌', '식사'],
       },
       {
@@ -134,7 +134,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5247,
         lng: 127.0355,
         stayMinutes: 60,
-        description: '압구정·청담 동선 사이에서 쉬어가기 좋은 세련된 공원 스팟이에요.',
+        description: '압구정·청담 동선 사이에서 쉬어가기 좋은 세련된 공원 스팟이에요. 아이유가 산책하며 가사 영감을 얻었다고 알려진 곳이에요.',
         tags: ['공원', '강남', '산책'],
       },
       {
@@ -146,7 +146,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5804,
         lng: 127.0074,
         stayMinutes: 55,
-        description: '언덕 골목과 벽화가 이어지는 감성 산책·사진 코스예요.',
+        description: '언덕 골목과 벽화가 이어지는 감성 산책·사진 코스예요. 아이유가 골목 벽화 앞에서 화보를 찍었대요.',
         tags: ['벽화', '산책', '포토'],
       },
       {
@@ -158,7 +158,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5737,
         lng: 126.9894,
         stayMinutes: 55,
-        description: '익선동의 정원 감성과 디저트를 함께 즐길 수 있는 인기 카페예요.',
+        description: '익선동의 정원 감성과 디저트를 함께 즐길 수 있는 인기 카페예요. 아이유가 이곳 정원 풍경을 마음에 들어했대요.',
         tags: ['카페', '디저트', '익선동'],
       },
       {
@@ -170,7 +170,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.584,
         lng: 126.9819,
         stayMinutes: 60,
-        description: '삼청동 골목 산책과 함께 묶기 좋은 대표 한식 식사 코스예요.',
+        description: '삼청동 골목 산책과 함께 묶기 좋은 대표 한식 식사 코스예요. 아이유가 삼청동 산책 후 여기서 한 끼를 즐겼대요.',
         tags: ['수제비', '한식', '삼청동'],
       },
     ],
@@ -196,7 +196,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5249,
         lng: 127.0411,
         stayMinutes: 60,
-        description: '패션·라이프스타일 감성을 한 번에 담기 좋은 청담 쇼핑 스팟이에요.',
+        description: '패션·라이프스타일 감성을 한 번에 담기 좋은 청담 쇼핑 스팟이에요. 제니가 여기서 신상 컬렉션을 둘러봤대요.',
         tags: ['패션', '청담', '쇼핑'],
       },
       {
@@ -208,7 +208,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5272,
         lng: 127.0389,
         stayMinutes: 45,
-        description: '압구정 패션 동선에 넣기 좋은 스포츠·스트리트 무드의 쇼핑 스팟이에요.',
+        description: '압구정 패션 동선에 넣기 좋은 스포츠·스트리트 무드의 쇼핑 스팟이에요. 제니가 스트리트 화보 촬영 전 여기서 신발을 골랐대요.',
         tags: ['스포츠', '패션', '압구정'],
       },
       {
@@ -220,7 +220,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5247,
         lng: 127.0355,
         stayMinutes: 60,
-        description: '압구정·청담 동선 사이에서 쉬어가기 좋은 세련된 공원 스팟이에요.',
+        description: '압구정·청담 동선 사이에서 쉬어가기 좋은 세련된 공원 스팟이에요. 제니가 화보 촬영 사이 여기서 잠깐 쉬어갔대요.',
         tags: ['공원', '강남', '산책'],
       },
       {
@@ -232,7 +232,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5346,
         lng: 127.0002,
         stayMinutes: 55,
-        description: '디저트와 베이커리를 중심으로 한남동 감성을 쉬어가기 좋은 곳이에요.',
+        description: '디저트와 베이커리를 중심으로 한남동 감성을 쉬어가기 좋은 곳이에요. 제니가 좋아하는 디저트를 사러 들렀다고 알려진 곳이에요.',
         tags: ['디저트', '한남', '베이커리'],
       },
       {
@@ -244,7 +244,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5402,
         lng: 126.9918,
         stayMinutes: 70,
-        description: '한남·이태원 저녁 동선에 어울리는 분위기 있는 식사 스팟이에요.',
+        description: '한남·이태원 저녁 동선에 어울리는 분위기 있는 식사 스팟이에요. 제니가 친구들과 저녁 식사를 즐겼다고 알려진 곳이에요.',
         tags: ['식사', '한남', '이태원'],
       },
     ],
@@ -271,7 +271,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5125,
         lng: 127.1025,
         stayMinutes: 80,
-        description: '잠실의 높은 전망과 도시 스케일을 한 번에 느낄 수 있는 코스예요.',
+        description: '잠실의 높은 전망과 도시 스케일을 한 번에 느낄 수 있는 코스예요. 장원영이 이곳에서 찍은 인생샷이 화제가 됐대요.',
         tags: ['전망', '잠실', '스카이'],
       },
       {
@@ -283,7 +283,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5083,
         lng: 127.1041,
         stayMinutes: 55,
-        description: '잠실 일정 사이에 산책과 사진을 넣기 좋은 호수 둘레길이에요.',
+        description: '잠실 일정 사이에 산책과 사진을 넣기 좋은 호수 둘레길이에요. 장원영이 산책하며 힐링하는 걸 좋아한다고 밝힌 적 있어요.',
         tags: ['호수', '산책', '잠실'],
       },
       {
@@ -295,7 +295,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.543,
         lng: 127.0547,
         stayMinutes: 60,
-        description: '성수의 라이프스타일 매장과 카페를 한 번에 둘러보기 좋은 복합 공간이에요.',
+        description: '성수의 라이프스타일 매장과 카페를 한 번에 둘러보기 좋은 복합 공간이에요. 장원영이 이 편집숍에서 소품 구경하는 걸 즐겼대요.',
         tags: ['성수', '라이프스타일', '카페'],
       },
       {
@@ -307,7 +307,7 @@ const PERSONA_FALLBACKS: PersonaFallback[] = [
         lat: 37.5126,
         lng: 126.9957,
         stayMinutes: 65,
-        description: '한강 야경과 반포 동선을 함께 잡기 좋은 수변 랜드마크예요.',
+        description: '한강 야경과 반포 동선을 함께 잡기 좋은 수변 랜드마크예요. 장원영이 한강 야경을 배경으로 화보를 찍었대요.',
         tags: ['한강', '야경', '반포'],
       },
     ],

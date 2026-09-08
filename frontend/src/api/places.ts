@@ -35,7 +35,7 @@ export const SEOUL_PLACES: Place[] = [
     lng: 126.9227,
     distanceM: 2100,
     crowdLevel: 'high',
-    tags: ['버스킹', '자유'],
+    tags: ['버스킹', '자유', '코인노래방', '방탈출', '홍대 빈티지'],
   },
   {
     id: '4',
@@ -46,7 +46,7 @@ export const SEOUL_PLACES: Place[] = [
     lng: 126.9882,
     distanceM: 3400,
     crowdLevel: 'low',
-    tags: ['야경', '전망'],
+    tags: ['야경', '전망', '인생네컷'],
   },
   {
     id: '5',
@@ -57,7 +57,7 @@ export const SEOUL_PLACES: Place[] = [
     lng: 127.0564,
     distanceM: 1500,
     crowdLevel: 'mid',
-    tags: ['감성카페', '루프탑'],
+    tags: ['감성카페', '루프탑', '성수 카페'],
   },
   {
     id: '6',

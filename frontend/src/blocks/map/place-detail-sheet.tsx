@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
+import { RatingBadge } from '@/blocks/common/rating-badge'
 import { PlaceReviewTab } from '@/blocks/map/place-review-tab'
 import { addStopToRouteDraft } from '@/lib/route-draft'
 import { useMediaQuery } from '@/lib/use-media-query'
@@ -160,7 +161,10 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{place.name}</DialogTitle>
-            <DialogDescription>{place.address}</DialogDescription>
+            <DialogDescription className="flex flex-wrap items-center gap-2">
+              <span>{place.address}</span>
+              <RatingBadge placeId={place.id} />
+            </DialogDescription>
           </DialogHeader>
           {media}
           {tabsSection}
@@ -177,7 +181,10 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
       <SheetContent side="bottom" className="mx-auto max-w-md rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>{place.name}</SheetTitle>
-          <SheetDescription>{place.address}</SheetDescription>
+          <SheetDescription className="flex flex-wrap items-center gap-2">
+            <span>{place.address}</span>
+            <RatingBadge placeId={place.id} />
+          </SheetDescription>
         </SheetHeader>
         {media}
         {tabsSection}

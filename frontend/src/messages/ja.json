@@ -61,7 +61,6 @@
     "seoul_fallback": "ソウル（デフォルト）",
     "location_unavailable": "位置情報を取得できないためソウルを表示します",
     "refresh_location": "位置情報を更新",
-    "open_analyzer": "SNS分析を開く",
     "analysis_result": "分析結果",
     "show_saved": "保存済みのみ表示",
     "collapse_panel": "パネルを閉じる",

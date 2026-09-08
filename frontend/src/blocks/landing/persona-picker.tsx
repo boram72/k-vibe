@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { fetchKContentPersonas, type KContentPersona } from '@/api/personas'
 import type { Locale } from '@/i18n'
 
@@ -10,8 +10,12 @@ import type { Locale } from '@/i18n'
 // Only lists personas and hands the pick off via onSelect; PersonaPage owns
 // actually generating the route so this component stays free of navigation
 // concerns and is easy to reuse (e.g. inside a modal) later if needed.
+//
+// Card shape: square photo tile + info below, matching the old HomeFeed
+// PlaceCard (blocks/common/place-card.tsx) look the team asked to reuse here,
+// laid out in the same mobile-scroll/desktop-grid pattern as HomeFeed.
 
-function PersonaAvatar({ persona }: { persona: KContentPersona }) {
+function PersonaCardImage({ persona }: { persona: KContentPersona }) {
   const [imageFailed, setImageFailed] = useState(false)
 
   if (persona.profileImg && !imageFailed) {
@@ -21,13 +25,13 @@ function PersonaAvatar({ persona }: { persona: KContentPersona }) {
         alt={`${persona.label} profile`}
         referrerPolicy="no-referrer"
         onError={() => setImageFailed(true)}
-        className="h-12 w-12 shrink-0 rounded-xl object-cover"
+        className="h-full w-full object-cover"
       />
     )
   }
 
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-xs font-bold text-primary">
+    <div className="flex h-full w-full items-center justify-center bg-primary/15 text-2xl font-bold text-primary">
       {persona.badge}
     </div>
   )
@@ -59,10 +63,15 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.k_content_subtitle')}</p>
       </div>
 
-      <div className="space-y-2">
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 scrollbar-hide scroll-fade-x md:mx-0 md:mask-none md:grid md:grid-cols-4 md:overflow-visible md:px-0">
         {personasQuery.isPending &&
           Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-[72px] animate-pulse rounded-xl border border-border bg-muted" />
+            <div
+              key={index}
+              className="w-40 shrink-0 animate-pulse overflow-hidden rounded-2xl border border-border bg-muted md:w-full md:shrink"
+            >
+              <div className="aspect-square w-full bg-muted" />
+            </div>
           ))}
 
         {!personasQuery.isPending &&
@@ -71,20 +80,19 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
               key={persona.id}
               type="button"
               onClick={() => onSelect(persona)}
-              className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all hover:border-primary/60 hover:bg-primary/10"
+              className="w-40 shrink-0 overflow-hidden rounded-2xl border border-border bg-card text-left transition-all hover:border-primary/60 hover:bg-primary/10 md:w-full md:shrink"
             >
-              <PersonaAvatar persona={persona} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-semibold text-foreground">{persona.label}</p>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    {persona.routeCnt}
-                    {t('persona.stops_suffix')}
-                  </span>
-                </div>
-                <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground">{persona.description}</p>
+              <div className="aspect-square w-full bg-muted">
+                <PersonaCardImage persona={persona} />
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="space-y-1 p-3">
+                <p className="truncate font-semibold text-foreground">{persona.label}</p>
+                <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                  {persona.routeCnt}
+                  {t('persona.stops_suffix')}
+                </span>
+                <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{persona.description}</p>
+              </div>
             </button>
           ))}
       </div>

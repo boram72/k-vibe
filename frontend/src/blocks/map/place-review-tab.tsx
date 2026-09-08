@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { MessageSquare, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/use-auth'
 import { cn } from '@/lib/utils'
 import { fetchPlaceReviews, createPlaceReview } from '@/api/reviews'
@@ -28,6 +29,24 @@ function StarRatingInput({ value, onChange, disabled }: { value: number; onChang
           <Star className={cn('h-5 w-5', star <= value ? 'fill-primary text-primary' : 'text-muted-foreground/40')} />
         </button>
       ))}
+    </div>
+  )
+}
+
+// blocks/common/loading-skeleton.tsx's CardSkeleton always includes an image
+// block, which doesn't match a review card (no image) — reuse the shadcn
+// Skeleton primitive it's built on instead, shaped like the actual review
+// card (username/stars row + content line + date line) rather than a raw
+// `animate-pulse` div.
+function ReviewSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+      <Skeleton className="mt-2 h-4 w-full" />
+      <Skeleton className="mt-1.5 h-2.5 w-14" />
     </div>
   )
 }
@@ -95,7 +114,7 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
       {reviewsQuery.isPending && (
         <div className="space-y-2">
           {[0, 1].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-muted" />
+            <ReviewSkeleton key={i} />
           ))}
         </div>
       )}

@@ -34,10 +34,10 @@ def test_normalize_db_location_returns_none_without_coordinates():
 
 
 @patch("business_services.personaRouteService.personainfo.build_pic_url")
-@patch("business_services.personaRouteService.locationinfo.get_location_by_place_id")
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
 @patch("business_services.personaRouteService.personainfo.get_persona_route")
 def test_load_persona_route_from_db_applies_location_story_and_pic(
-    mock_get_route, mock_get_location, mock_build_pic_url
+    mock_get_route, mock_get_locations, mock_build_pic_url
 ):
     mock_get_route.return_value = [
         {
@@ -48,16 +48,18 @@ def test_load_persona_route_from_db_applies_location_story_and_pic(
             "location_pic": "kyungbokplace_V.jpg",
         }
     ]
-    mock_get_location.return_value = {
-        "name": "경복궁",
-        "town": "서울 종로구",
-        "rating": 4.3,
-        "latitude": 37.5796,
-        "longitude": 126.977,
-        "category": "Culture",
-        "crowd_level": "high",
-        "place_id": "3354946",
-        "tags": [],
+    mock_get_locations.return_value = {
+        "3354946": {
+            "name": "경복궁",
+            "town": "서울 종로구",
+            "rating": 4.3,
+            "latitude": 37.5796,
+            "longitude": 126.977,
+            "category": "Culture",
+            "crowd_level": "high",
+            "place_id": "3354946",
+            "tags": [],
+        }
     }
     mock_build_pic_url.return_value = (
         "https://zchxwhmddkabhhhywkge.supabase.co/storage/v1/object/public/"
@@ -74,20 +76,22 @@ def test_load_persona_route_from_db_applies_location_story_and_pic(
     }
     assert location["characterImageUrl"].endswith("kyungbokplace_V.jpg")
     mock_build_pic_url.assert_called_once_with("kyungbokplace_V.jpg")
-    mock_get_location.assert_called_once_with("3354946")
+    mock_get_locations.assert_called_once_with(["3354946"])
 
 
-@patch("business_services.personaRouteService.locationinfo.get_location_by_place_id")
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
 @patch("business_services.personaRouteService.personainfo.get_persona_route")
 def test_load_persona_route_from_db_keeps_defaults_without_story_or_pic(
-    mock_get_route, mock_get_location
+    mock_get_route, mock_get_locations
 ):
     mock_get_route.return_value = [{"locationname": "3354946"}]
-    mock_get_location.return_value = {
-        "name": "경복궁",
-        "latitude": 37.5796,
-        "longitude": 126.977,
-        "place_id": "3354946",
+    mock_get_locations.return_value = {
+        "3354946": {
+            "name": "경복궁",
+            "latitude": 37.5796,
+            "longitude": 126.977,
+            "place_id": "3354946",
+        }
     }
 
     locations = personaRouteService._load_persona_route_from_db("BTS뷔")
@@ -95,6 +99,29 @@ def test_load_persona_route_from_db_keeps_defaults_without_story_or_pic(
     assert len(locations) == 1
     assert "characterImageUrl" not in locations[0]
     assert locations[0]["description"]["ko"] == "경복궁 방문 코스입니다."
+
+
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
+@patch("business_services.personaRouteService.personainfo.get_persona_route")
+def test_load_persona_route_from_db_batches_location_lookup_for_multiple_stops(
+    mock_get_route, mock_get_locations
+):
+    """stop이 여러 개여도 location 조회는 (N+1이 아니라) 한 번만 배치로 호출되어야 한다."""
+    mock_get_route.return_value = [
+        {"locationname": "1"},
+        {"locationname": "2"},
+        {"locationname": "3"},
+    ]
+    mock_get_locations.return_value = {
+        "1": {"name": "A", "latitude": 1.0, "longitude": 1.0, "place_id": "1"},
+        "2": {"name": "B", "latitude": 2.0, "longitude": 2.0, "place_id": "2"},
+        "3": {"name": "C", "latitude": 3.0, "longitude": 3.0, "place_id": "3"},
+    }
+
+    locations = personaRouteService._load_persona_route_from_db("BTS뷔")
+
+    assert len(locations) == 3
+    mock_get_locations.assert_called_once_with(["1", "2", "3"])
 
 
 @patch("business_services.personaRouteService.personainfo.get_persona_route")

@@ -182,7 +182,14 @@ export async function fetchAnalysis(url: string, locale: Locale): Promise<Analys
   const videoId = extractVideoId(url) ?? url
   return withFallback(
     async () => {
-      const response = await apiClient.post<RawAnalysisResult>('/analyze', { youtube_url: url, locale })
+      // 백엔드 /analyze는 Gemini 네이티브 영상분석(요청당 15~60초) + Render 무료
+      // 인스턴스 콜드스타트(최대 ~50초)가 겹칠 수 있어, apiClient 기본 timeout(8초)
+      // 로는 거의 매번 끊겨 mock으로 폴백해버린다. 이 호출만 넉넉하게 잡는다.
+      const response = await apiClient.post<RawAnalysisResult>(
+        '/analyze',
+        { youtube_url: url, locale },
+        { timeout: 90000 },
+      )
       return normalizeAnalysisResult(response.data, videoId)
     },
     async () => {

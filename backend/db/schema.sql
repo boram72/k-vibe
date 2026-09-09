@@ -171,3 +171,21 @@ create table if not exists reviews (
   created_at timestamptz not null default now()
 );
 create index if not exists reviews_place_id_created_at_idx on reviews (place_id, created_at desc);
+
+-- ============================================================
+-- SNS 분석기 결과 캐시
+-- ============================================================
+
+-- ANALYZE_CACHE: (video_id, locale)별 SNS 분석 결과(JSON)를 저장한다.
+-- Gemini 네이티브 영상분석이 요청당 15~60초 걸리고 무료 티어 일일 할당량이
+-- 있어서, 같은 영상을 볼 때마다 다시 분석하지 않도록 결과를 캐싱한다.
+-- 캐시가 있으면 즉시 반환(cached=true). 영상은 바뀌지 않으므로 TTL은 두지 않고,
+-- 다시 분석시키려면 해당 행을 지우면 된다. 규칙기반 worker 결과는 저장하지
+-- 않으므로(품질 낮은 폴백), 일시적으로 실패한 영상은 다음 요청에서 재시도된다.
+create table if not exists analyze_cache (
+  video_id text not null,
+  locale text not null,
+  result jsonb not null,
+  created_at timestamptz not null default now(),
+  primary key (video_id, locale)
+);

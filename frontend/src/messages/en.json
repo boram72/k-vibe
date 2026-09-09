@@ -41,6 +41,9 @@
     "feature_radar": "Radar",
     "personalized_for": "Personalized for {{persona}}"
   },
+  "home": {
+    "title": "Home"
+  },
   "map": {
     "title": "K-Vibe Map",
     "filter_all": "All",

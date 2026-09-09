@@ -19,6 +19,7 @@ export function SidebarNav() {
         <NavLink
           key={item.key}
           to={item.path}
+          end
           title={isCollapsed ? t(item.labelKey) : undefined}
           className={({ isActive }) =>
             cn(

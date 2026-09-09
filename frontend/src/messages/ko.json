@@ -41,6 +41,9 @@
     "feature_radar": "레이더",
     "personalized_for": "{{persona}} 맞춤 피드 보기"
   },
+  "home": {
+    "title": "홈"
+  },
   "map": {
     "title": "K-Vibe 지도",
     "filter_all": "전체",

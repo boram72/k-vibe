@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { CheckCircle2, MessageCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useAuth } from '@/lib/use-auth'
-import { isOAuthBackendConfigured, redirectToOAuthProvider, type AuthProvider } from '@/lib/auth'
+import { redirectToOAuthProvider, type AuthProvider } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { GoogleIcon } from '@/assets/google-icon'
 
@@ -35,8 +35,6 @@ const PROVIDER_BUTTONS: {
 export function LoginModal({ open, onOpenChange }: LoginModalProps) {
   const { t } = useTranslation()
   const {
-    login,
-    isLoggingIn,
     signup,
     isSigningUp,
     signupError,
@@ -54,18 +52,6 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
   const isSubmitting = isSigningUp || isLoggingInWithCredentials
   const credentialsError = signupError || loginCredentialsError
-
-  function handleLogin(provider: AuthProvider) {
-    // Real backend -> plain navigation, bypassing the mutation entirely (see
-    // redirectToOAuthProvider's comment in auth.ts for why: a pending
-    // mutation state can get stuck forever if the browser restores this page
-    // from bfcache after the user presses back).
-    if (isOAuthBackendConfigured()) {
-      redirectToOAuthProvider(provider)
-      return
-    }
-    login(provider, { onSuccess: () => onOpenChange(false) })
-  }
 
   function handleCredentialsSubmit(event: FormEvent) {
     event.preventDefault()
@@ -92,8 +78,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
                 <button
                   key={id}
                   type="button"
-                  disabled={isLoggingIn}
-                  onClick={() => handleLogin(id)}
+                  onClick={() => redirectToOAuthProvider(id)}
                   className={cn(
                     'flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60',
                     className,

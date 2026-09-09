@@ -1,3 +1,5 @@
+// [미사용, 2026-09 서비스 컨셉 변경(PR #11)] theme-step.tsx와 동일한 사유로
+// 위저드 자체가 폐기됨(원복 방법은 theme-step.tsx 주석 참고).
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, Sparkles } from 'lucide-react'
 import type { RouteTheme } from '@/types/route-theme'

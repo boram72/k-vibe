@@ -1,3 +1,7 @@
+// [파일 전체 미사용, 2026-09 서비스 컨셉 변경(PR #11)] 이 파일의 유일한 export인
+// fetchScheduledRoute()를 부르던 테마/디테일 위저드가 폐기되며 호출부가 사라짐
+// (원복 방법은 theme-step.tsx 주석 참고). K-콘텐츠 셀럽 루트는 대신
+// api/personas.ts의 fetchKContentPersonaRoute()가 담당.
 import { apiClient, withFallback } from '@/api/client'
 import { scheduleStops, type ScheduledRoute, type RouteStop } from '@/lib/route-timing'
 import type { RouteTheme } from '@/types/route-theme'

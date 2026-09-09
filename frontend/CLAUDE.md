@@ -6,6 +6,19 @@ K-Culture 관광 앱 프론트엔드. 한국을 방문하는 외국인 관광객
 기존 `k-vibe-tracker` (Next.js 14 monorepo)에서 프론트엔드만 완전 분리한 프로젝트.
 백엔드와 **API로만 통신** — 백엔드를 교체해도 API 스펙만 맞으면 동작.
 
+## 2026-09 서비스 컨셉 변경 (PR #8~#22)
+
+**"근처 인기 K-스팟 둘러보기" 앱에서 "좋아하는 스타의 루트를 따라가보자" 앱으로 컨셉 전환.** 아래는 Step15(백엔드 연동) 이후 이 전환에 따라 실제로 반영된 변경사항 요약 — 상세 구현은 아래 "현재 파일 트리"/"Execution Progress"의 각 항목, 판단 근거는 각 파일 상단 주석 참고.
+
+- **홈 화면**: "근처 인기 K-스팟" 홈피드 섹션 제거. 대신 (1) SNS 분석기 진입(유튜브 링크 → 루트 만들기)과 (2) K-콘텐츠 페르소나 카드(아이유/뷔/제니/장원영 등)를 홈의 핵심 진입점으로 배치. 페르소나 카드는 이제 백엔드(`GET /personas`)가 목록을 내려줌 — 예전처럼 프론트 고정 테마/디테일 위저드가 아님
+- **지도**: 장소 리뷰 기능 추가(K팝 팬들이 쓰는 실제 리뷰). **로그인한 사용자만 작성 가능**, 비로그인 상태에서는 "로그인 후 이용 가능" placeholder 안내
+- **SNS 분석기**: AI로 분석한 루트라는 면책 문구 추가, AI 폴백 체인(Groq 우선, 실패 시 후보 매칭)
+- **편의시설 레이더**: 내비게이션에서 숨김(실데이터 정확도 낮음 + "스타 루트 따라가기" 컨셉과 기능 자체가 안 맞음 — `nav-items.ts` 주석 참고). 라우트/컴포넌트/API 연동 코드 자체는 삭제하지 않고 유지
+- **페르소나**: 2단계로 축소 — ① 홈 화면에서 카드 선택 ② 홈에서 누르면 페르소나 결과 화면으로 바로 이동(선택 화면 따로 없음). 각 스팟에 작은 캐릭터 이미지 자리 추가(실제 이미지 생성 파이프라인 연동 전이라 항상 placeholder), 장소 설명은 "스타가 여기서 ~했대요" 식 방문 스토리로 하드코딩. 사이드바/하단탭의 페르소나 메뉴 항목은 삭제(라우트 자체는 살아있음, 홈 카드 클릭으로만 진입)
+- **로그인**: SNS(Google/Kakao) 로그인만 노출. ID/PW 자체 회원가입·로그인 UI는 숨김(자체 DB로 회원 정보까지 관리할 필요 없다는 판단) — 로직 자체는 플래그(`SHOW_CREDENTIALS_LOGIN`/`OAUTH_BACKEND_READY`)로 남겨서 필요시 복구 가능
+
+이 컨셉 전환으로 예전 "테마/디테일 위저드" 관련 파일들(`theme-step.tsx`/`detail-step.tsx`/`confirm-step.tsx`/`api/routes.ts`)과 "근처 인기 K-스팟" 홈피드 관련 파일들(`home-feed.tsx`/`home-feed.data.ts`/`persona-chip.tsx`)이 미사용 상태가 됐음 — **컨셉을 되돌릴 가능성을 감안해 삭제하지 않고 각 파일 상단에 사유+원복 방법 주석만 남겨둠.**
+
 ## Working Directory
 `/Users/boram/refactoring_project/refactoring-k-vibe/`
 
@@ -258,6 +271,13 @@ src/
 │   └── trending.ts                ← MOCK_KEYWORDS+fetchTrendingKeywords()(hslee에 대응 엔드포인트 없음, 영구 mock)
 └── vite-env.d.ts                  ← ImportMetaEnv에 VITE_API_BASE_URL 등 타입 선언(Step13 신규, 이전엔 없었음)
 ```
+
+**2026-09 갱신 (서비스 컨셉 변경, PR #8~#22 계열)** — 위 트리는 Step13 시점 스냅샷이라 이후 변경분은 별도로 기록:
+
+- 신규 파일: `api/personas.ts`(K-콘텐츠 페르소나 카탈로그+`fetchKContentPersonaRoute()`, `api/routes.ts`의 기능적 후속), `api/reviews.ts`(장소 리뷰 CRUD, 로그인 사용자 전용), `api/docent.ts`(도슨트 음성/스크립트), `api/attractions.ts`, `blocks/landing/persona-picker.tsx`(신규 홈 메인 진입점), `blocks/map/place-review-tab.tsx`(지도 리뷰 탭, 로그인 게이트), `blocks/common/rating-badge.tsx`, `blocks/common/zoomable-image.tsx`, `blocks/persona/docent-player.tsx`, `lib/db-sync.ts`
+- 미사용(파일 삭제 대신 헤더 주석으로 원복 경로 표시 — 컨셉 재변경 가능성 대비): `api/routes.ts`(PR #11), `blocks/persona/{theme-step,detail-step,confirm-step}.tsx`(PR #11, 구 테마/디테일 위저드), `blocks/landing/{home-feed,home-feed.data,persona-chip}.tsx`(PR #11, 구 홈피드 섹션). 각 파일 상단 주석에 원복 방법 명시.
+- 부분 미사용: `lib/persona-preference.ts`는 파일 전체가 아니라 `savePersonaPreference()`(쓰기)만 죽고 `readPersonaPreference()`(읽기)는 `profile-header.tsx`가 계속 사용 중 — 해당 함수 위 주석 참고.
+- 내비게이션에서만 숨김(라우트/로직은 生존): `radar`(PR #16, 정확도·컨셉 불일치 사유), `persona` 메뉴 항목(PR #11, 홈 카드로 진입점 이동), `home` 탭 — 자세한 사유는 `blocks/layout/nav-items.ts`의 각 주석 참고.
 
 ---
 
@@ -545,6 +565,7 @@ MapPage.tsx가 비대해져서 검색/필터/목록/스와이프/패널접기 �
   - [x] `src/blocks/map/map-canvas.tsx` — `VITE_KAKAO_MAP_KEY` 있으면 실제 `<Map>`+`<CustomOverlayMap>` 렌더링, 없거나 SDK 로드 실패 시 기존 퍼센트 좌표 미리보기로 자동 폴백(`src/api/client.ts`의 `withFallback()`과 동일한 graceful-degradation 철학). 키 없을 땐 `useKakaoLoader()`를 아예 호출 안 해서 불필요한 카카오 서버 네트워크 요청 자체가 안 나감(컴포넌트 자체를 분기)
   - [x] `MapPage.tsx`로 내려가는 `MapCanvas` props 인터페이스 변경 없음(`center`/`places`/`selectedPlaceId`/`onSelectPlace`/`onRequestLocation`/`locationLabel` 그대로) — 장소 데이터는 여전히 기존 `fetchMapPlaces()`(`src/api/places.ts`)를 그대로 거쳐서 내려옴, 이번 작업은 그 결과를 "그리는 방식"만 교체(데이터 fetch 계층은 무관)
   - [x] Radar의 `radar-map-preview.tsx`/Route의 `route-mini-map.tsx`는 장식용 미리보기지 인터랙티브 지도가 아니라서 교체 대상에서 제외(원래 계획에도 MapPage 한정)
+    - **2026-09 갱신**: 이후 별도 작업(PR #8 계열)에서 `route-mini-map.tsx`도 `PercentRouteMiniMap`(폴백)/`KakaoRouteMiniMap`(실지도) 이원화로 Kakao SDK 기반으로 교체됨 — 위 "교체 대상에서 제외" 결정이 뒤집힌 상태. `radar-map-preview.tsx`는 여전히 퍼센트 좌표 미리보기 그대로.
   - [x] 검증: `npx tsc --noEmit`/`npx eslint src` 클린(shadcn 3건 제외). `.env` 미생성(키 없음) 상태에서 Playwright로 `dapi.kakao.com` 네트워크 요청이 실제로 발생하지 않는 것 확인 + 퍼센트 미리보기 핀/클릭→상세시트 기존과 동일하게 동작(회귀 없음) 확인
   - [x] **실제 키 연동 완료 + 트러블슈팅 2건**:
     1. **`ERR_BLOCKED_BY_ORB`(http→https)**: `useKakaoLoader()`의 기본 스크립트 URL이 프로토콜 생략형(`//dapi.kakao.com/...`)이라, `http://localhost:5173`(Vite dev 서버)에서는 `http://dapi.kakao.com`으로 요청됨 — 카카오 서버가 평문 http를 거부해서 브라우저가 막아버림. `useKakaoLoader({ appkey, url: 'https://dapi.kakao.com/v2/maps/sdk.js' })`로 프로토콜 명시 고정해서 해결

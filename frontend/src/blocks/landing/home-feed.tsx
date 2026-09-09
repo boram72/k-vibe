@@ -1,3 +1,9 @@
+// [미사용, 2026-09 서비스 컨셉 변경(PR #11)] "근처 인기 K-스팟" 홈피드 섹션이
+// PersonaPicker(K-콘텐츠 페르소나 카드)로 대체되며 LandingPage.tsx가 더 이상
+// 이 컴포넌트를 렌더링하지 않음. 삭제하지 않고 남겨둔 이유는 컨셉을 되돌릴
+// 가능성이 있어서 — 원복 시 LandingPage.tsx에 <HomeFeed />를 다시 추가하면 됨.
+// 이 파일이 쓰는 home-feed.data.ts/persona-chip.tsx/api/places.ts의
+// fetchHomeFeedPlaces()도 함께 되살아남(전부 아직 정상 동작하는 코드).
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'

@@ -1,3 +1,8 @@
+// [미사용, 2026-09 서비스 컨셉 변경(PR #11)] "테마→디테일→확인" 위저드 자체가
+// K-콘텐츠 셀럽 선택 방식(PersonaPage/persona-picker.tsx)으로 대체되며 이 파일을
+// import하는 곳이 없어졌음. 삭제하지 않고 남겨둔 이유는 컨셉을 되돌릴 가능성이
+// 있어서 — 원복 시 PersonaPage.tsx가 이 컴포넌트+detail-step.tsx+confirm-step.tsx
+// 3단계를 다시 조립하면 됨(예전 구현은 git 히스토리의 PersonaPage.tsx 참고).
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, Clock } from 'lucide-react'
 import { ROUTE_THEME_OPTIONS, type RouteTheme } from '@/types/route-theme'

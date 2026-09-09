@@ -14,6 +14,13 @@ function isRouteDetailForTheme(theme: RouteTheme, detail: string): boolean {
   return ROUTE_THEME_OPTIONS.find((option) => option.id === theme)?.detailIds.includes(detail) ?? false
 }
 
+// [쓰기 경로만 미사용, 2026-09 서비스 컨셉 변경(PR #11)] 이 함수를 호출하던
+// PersonaPage의 테마/디테일 위저드가 K-콘텐츠 셀럽 선택 방식으로 대체되며 호출부가
+// 사라졌음 — 신규 유저는 이 함수가 다시는 호출되지 않아 홈피드 개인화 칩
+// (persona-chip.tsx, 이것도 현재 미사용)이 영구 비활성 상태. 반대로
+// readPersonaPreference()는 profile-header.tsx가 여전히 읽고 있어 살아있고,
+// 예전에 이미 저장해둔 값이 있던 기존 유저에게는 계속 표시됨. 원복 시 이 함수
+// 호출부를 새 위저드/피커 어딘가에 다시 연결하면 됨.
 export function savePersonaPreference(theme: RouteTheme, detail: string) {
   const preference: PersonaPreference = { theme, detail, updatedAt: new Date().toISOString() }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(preference))

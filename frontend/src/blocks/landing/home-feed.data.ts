@@ -1,3 +1,5 @@
+// [미사용, 2026-09 서비스 컨셉 변경(PR #11)] home-feed.tsx 전용 데이터 — 그 파일과
+// 같은 사유로 미사용(원복 방법은 home-feed.tsx 주석 참고).
 import { Music2, Utensils, Camera, Trees, ShoppingBag, type LucideIcon } from 'lucide-react'
 import type { PlaceCategory } from '@/types/place'
 

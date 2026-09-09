@@ -10,6 +10,15 @@ def get_location(name: str) -> dict | None:
     return result.data[0] if result.data else None
 
 
+def get_location_by_place_id(place_id: str) -> dict | None:
+    """place_id(PK)로 장소를 조회한다. persona.locationname은 location.place_id를
+    참조하는 FK라 정수값이 들어있으므로, name이 아닌 이 함수로 조회해야 한다.
+    """
+    client = get_supabase_client()
+    result = client.table(TABLE).select("*").eq("place_id", place_id).execute()
+    return result.data[0] if result.data else None
+
+
 def upsert_location(location_data: dict) -> dict | None:
     """place_id(PK) 기준으로 없으면 insert, 있으면 update한다.
 

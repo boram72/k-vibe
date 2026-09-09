@@ -41,6 +41,9 @@
     "feature_radar": "雷达",
     "personalized_for": "为{{persona}}个性化推荐"
   },
+  "home": {
+    "title": "首页"
+  },
   "map": {
     "title": "K-Vibe地图",
     "filter_all": "全部",

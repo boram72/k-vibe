@@ -41,6 +41,9 @@
     "feature_radar": "レーダー",
     "personalized_for": "{{persona}}向けにパーソナライズ"
   },
+  "home": {
+    "title": "ホーム"
+  },
   "map": {
     "title": "K-Vibeマップ",
     "filter_all": "すべて",

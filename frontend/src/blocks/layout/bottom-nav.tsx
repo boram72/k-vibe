@@ -12,6 +12,7 @@ export function BottomNav() {
         <NavLink
           key={item.key}
           to={item.path}
+          end
           className={({ isActive }) =>
             cn(
               'flex flex-1 flex-col items-center justify-center gap-1 text-xs',

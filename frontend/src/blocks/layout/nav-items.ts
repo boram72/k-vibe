@@ -1,4 +1,5 @@
 import {
+  Home,
   Map,
   // Wand2, // 2026-09: 페르소나 메뉴 숨김과 함께 미사용 처리 — 되살릴 때 같이 복구
   Route,
@@ -19,9 +20,7 @@ export interface NavItem {
  * Add/remove/reorder tabs here — BottomNav and SidebarNav both render from this array.
  */
 export const NAV_ITEMS: NavItem[] = [
-  // Home 탭은 홈/랜딩과 별개 메뉴 항목 — 사이드바/하단바에 6개가 들어가면
-  // 항목이 너무 많아진다는 판단으로 숨김(인덱스 라우트 자체는 그대로 홈).
-  // { key: "home", path: "", icon: Home, labelKey: "home.title" },
+  { key: "home", path: "", icon: Home, labelKey: "home.title" },
   { key: "map", path: "map", icon: Map, labelKey: "map.title" },
   {
     key: "analyze",

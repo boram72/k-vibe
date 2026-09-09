@@ -5,8 +5,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from config.configure import CORS_ALLOWED_ORIGINS
 from presentation_api import (
     analyze,
+    auth,
     findAmenities,
     personas,
     personaPreference,
@@ -42,13 +44,7 @@ async def external_api_error_handler(request: Request, exc: httpx.HTTPError):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://192.168.219.113:5173",
-        "https://unlegalised-theresia-answeringly.ngrok-free.dev",
-        "https://k-vibe-psi.vercel.app",
-    ],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,6 +57,7 @@ app.include_router(showPersona.router)
 app.include_router(playDocentVoice.router)
 app.include_router(analyze.router)
 app.include_router(user.router)
+app.include_router(auth.router)
 app.include_router(findAmenities.router)
 app.include_router(relatedAttractions.router)
 app.include_router(places.router)

@@ -84,21 +84,24 @@ def build_persona_route(persona_id: str, persona: dict, locations: list[dict], s
             prev = locations[index - 1]
             cursor += _walking_minutes(_haversine_km(prev["lat"], prev["lng"], location["lat"], location["lng"]))
 
-        stops.append(
-            {
-                "id": f"{persona_id}-{_pick(location['label'], 'ko')}",
-                "name": _pick(location["label"], locale),
-                "category": location["category"],
-                "address": f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}",
-                "crowdLevel": location["crowdLevel"],
-                "lat": location["lat"],
-                "lng": location["lng"],
-                "stayMinutes": location["stayMinutes"],
-                "startTime": _format_clock(cursor),
-                "description": _pick(location["description"], locale),
-                "tags": location["tags"],
-            }
-        )
+        stop = {
+            "id": f"{persona_id}-{_pick(location['label'], 'ko')}",
+            "name": _pick(location["label"], locale),
+            "category": location["category"],
+            "address": f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}",
+            "crowdLevel": location["crowdLevel"],
+            "lat": location["lat"],
+            "lng": location["lng"],
+            "stayMinutes": location["stayMinutes"],
+            "startTime": _format_clock(cursor),
+            "description": _pick(location["description"], locale),
+            "tags": location["tags"],
+        }
+        # DB(persona.location_pic)로 채워진 정거장만 갖는 선택 필드 — 프론트 RouteStop
+        # 타입의 characterImageUrl?와 대응. 하드코딩 카탈로그 경로는 이 값이 없다.
+        if location.get("characterImageUrl"):
+            stop["characterImageUrl"] = location["characterImageUrl"]
+        stops.append(stop)
         cursor += location["stayMinutes"]
 
     walking_total = 0

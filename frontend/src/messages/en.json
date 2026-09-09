@@ -126,7 +126,20 @@
     "local_mode_title": "Backend analysis ready",
     "local_mode_body": "Paste a YouTube link and the backend will prepare candidate spots that can be opened on the map or added to a route.",
     "detected_address": "Detected from YouTube analysis",
-    "route_saved": "Route saved"
+    "route_saved": "Route saved",
+    "spotlight_captions": [
+      "Breaking down every frame of the video...",
+      "Hunting for clues hidden in the background...",
+      "Could this be the cafe your bias once visited?",
+      "Tracing the real spot behind the camera angle...",
+      "Shortlisting K-pop pilgrimage candidates...",
+      "Checking signs, interiors, and the view outside...",
+      "Comparing hundreds of screenshots with AI...",
+      "Narrowing down the most likely locations...",
+      "Getting ready to drop a pin on the map...",
+      "Almost there, just a little longer!"
+    ],
+    "spotlight_elapsed": "Analyzing for {{seconds}}s"
   },
   "persona": {
     "title": "Build a K-content day plan",

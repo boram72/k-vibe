@@ -19,6 +19,20 @@ def get_location_by_place_id(place_id: str) -> dict | None:
     return result.data[0] if result.data else None
 
 
+def get_locations_by_place_ids(place_ids: list[str]) -> dict[str, dict]:
+    """여러 place_id를 한 번의 조회로 가져온다(N+1 방지).
+
+    페르소나 경로의 stop마다 get_location_by_place_id를 개별 호출하면 stop 수만큼
+    Supabase 왕복이 직렬로 늘어나 느려진다(personaRouteService._load_persona_route_from_db).
+    place_id -> row 매핑으로 반환해 호출부가 순서를 유지하며 조회할 수 있게 한다.
+    """
+    if not place_ids:
+        return {}
+    client = get_supabase_client()
+    result = client.table(TABLE).select("*").in_("place_id", place_ids).execute()
+    return {row["place_id"]: row for row in (result.data or [])}
+
+
 def upsert_location(location_data: dict) -> dict | None:
     """place_id(PK) 기준으로 없으면 insert, 있으면 update한다.
 

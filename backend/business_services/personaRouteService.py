@@ -44,15 +44,20 @@ def _load_persona_route_from_db(persona_id: str) -> list[dict]:
     except Exception:
         return []
 
+    # stop마다 location을 개별 조회하면(N+1) stop 수만큼 Supabase 왕복이 직렬로 늘어나
+    # 느려진다 — place_id를 모아 한 번에 배치 조회한다.
+    place_ids = [pid for pid in (_db_location_place_id(row) for row in route_rows) if pid]
+    try:
+        locations_by_place_id = locationinfo.get_locations_by_place_ids(place_ids)
+    except Exception:
+        locations_by_place_id = {}
+
     locations: list[dict] = []
     for route_row in route_rows:
         place_id = _db_location_place_id(route_row)
         if not place_id:
             continue
-        try:
-            location_row = locationinfo.get_location_by_place_id(place_id)
-        except Exception:
-            location_row = None
+        location_row = locations_by_place_id.get(place_id)
         location = _normalize_db_location(location_row or {}, place_id)
         if not location:
             continue

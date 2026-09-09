@@ -69,5 +69,5 @@ def test_auth_callback_redirects_with_user_on_success(mock_exchange_and_upsert):
 
     assert response.status_code in (302, 307)
     assert response.headers["location"] == (
-        "http://localhost:5173/auth/callback?username=google_12345&email=a%40example.com"
+        "http://localhost:5173/auth/callback?username=google_12345&email=a%40example.com&provider=google"
     )

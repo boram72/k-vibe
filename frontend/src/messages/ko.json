@@ -26,8 +26,8 @@
     }
   },
   "landing": {
-    "headline": "나만의 페르소나로 완성하는 K-콘텐츠 하루 루트",
-    "subtitle": "SNS에서 본 그 장소, 나만의 여행 루트로!",
+    "headline": "K-콘텐츠 하루 루트",
+    "subtitle": "SNS에서 본 스타 방문 명소, 나만의 여행루트로 !",
     "trending_now": "지금 한국에서 핫한",
     "help_title": "K-Vibe에 오신 걸 환영해요",
     "help_body": "지금 한국에서 뜨고 있는 키워드를 확인하고, \"K-Vibe 둘러보기\"를 눌러 지도에서 장소를 탐색해보세요.",
@@ -132,6 +132,8 @@
     "title": "K-콘텐츠 하루 루트 만들기",
     "nav_title": "페르소나",
     "help_title": "하루 계획 짜기",
+    "character_image_pending": "캐릭터 이미지 준비 중",
+    "docent_loading": "음성 가이드 불러오는 중...",
     "help_body": "좋아하는 K-콘텐츠 페르소나를 고르면 각 스팟의 시간까지 계산된 하루 루트를 만들어드려요. 바로 편집하거나 공유할 수 있어요.",
     "generator_eyebrow": "루트 생성기",
     "subtitle": "좋아하는 K-콘텐츠 페르소나를 고르면 바로 하루 루트가 만들어져요.",

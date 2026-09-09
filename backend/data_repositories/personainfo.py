@@ -2,6 +2,15 @@
 from config.dependency import get_supabase_client
 
 TABLE = "persona"
+PIC_BUCKET = "k-vibe_storage"
+
+
+def build_pic_url(piclocation: str | None) -> str | None:
+    """persona.location_pic(버킷 내 상대경로) -> Supabase Storage 공개 URL."""
+    if not piclocation:
+        return None
+    client = get_supabase_client()
+    return client.storage.from_(PIC_BUCKET).get_public_url(piclocation)
 
 
 def get_persona_route(name: str) -> list[dict]:

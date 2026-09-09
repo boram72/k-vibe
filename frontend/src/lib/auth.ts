@@ -11,19 +11,12 @@ export interface AuthUser {
 
 const STORAGE_KEY = 'k-vibe-mock-session'
 
-// Fixture per provider — stands in for what each real OAuth provider would
-// actually return, so swapping in real auth later doesn't change what the UI
-// expects to receive (still "an AuthUser shaped by which provider was used").
-const MOCK_USERS: Record<AuthProvider, AuthUser> = {
-  google: { id: 'mock-google-1', name: 'Google User', email: 'guest@gmail.com', provider: 'google' },
-  kakao: { id: 'mock-kakao-1', name: '카카오 사용자', email: 'guest@kakao.com', provider: 'kakao' },
-}
-
-// All three functions below are mocked against localStorage for now. Step15
-// (backend integration) replaces only these bodies — e.g. with
-// supabase.auth.getUser()/signInWithOAuth()/signOut(), or calls to our own
-// backend — without touching any caller (LoginModal/ProfilePage/TopBar only
-// ever go through useAuth(), never these functions directly).
+// getCurrentUser/logout below only read/clear this local session record —
+// there's no server-issued token or session validation yet, just "who last
+// completed a login flow on this browser" (real OAuth identity via
+// completeOAuthLogin, or real credentials via toAuthUser). Step15 replaces
+// these bodies with real session handling without touching any caller
+// (LoginModal/ProfilePage/TopBar only ever go through useAuth()).
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -43,43 +36,15 @@ function buildOAuthStartUrl(provider: AuthProvider): string {
   return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
-// 2026-09: backend has no /auth/{provider}/start|callback routes yet (see
-// OAUTH_INTEGRATION_REQUEST.md — still open). isOAuthBackendConfigured() used
-// to key off API_BASE_URL alone, which is true in every deployed environment
-// (VITE_API_BASE_URL is always set), so it would send users to a redirect
-// URL the backend 404s on — a real login failure, not a graceful mock
-// fallback. Hard-pinned to false until those routes ship; flip this back to
-// `Boolean(API_BASE_URL)` (and delete this flag) once the backend redirect
-// flow is live — nothing else here needs to change, redirectToOAuthProvider/
-// completeOAuthLogin/OAuthCallbackPage are already fully implemented and
-// waiting.
-const OAUTH_BACKEND_READY = false
-
-// Whether loginWithProvider will redirect (real) vs resolve instantly (mock)
-// — LoginModal checks this to decide whether to route the click through
-// useAuth()'s mutation at all (see redirectToOAuthProvider below for why).
-export function isOAuthBackendConfigured(): boolean {
-  return OAUTH_BACKEND_READY && Boolean(API_BASE_URL)
-}
-
-// Called directly by LoginModal, bypassing useAuth()'s login mutation
-// entirely — a plain navigation, not a tracked async action. Earlier this
-// went through loginWithProvider() with a Promise that intentionally never
-// resolves ("the page is leaving anyway"), but browsers restore the whole JS
-// heap from bfcache on back-navigation — including that still-pending
-// promise — so after a failed round-trip (backend endpoint not built yet)
-// and pressing back, isLoggingIn stayed stuck at `true` forever and the
-// buttons never re-enabled. Keeping this outside the mutation means there's
-// no pending state to get stuck in the first place.
+// 2026-09: mock 로그인(구 loginWithProvider/MOCK_USERS/isOAuthBackendConfigured)
+// 제거 — LoginModal의 Google/Kakao 버튼은 이제 항상 이 함수로 실제 리다이렉트를
+// 시도한다. 백엔드에 /auth/{provider}/start|callback 라우트가 아직 없어서
+// (OAUTH_INTEGRATION_REQUEST.md 참고) 그 전까지는 클릭 시 404로 실패하는 게
+// 사용자에게 그대로 보임 — 조용한 mock 폴백 대신 실패를 드러내기로 한 결정.
+// completeOAuthLogin/OAuthCallbackPage는 백엔드 라우트가 준비되는 대로 바로
+// 동작하도록 이미 구현되어 있음.
 export function redirectToOAuthProvider(provider: AuthProvider): void {
   window.location.href = buildOAuthStartUrl(provider)
-}
-
-// Only reached when isOAuthBackendConfigured() is false — always resolves.
-export async function loginWithProvider(provider: AuthProvider): Promise<AuthUser> {
-  const user = MOCK_USERS[provider]
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  return user
 }
 
 // Called by the /auth/callback route once the backend redirects back with

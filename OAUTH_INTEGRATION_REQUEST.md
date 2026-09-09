@@ -8,6 +8,10 @@
 
 ---
 
+**🔴 2026-09 업데이트 (긴급도 상향)**: 프론트에서 `loginWithProvider()`/`MOCK_USERS`(mock 계정)를 완전히 삭제했습니다 — 이제 로그인 버튼을 누르면 조용히 mock 계정으로 넘어가지 않고, 무조건 아래 ①의 `/auth/{provider}/start`로 실제 리다이렉트를 시도합니다. **이 문서의 엔드포인트 2개가 배포되기 전까지는 Google/Kakao 로그인이 전부 404로 실패합니다** — 더 이상 "나중에 준비되면 켜는" 선택 사항이 아니라 로그인 기능 자체가 막혀 있는 상태입니다. 아래 내용은 재확인해본 결과 여전히 유효합니다(`/user/login`·`/user/signup`·CORS `allow_origins`·`KAKAO_REST_API_KEY` 전부 현재 코드와 일치).
+
+---
+
 ## 왜 지금 있는 `/user/login`과 다른 구조가 필요한가
 
 ID/PW 로그인(`/user/signup`, `/user/login`)은 axios POST 한 번으로 끝나지만, OAuth는 **브라우저 전체가 Google/Kakao 로그인 화면으로 이동했다가 돌아오는** 리다이렉트 흐름이라 구조 자체가 다릅니다. 아래 4단계가 필요합니다.
@@ -71,5 +75,7 @@ BACKEND_PUBLIC_URL=         # 백엔드 자신의 콜백 URL을 만들 때 사�
 
 ## 참고 — 프론트가 하게 될 일 (백엔드 작업과 무관, 별도로 진행)
 
-- `loginWithProvider()`가 `window.location.href = "{VITE_API_BASE_URL}/auth/{provider}/start?redirect_uri=..."`로 브라우저 전체를 이동시키도록 변경(현재의 "호출하면 Promise가 바로 끝나는" mock 구조와 다름)
-- `/auth/callback` 콜백 전용 페이지/라우트 신규 추가 — `username`/`email`/`error` 쿼리파라미터를 읽어서 로그인 완료 처리
+- ~~`loginWithProvider()`가 `window.location.href = "{VITE_API_BASE_URL}/auth/{provider}/start?redirect_uri=..."`로 브라우저 전체를 이동시키도록 변경~~ **완료(2026-09)** — `redirectToOAuthProvider()`(`src/lib/auth.ts`)로 구현, mock `loginWithProvider()`/`MOCK_USERS`는 삭제됨
+- ~~`/auth/callback` 콜백 전용 페이지/라우트 신규 추가~~ **완료(2026-09)** — `src/pages/OAuthCallbackPage.tsx`, `username`/`email`/`error` 쿼리파라미터 처리까지 구현되어 백엔드 라우트만 기다리는 상태
+
+**즉 프론트는 할 일이 없고, 위 엔드포인트 2개(`/auth/{provider}/start`, `/auth/{provider}/callback`)만 배포되면 그 순간부터 바로 동작합니다.**

@@ -211,7 +211,9 @@ export default function RoutePage() {
             onToggleComplete={toggleComplete}
             onRemove={removeStop}
             onViewOnMap={viewStopOnMap}
-            onDocent={personaPlan ? () => setDocentOpen(true) : undefined}
+            // 2026-09 태스크보드 7번: 도슨트 버튼 숨김. 되돌리려면 undefined를
+            // `personaPlan ? () => setDocentOpen(true) : undefined`로 복구
+            onDocent={undefined}
           />
         </div>
       </div>

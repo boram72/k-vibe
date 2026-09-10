@@ -380,7 +380,6 @@
     "title": "Sign in",
     "subtitle": "Sync your saved places and routes across devices.",
     "continue_google": "Continue with Google",
-    "continue_kakao": "Continue with Kakao",
     "continue_guest": "Continue as guest",
     "available_without_login": "Available without signing in",
     "guest_features": ["Map and SNS Analyzer", "Build and edit routes", "Facility Radar"],

@@ -1,6 +1,6 @@
 import { API_BASE_URL, apiClient } from '@/api/client'
 
-export type AuthProvider = 'google' | 'kakao'
+export type AuthProvider = 'google'
 
 export interface AuthUser {
   id: string
@@ -27,7 +27,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 // See OAUTH_INTEGRATION_REQUEST.md — backend relays the OAuth flow (frontend
-// never talks to Google/Kakao directly). This callback path must match the
+// never talks to Google directly). This callback path must match the
 // route registered in router/index.tsx.
 const OAUTH_CALLBACK_PATH = '/auth/callback'
 
@@ -37,12 +37,16 @@ function buildOAuthStartUrl(provider: AuthProvider): string {
 }
 
 // 2026-09: mock 로그인(구 loginWithProvider/MOCK_USERS/isOAuthBackendConfigured)
-// 제거 — LoginModal의 Google/Kakao 버튼은 이제 항상 이 함수로 실제 리다이렉트를
+// 제거 — LoginModal의 Google 버튼은 이제 항상 이 함수로 실제 리다이렉트를
 // 시도한다. 백엔드에 /auth/{provider}/start|callback 라우트가 아직 없어서
 // (OAUTH_INTEGRATION_REQUEST.md 참고) 그 전까지는 클릭 시 404로 실패하는 게
 // 사용자에게 그대로 보임 — 조용한 mock 폴백 대신 실패를 드러내기로 한 결정.
 // completeOAuthLogin/OAuthCallbackPage는 백엔드 라우트가 준비되는 대로 바로
 // 동작하도록 이미 구현되어 있음.
+// 2026-09 팀 태스크보드: 카카오 로그인 삭제 — AuthProvider를 'google'로만
+// 좁혔다. 백엔드(oauthService.py)의 카카오 지원 코드는 그대로 남아있어서
+// 필요해지면 이 타입에 'kakao'만 다시 추가하고 login-modal.tsx의
+// PROVIDER_BUTTONS에 항목만 되돌리면 됨(그 외 로직 변경 불필요).
 export function redirectToOAuthProvider(provider: AuthProvider): void {
   window.location.href = buildOAuthStartUrl(provider)
 }

@@ -380,7 +380,6 @@
     "title": "로그인",
     "subtitle": "찜한 장소와 루트를 다른 기기와 동기화하세요.",
     "continue_google": "Google로 계속하기",
-    "continue_kakao": "카카오로 계속하기",
     "continue_guest": "게스트로 계속하기",
     "available_without_login": "로그인 없이도 이용 가능",
     "guest_features": ["지도 및 SNS 분석", "루트 생성 및 편집", "편의시설 레이더"],

@@ -380,7 +380,6 @@
     "title": "登录",
     "subtitle": "在多设备间同步已保存的地点和路线。",
     "continue_google": "使用Google继续",
-    "continue_kakao": "使用Kakao继续",
     "continue_guest": "以访客身份继续",
     "available_without_login": "无需登录即可使用",
     "guest_features": ["地图与SNS分析", "创建与编辑路线", "设施雷达"],

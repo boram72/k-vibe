@@ -19,7 +19,7 @@ export function useAuth() {
     queryFn: getCurrentUser,
   })
 
-  // OAuth login (Google/Kakao) no longer goes through a mutation here — it's
+  // OAuth login (Google) no longer goes through a mutation here — it's
   // a full-page redirect (see auth.ts's redirectToOAuthProvider) that never
   // "resolves" on this page. The equivalent of this mutation's onSuccess
   // (merge guest saves, invalidate queries) runs in OAuthCallbackPage once

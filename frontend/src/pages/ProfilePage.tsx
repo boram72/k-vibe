@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProfileHeader } from '@/blocks/profile/profile-header'
-import { SavedPlacesGrid } from '@/blocks/profile/saved-places-grid'
 import { CurrentRouteCard } from '@/blocks/profile/current-route-card'
 import { SettingsList } from '@/blocks/profile/settings-list'
 import { LoginModal } from '@/blocks/profile/login-modal'
@@ -35,7 +34,6 @@ export default function ProfilePage() {
         </div>
 
         <div className="min-w-0 space-y-4 md:col-start-1 md:row-start-1 md:row-span-2">
-          <SavedPlacesGrid />
           <CurrentRouteCard />
         </div>
 

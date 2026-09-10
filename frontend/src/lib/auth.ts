@@ -70,8 +70,11 @@ export interface SignupPayload {
   password: string
 }
 
-function toAuthUser(data: { username: string; email: string }, provider: AuthUser['provider'] = 'credentials'): AuthUser {
-  const user: AuthUser = { id: data.username, name: data.username, email: data.email, provider }
+function toAuthUser(
+  data: { username: string; email: string; display_name?: string },
+  provider: AuthUser['provider'] = 'credentials',
+): AuthUser {
+  const user: AuthUser = { id: data.username, name: data.display_name || data.username, email: data.email, provider }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   return user
 }
@@ -84,4 +87,11 @@ export async function signupWithCredentials(payload: SignupPayload): Promise<Aut
 export async function loginWithCredentials(username: string, password: string): Promise<AuthUser> {
   const { data } = await apiClient.post('/user/login', { username, password })
   return toAuthUser(data)
+}
+
+// 표시 이름 편집 — BACKEND_REQUESTS.md #1의 POST /user/display-name이 아직 없어
+// 그 전까진 404. username(id)은 안 바뀌고 화면에 보이는 name만 바뀜.
+export async function updateDisplayName(user: AuthUser, displayName: string): Promise<AuthUser> {
+  const { data } = await apiClient.post('/user/display-name', { username: user.id, display_name: displayName })
+  return toAuthUser(data, user.provider)
 }

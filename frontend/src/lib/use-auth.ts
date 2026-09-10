@@ -4,6 +4,8 @@ import {
   loginWithCredentials,
   logout,
   signupWithCredentials,
+  updateDisplayName,
+  type AuthUser,
   type SignupPayload,
 } from '@/lib/auth'
 import { mergeGuestSavedPlacesIntoUser } from '@/lib/saved-places'
@@ -49,6 +51,12 @@ export function useAuth() {
     onSuccess: onCredentialsSuccess,
   })
 
+  const updateDisplayNameMutation = useMutation({
+    mutationFn: (payload: { user: AuthUser; displayName: string }) =>
+      updateDisplayName(payload.user, payload.displayName),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY }),
+  })
+
   return {
     user,
     isLoading,
@@ -59,5 +67,8 @@ export function useAuth() {
     loginWithCredentials: loginCredentialsMutation.mutate,
     isLoggingInWithCredentials: loginCredentialsMutation.isPending,
     loginCredentialsError: loginCredentialsMutation.error,
+    updateDisplayName: updateDisplayNameMutation.mutate,
+    isUpdatingDisplayName: updateDisplayNameMutation.isPending,
+    updateDisplayNameError: updateDisplayNameMutation.error,
   }
 }

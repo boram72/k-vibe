@@ -1,7 +1,9 @@
 import { useRef, type Dispatch, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Heart, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CategoryFilter } from '@/blocks/map/category-filter'
+import { StarFilter } from '@/blocks/map/star-filter'
 import { RelatedAttractionsList } from '@/blocks/map/related-attractions-list'
 import { LoadingSkeleton } from '@/blocks/common/loading-skeleton'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -21,12 +23,17 @@ interface SpotListPanelProps {
   isDesktop: boolean
   isCollapsed: boolean
   onCollapsedChange: Dispatch<SetStateAction<boolean>>
+  filterMode: 'category' | 'star'
+  onFilterModeChange: Dispatch<SetStateAction<'category' | 'star'>>
   categories: PlaceCategory[]
   onCategoriesChange: Dispatch<SetStateAction<PlaceCategory[]>>
+  starFilter: string | null
+  onStarFilterChange: Dispatch<SetStateAction<string | null>>
   search: string
   onSearchChange: Dispatch<SetStateAction<string>>
-  showSavedOnly: boolean
-  onShowSavedOnlyChange: Dispatch<SetStateAction<boolean>>
+  showSavedList: boolean
+  onShowSavedListChange: Dispatch<SetStateAction<boolean>>
+  savedPlaces: Place[]
   places: Place[]
   isLoading: boolean
   onSelectPlace: (place: Place) => void
@@ -37,12 +44,17 @@ export function SpotListPanel({
   isDesktop,
   isCollapsed,
   onCollapsedChange,
+  filterMode,
+  onFilterModeChange,
   categories,
   onCategoriesChange,
+  starFilter,
+  onStarFilterChange,
   search,
   onSearchChange,
-  showSavedOnly,
-  onShowSavedOnlyChange,
+  showSavedList,
+  onShowSavedListChange,
+  savedPlaces,
   places,
   isLoading,
   onSelectPlace,
@@ -54,6 +66,7 @@ export function SpotListPanel({
   function resetFilters() {
     onSearchChange('')
     onCategoriesChange(['all'])
+    onStarFilterChange(null)
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -69,26 +82,8 @@ export function SpotListPanel({
     touchStartY.current = null
   }
 
-  function renderList() {
-    if (isLoading) {
-      return (
-        <div className="space-y-3 px-4">
-          <LoadingSkeleton variant="list" count={4} />
-        </div>
-      )
-    }
-    if (places.length === 0) {
-      return (
-        <div className="space-y-3 px-4 py-8 text-center">
-          <p className="text-sm font-semibold text-muted-foreground">{t('map.no_places')}</p>
-          <p className="text-xs text-muted-foreground/70">{t('map.no_places_hint')}</p>
-          <Button variant="outline" size="sm" onClick={resetFilters}>
-            {t('common.retry_btn')}
-          </Button>
-        </div>
-      )
-    }
-    return places.map((place) => (
+  function renderPlaceRow(place: Place) {
+    return (
       <button
         key={place.id}
         type="button"
@@ -110,19 +105,41 @@ export function SpotListPanel({
           {place.crowdLevel && <CrowdBadge level={place.crowdLevel} className="mt-1" />}
         </div>
       </button>
-    ))
+    )
+  }
+
+  function renderList() {
+    if (isLoading) {
+      return (
+        <div className="space-y-3 px-4">
+          <LoadingSkeleton variant="list" count={4} />
+        </div>
+      )
+    }
+    if (places.length === 0) {
+      return (
+        <div className="space-y-3 px-4 py-8 text-center">
+          <p className="text-sm font-semibold text-muted-foreground">{t('map.no_places')}</p>
+          <p className="text-xs text-muted-foreground/70">{t('map.no_places_hint')}</p>
+          <Button variant="outline" size="sm" onClick={resetFilters}>
+            {t('common.retry_btn')}
+          </Button>
+        </div>
+      )
+    }
+    return places.map(renderPlaceRow)
   }
 
   const savedToggleButton = (
     <Button
       size="icon"
-      variant={showSavedOnly ? 'default' : 'outline'}
-      onClick={() => onShowSavedOnlyChange((v) => !v)}
-      aria-pressed={showSavedOnly}
+      variant={showSavedList ? 'default' : 'outline'}
+      onClick={() => onShowSavedListChange((v) => !v)}
+      aria-pressed={showSavedList}
       aria-label={t('map.show_saved')}
       className="shrink-0"
     >
-      <Heart className={cn('h-4 w-4', showSavedOnly && 'fill-current')} />
+      <Heart className={cn('h-4 w-4', showSavedList && 'fill-current')} />
     </Button>
   )
 
@@ -140,7 +157,22 @@ export function SpotListPanel({
         </div>
         {savedToggleButton}
       </div>
-      <CategoryFilter selected={categories} onChange={onCategoriesChange} />
+      <Tabs value={filterMode} onValueChange={(v) => onFilterModeChange(v as 'category' | 'star')}>
+        <TabsList className="w-full">
+          <TabsTrigger value="category" className="flex-1">
+            {t('map.filter_mode_category')}
+          </TabsTrigger>
+          <TabsTrigger value="star" className="flex-1">
+            {t('map.filter_mode_star')}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="category" className="pt-2">
+          <CategoryFilter selected={categories} onChange={onCategoriesChange} />
+        </TabsContent>
+        <TabsContent value="star" className="pt-2">
+          <StarFilter selected={starFilter} onChange={onStarFilterChange} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 
@@ -150,6 +182,24 @@ export function SpotListPanel({
       <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
         {places.length}
       </span>
+    </div>
+  )
+
+  // 찜 목록은 자체적으로 높이를 제한(overflow-y-auto)해서, 아무리 많이
+  // 찜해뒀어도 아래 "주변 스팟"/연관 관광지 추천이 화면 밖으로 밀려나지 않게 함.
+  const savedListSection = showSavedList && (
+    <div className="border-b border-border pb-2">
+      <div className="flex items-center justify-between px-4 pb-2 pt-1">
+        <p className="text-sm font-bold text-foreground">{t('map.saved_list_title')}</p>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+          {savedPlaces.length}
+        </span>
+      </div>
+      {savedPlaces.length === 0 ? (
+        <p className="px-4 pb-2 text-xs text-muted-foreground">{t('map.saved_list_empty')}</p>
+      ) : (
+        <div className="max-h-64 overflow-y-auto">{savedPlaces.map(renderPlaceRow)}</div>
+      )}
     </div>
   )
 
@@ -206,6 +256,7 @@ export function SpotListPanel({
               <div className="h-1 w-10 rounded-full bg-muted" />
             </div>
             {searchAndFilter}
+            {savedListSection}
             {titleRow}
           </div>
           {!isCollapsed && listRegion}
@@ -213,6 +264,7 @@ export function SpotListPanel({
       ) : (
         <>
           {searchAndFilter}
+          {savedListSection}
           {titleRow}
           {listRegion}
         </>

@@ -39,6 +39,11 @@ export default function MapPage() {
   const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
 
   const [categories, setCategories] = useState<PlaceCategory[]>(['all'])
+  // 2026-09 태스크보드 9번: 카테고리별/스타별 탭. 스타별일 때만 starFilter가
+  // 실제로 필터링에 관여하고, 탭 전환 시 서로의 선택값은 안 지움(다시
+  // 돌아왔을 때 그대로 유지되는 게 자연스럽다고 판단).
+  const [filterMode, setFilterMode] = useState<'category' | 'star'>('category')
+  const [starFilter, setStarFilter] = useState<string | null>(null)
   // Lazy initializer for the same reason as `selectedPlace` below — the
   // trending-keyword handoff (LandingPage → `navigate('../map', { state })`)
   // is router state available synchronously at first render.
@@ -49,7 +54,10 @@ export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(() =>
     focusPlaces.length === 1 && focusState?.openDetail ? focusPlaces[0] : null,
   )
-  const [showSavedOnly, setShowSavedOnly] = useState(false)
+  // 2026-09: 하트 버튼이 "찜한 것만 필터"에서 "찜 목록 섹션 토글"로 역할이
+  // 바뀜 — 더 이상 places를 필터링하지 않고, SpotListPanel이 이 값으로 위쪽에
+  // 찜 목록 섹션을 보여줄지만 결정한다.
+  const [showSavedList, setShowSavedList] = useState(false)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
@@ -110,16 +118,17 @@ export default function MapPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return candidates.filter((place) => {
-      const matchCategory = categories.includes('all') || categories.includes(place.category)
+      const matchCategory =
+        filterMode !== 'category' || categories.includes('all') || categories.includes(place.category)
+      const matchStar = filterMode !== 'star' || !starFilter || place.tags?.includes(starFilter)
       const matchSearch =
         !q ||
         place.name.toLowerCase().includes(q) ||
         place.address.toLowerCase().includes(q) ||
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
-      const matchSaved = !showSavedOnly || savedIds.has(place.id)
-      return matchCategory && matchSearch && matchSaved
+      return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, search, showSavedOnly, savedIds])
+  }, [candidates, categories, filterMode, starFilter, search])
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -149,12 +158,17 @@ export default function MapPage() {
         isDesktop={isDesktop}
         isCollapsed={isPanelCollapsed}
         onCollapsedChange={setIsPanelCollapsed}
+        filterMode={filterMode}
+        onFilterModeChange={setFilterMode}
         categories={categories}
         onCategoriesChange={setCategories}
+        starFilter={starFilter}
+        onStarFilterChange={setStarFilter}
         search={search}
         onSearchChange={setSearch}
-        showSavedOnly={showSavedOnly}
-        onShowSavedOnlyChange={setShowSavedOnly}
+        showSavedList={showSavedList}
+        onShowSavedListChange={setShowSavedList}
+        savedPlaces={savedPlaces}
         places={filtered}
         isLoading={isLoading}
         onSelectPlace={setSelectedPlace}

@@ -19,6 +19,10 @@ interface MapCanvasProps {
   onSelectPlace: (place: Place) => void
   onRequestLocation: () => void
   locationLabel: string
+  // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
+  // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
+  // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
+  onSearchArea?: (coords: Coordinates) => void
 }
 
 // Icon-badge pins colored per category (types/place.ts PLACE_CATEGORIES.pinBg) —
@@ -162,16 +166,35 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
   )
 }
 
+// 팀 태스크보드 5번 — 지도를 손으로 옮기면 뜨는 "이 지역에서 검색" 버튼.
+// LocationOverlay/MapActionButtons와 겹치지 않게 상단 중앙에 배치, 동일하게 z-10.
+function SearchAreaButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-xl border border-border bg-popover/90 px-3 py-2 text-xs font-semibold text-popover-foreground shadow-lg backdrop-blur transition-colors hover:bg-popover"
+    >
+      {t('map.search_this_area')}
+    </button>
+  )
+}
+
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel } = props
+  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
   // ("//dapi.kakao.com/..."), which resolves to http:// on our http://localhost
   // dev server. Kakao's CDN rejects plain http requests (ERR_BLOCKED_BY_ORB).
+  // libraries: ['services'] — 팀 태스크보드 6번(동네검색)에서 쓰는
+  // kakao.maps.services.Places().keywordSearch()에 필요. 기본 로드에는
+  // 포함되지 않는 별도 라이브러리라 명시해야 함(src/lib/kakao-area-search.ts 참고).
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAP_KEY,
     url: 'https://dapi.kakao.com/v2/maps/sdk.js',
+    libraries: ['services'],
   })
 
   useEffect(() => {
@@ -195,10 +218,14 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   const [prevCenter, setPrevCenter] = useState(center)
   const [prevBoundsKey, setPrevBoundsKey] = useState(boundsKey)
   const [prevSelectedPlaceId, setPrevSelectedPlaceId] = useState(selectedPlaceId)
+  // 팀 태스크보드 5번 — 드래그로 옮긴 뒤 아직 "이 지역에서 검색"을 누르기 전인
+  // 좌표. 실제 검색 중심(center prop)이 바뀌면(= 검색이 확정되면) 같이 비운다.
+  const [pendingCenter, setPendingCenter] = useState<Coordinates | null>(null)
 
   if (center.lat !== prevCenter.lat || center.lng !== prevCenter.lng) {
     setPrevCenter(center)
     setFocusCenter(null)
+    setPendingCenter(null)
   }
   if (boundsKey !== prevBoundsKey) {
     setPrevBoundsKey(boundsKey)
@@ -225,9 +252,25 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   function handleRequestLocation() {
     onRequestLocation()
     setFocusCenter(null)
+    setPendingCenter(null)
     if (map && typeof kakao !== 'undefined' && kakao.maps) {
       map.panTo(new kakao.maps.LatLng(center.lat, center.lng))
     }
+  }
+
+  // 팀 태스크보드 5번 — 사용자가 지도를 손으로 드래그해서 놓은 순간의 중심좌표를
+  // 기억해둔다(아직 검색 확정 아님, 버튼 노출용). 카카오 지도 내부 드래그는
+  // React state를 전혀 거치지 않으므로 dragend 이벤트에서 map.getCenter()로 직접 읽는다.
+  function handleDragEnd(target: kakao.maps.Map) {
+    const latLng = target.getCenter()
+    setPendingCenter({ lat: latLng.getLat(), lng: latLng.getLng() })
+  }
+
+  function handleSearchArea() {
+    if (!pendingCenter || !onSearchArea) return
+    onSearchArea(pendingCenter)
+    setPendingCenter(null)
+    setFocusCenter(null)
   }
 
   if (loading || error) {
@@ -238,7 +281,14 @@ function KakaoMapCanvas(props: MapCanvasProps) {
 
   return (
     <div className="relative h-full min-h-70 w-full overflow-hidden">
-      <KakaoMap center={mapCenter} level={4} isPanto className="h-full w-full" onCreate={setMap}>
+      <KakaoMap
+        center={mapCenter}
+        level={4}
+        isPanto
+        className="h-full w-full"
+        onCreate={setMap}
+        onDragEnd={onSearchArea ? handleDragEnd : undefined}
+      >
         {places.map((place) => {
           const selected = place.id === selectedPlaceId
           const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
@@ -259,6 +309,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
 
       <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} />
       <MapActionButtons onRequestLocation={handleRequestLocation} />
+      {onSearchArea && pendingCenter && <SearchAreaButton onClick={handleSearchArea} />}
     </div>
   )
 }

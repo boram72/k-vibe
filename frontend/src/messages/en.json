@@ -65,6 +65,8 @@
     "seoul_fallback": "Seoul (default)",
     "location_unavailable": "Location unavailable — showing Seoul",
     "refresh_location": "Refresh location",
+    "search_this_area": "Search this area",
+    "search_area_not_found": "Couldn't find that area",
     "analysis_result": "Analysis Result",
     "show_saved": "Show saved only",
     "collapse_panel": "Collapse panel",

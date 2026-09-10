@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { Check, LogOut, Pencil, Sparkles, User, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -32,8 +33,15 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
 
   function saveName() {
     if (!user || !nameDraft.trim()) return
-    updateDisplayName({ user, displayName: nameDraft.trim() })
-    setEditingName(false)
+    updateDisplayName(
+      { user, displayName: nameDraft.trim() },
+      {
+        onSuccess: () => setEditingName(false),
+        // 백엔드에 POST /user/display-name이 아직 없어 지금은 항상 404로 여기로
+        // 옴(BACKEND_REQUESTS.md #1 참고) — 실패해도 입력창은 열어두고 에러만 표시.
+        onError: () => toast.error(t('profile.edit_name_error')),
+      },
+    )
   }
 
   const personaLabel = personaPreference
@@ -97,7 +105,7 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
           <p className="text-xs text-muted-foreground">{t('profile.stats_places')}</p>
         </div>
         <div className="rounded-xl bg-muted p-3 text-center">
-          <p className="text-lg font-bold text-foreground">{routeStopCount > 0 ? 1 : 0}</p>
+          <p className="text-lg font-bold text-foreground">{routeStopCount}</p>
           <p className="text-xs text-muted-foreground">{t('profile.stats_routes')}</p>
         </div>
       </div>

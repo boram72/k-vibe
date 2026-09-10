@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ChevronRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { RouteResult } from '@/blocks/persona/route-result'
 import { Button } from '@/components/ui/button'
 import { ZoomableImage } from '@/blocks/common/zoomable-image'
@@ -11,6 +11,7 @@ import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona 
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
+import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n'
 
 const START_TIME = '10:00'
@@ -22,23 +23,28 @@ function buildRouteTitle(persona: KContentPersona, locale: string): string {
   return `${persona.label} One-Day Route`
 }
 
-function PersonaAvatar({ persona }: { persona: KContentPersona }) {
+// 2026-09 태스크보드 2번: 홈(persona-picker.tsx)의 PersonaCardImage와 동일한
+// 정사각 카드 사진 룩으로 통일 — 카드 클릭 시 선택은 그대로 동작하되, 사진
+// 자체는 클릭하면(ZoomableImage) 확대 팝업이 뜨도록 기존 PersonaAvatar와
+// 같은 인터랙션 유지.
+function PersonaCardImage({ persona }: { persona: KContentPersona }) {
   const [imageFailed, setImageFailed] = useState(false)
 
   if (persona.profileImg && !imageFailed) {
     return (
       <ZoomableImage
+        fill
         src={persona.profileImg}
         alt={`${persona.label} profile`}
         referrerPolicy="no-referrer"
         onError={() => setImageFailed(true)}
-        className="h-10 w-10 shrink-0 rounded-xl object-cover"
+        className="h-full w-full object-cover"
       />
     )
   }
 
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-xs font-bold text-primary">
+    <div className="flex h-full w-full items-center justify-center bg-primary/15 text-2xl font-bold text-primary">
       {persona.badge}
     </div>
   )
@@ -181,77 +187,101 @@ export default function PersonaPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-2xl">
+    // md:max-w-6xl — RoutePage("내 루트")와 동일한 데스크탑 폭. 그리드가
+    // md:grid-cols-4로 이미 유동적이라 폭을 넓히면 카드도 그만큼 같이 커짐
+    // (별도 카드 크기 클래스 조정 불필요).
+    <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-6xl">
       <div className="flex-1 space-y-4 py-4">
         <div>
-          <p className="text-xs font-semibold text-primary">{t('persona.generator_eyebrow')}</p>
+          {/* <p className="text-xs font-semibold text-primary">{t('persona.generator_eyebrow')}</p>
           <h2 className="mt-1 text-lg font-bold text-foreground">{t('persona.title')}</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.subtitle')}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.subtitle')}</p> */}
+          {/* <p className="text-xs font-semibold text-primary">
+            {t("persona.k_content_eyebrow")}
+          </p> */}
+          <h3 className="mt-0.5 text-base font-bold text-foreground">
+            {t("persona.k_content_title")}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {t("persona.k_content_subtitle")}
+          </p>
           <div className="mt-4 h-1 rounded-full bg-primary" />
         </div>
 
-        <div className="rounded-xl border border-primary/25 bg-primary/[0.06] p-3">
-          <p className="text-xs font-semibold text-primary">{t('persona.k_content_eyebrow')}</p>
-          <h3 className="mt-0.5 text-base font-bold text-foreground">{t('persona.k_content_title')}</h3>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.k_content_subtitle')}</p>
-
-          <div className="mt-3 space-y-2">
+        <div className="rounded-xl bg-primary/[0.06] p-3">
+          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
             {personasQuery.isPending &&
               Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-[64px] animate-pulse rounded-xl border border-border bg-muted" />
+                <div
+                  key={index}
+                  className="animate-pulse overflow-hidden rounded-xl border border-border bg-muted md:rounded-2xl"
+                >
+                  <div className="aspect-square w-full bg-muted" />
+                </div>
               ))}
 
             {!personasQuery.isPending &&
               (personasQuery.data ?? []).map((persona) => {
-                const isSelected = selectedPersona?.id === persona.id
+                const isSelected = selectedPersona?.id === persona.id;
                 return (
                   <button
                     key={persona.id}
                     type="button"
                     onClick={() => handleSelectPersona(persona)}
                     disabled={mutation.isPending}
-                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-background p-3 text-left transition-all hover:border-primary/60 hover:bg-primary/10 disabled:opacity-70"
+                    className={cn(
+                      "overflow-hidden rounded-xl border text-left transition-all disabled:opacity-70 md:rounded-2xl",
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background hover:border-primary/60 hover:bg-primary/10",
+                    )}
                   >
-                    <PersonaAvatar persona={persona} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-foreground">{persona.label}</p>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {persona.routeCnt}
-                          {t('persona.stops_suffix')}
-                        </span>
+                    <div className="aspect-square w-full bg-muted">
+                      <PersonaCardImage persona={persona} />
+                    </div>
+                    <div className="space-y-0.5 p-2 md:space-y-1 md:p-3">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-xs font-semibold text-foreground md:text-sm">
+                          {persona.label}
+                        </p>
+                        {mutation.isPending && isSelected && (
+                          <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+                        )}
                       </div>
-                      <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      <span className="inline-block rounded-full bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground md:px-2 md:text-[10px]">
+                        {persona.routeCnt}
+                        {t("persona.stops_suffix")}
+                      </span>
+                      <p className="line-clamp-2 text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5">
                         {persona.description}
                       </p>
                     </div>
-                    {mutation.isPending && isSelected ? (
-                      <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    )}
                   </button>
-                )
+                );
               })}
           </div>
         </div>
 
         {mutation.isError && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-            <p className="text-sm font-semibold text-destructive">{t('persona.error_title')}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {t("persona.error_title")}
+            </p>
             <Button
               variant="destructive"
               size="sm"
               className="mt-2"
               disabled={!selectedPersona || mutation.isPending}
-              onClick={() => selectedPersona && mutation.mutate(selectedPersona)}
+              onClick={() =>
+                selectedPersona && mutation.mutate(selectedPersona)
+              }
             >
               <Sparkles className="h-3.5 w-3.5" />
-              {t('persona.retry')}
+              {t("persona.retry")}
             </Button>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

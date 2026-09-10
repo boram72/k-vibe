@@ -1,3 +1,6 @@
+// [ProfilePage에서만 미사용, 2026-09 태스크보드 10번] "찜한 장소"를 홈 화면(1번
+// 작업)으로 옮기기로 하면서 ProfilePage.tsx에서만 렌더링을 뺐다 — 이 컴포넌트
+// 자체는 그대로 남겨서 홈 화면에 그대로 재사용할 예정.
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'

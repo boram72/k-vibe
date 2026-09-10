@@ -5,7 +5,10 @@ import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Compass, MapPin, Plus, Sparkles } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
-import { AnalysisLoading } from '@/blocks/analyze/analysis-loading'
+// 되돌리려면 이 import를 `AnalysisLoading` ('@/blocks/analyze/analysis-loading')으로
+// 바꾸고 아래 렌더 한 줄을 <AnalysisLoading />로 되돌리면 됨. 인라인 로딩
+// 컴포넌트(analysis-loading.tsx)는 삭제하지 않고 그대로 둔다.
+import { AnalysisLoadingSpotlight } from '@/blocks/analyze/analysis-loading-spotlight'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { Button } from '@/components/ui/button'
@@ -130,7 +133,7 @@ export default function AnalyzePage() {
             onSelectExample={handleSelectExample}
           />
 
-          {mutation.isPending && <AnalysisLoading />}
+          {mutation.isPending && <AnalysisLoadingSpotlight />}
 
           {mutation.isError && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">

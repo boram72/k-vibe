@@ -16,6 +16,10 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# SNS 분석기 결과 캐시용 Redis 호환 저장소(예: Render Key Value).
+# 미설정이면 캐싱만 비활성화되고 분석 자체는 그대로 동작(매 요청 재분석).
+REDIS_URL = os.getenv("REDIS_URL")
+
 # Google/Kakao OAuth 로그인 중계(OAUTH_INTEGRATION_REQUEST.md 참고).
 # KAKAO_REST_API_KEY는 Kakao OAuth의 client_id로 그대로 재사용한다(콘솔에 이미 등록됨).
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")

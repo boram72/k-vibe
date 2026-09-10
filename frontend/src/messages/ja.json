@@ -349,6 +349,7 @@
     "help_body": "ログインすると保存した場所やルートを他のデバイスと同期できます。ゲストのままでもこの端末では引き続き利用できます。",
     "guest_title": "ゲスト旅行者",
     "guest_subtitle": "ログインすると保存した場所やルートを同期できます。",
+    "edit_name": "名前を編集",
     "persona_label": "ペルソナ",
     "persona_unset": "未設定",
     "stats_places": "保存した場所",
@@ -371,8 +372,6 @@
     "continue_route": "続ける",
     "settings_title": "設定",
     "settings_language": "言語",
-    "settings_notifications": "通知",
-    "settings_on": "オン",
     "sign_in": "ログイン",
     "sign_out": "ログアウト"
   },

@@ -349,6 +349,7 @@
     "help_body": "登录后可在多设备间同步已保存的地点和路线;以访客身份继续使用,本设备上的功能依然可用。",
     "guest_title": "访客用户",
     "guest_subtitle": "登录后可同步已保存的地点和路线。",
+    "edit_name": "编辑名称",
     "persona_label": "人设",
     "persona_unset": "尚未设置",
     "stats_places": "已保存地点",
@@ -371,8 +372,6 @@
     "continue_route": "继续",
     "settings_title": "设置",
     "settings_language": "语言",
-    "settings_notifications": "通知",
-    "settings_on": "已开启",
     "sign_in": "登录",
     "sign_out": "退出登录"
   },

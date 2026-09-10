@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { LogOut, Sparkles, User } from 'lucide-react'
+import { Check, LogOut, Pencil, Sparkles, User, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/use-auth'
@@ -15,12 +15,26 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
   const { t } = useTranslation()
-  const { user, logout } = useAuth()
+  const { user, logout, updateDisplayName, isUpdatingDisplayName } = useAuth()
   const { data: savedPlaces = [] } = useQuery({ queryKey: ['saved-places'], queryFn: fetchSavedPlaces })
   // Lazy initializers — both are one-time local reads, same pattern as
   // RoutePage's/LandingPage's mount-time localStorage reads.
   const [routeStopCount] = useState(() => readRouteDraft().length)
   const [personaPreference] = useState(() => readPersonaPreference())
+  const [editingName, setEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+
+  function startEditingName() {
+    if (!user) return
+    setNameDraft(user.name)
+    setEditingName(true)
+  }
+
+  function saveName() {
+    if (!user || !nameDraft.trim()) return
+    updateDisplayName({ user, displayName: nameDraft.trim() })
+    setEditingName(false)
+  }
 
   const personaLabel = personaPreference
     ? t(`persona.themes.${personaPreference.theme}.details.${personaPreference.detail}.label`)
@@ -35,7 +49,37 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-foreground">{user ? user.name : t('profile.guest_title')}</p>
+          {user && editingName ? (
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveName()}
+                className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm font-bold text-foreground outline-none focus:border-primary/50"
+              />
+              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" disabled={isUpdatingDisplayName} onClick={saveName}>
+                <Check className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingName(false)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <p className="truncate font-bold text-foreground">{user ? user.name : t('profile.guest_title')}</p>
+              {user && (
+                <button
+                  type="button"
+                  onClick={startEditingName}
+                  aria-label={t('profile.edit_name')}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
           <p className="mt-0.5 line-clamp-2 text-sm leading-5 text-muted-foreground">
             {user ? user.email : t('profile.guest_subtitle')}
           </p>

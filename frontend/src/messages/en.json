@@ -351,8 +351,6 @@
     "guest_subtitle": "Sign in to sync your saved places and routes.",
     "edit_name": "Edit name",
     "edit_name_error": "Couldn't save your name. Please try again.",
-    "persona_label": "Persona",
-    "persona_unset": "Not set yet",
     "stats_places": "Places",
     "stats_routes": "Routes",
     "saved_places": "Saved Places",

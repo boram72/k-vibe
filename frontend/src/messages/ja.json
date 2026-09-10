@@ -351,8 +351,6 @@
     "guest_subtitle": "ログインすると保存した場所やルートを同期できます。",
     "edit_name": "名前を編集",
     "edit_name_error": "名前を保存できませんでした。もう一度お試しください。",
-    "persona_label": "ペルソナ",
-    "persona_unset": "未設定",
     "stats_places": "保存した場所",
     "stats_routes": "ルート",
     "saved_places": "保存した場所",

@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Check, LogOut, Pencil, Sparkles, User, X } from 'lucide-react'
+import { Check, LogOut, Pencil, User, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/use-auth'
 import { fetchSavedPlaces } from '@/lib/saved-places'
 import { readRouteDraft } from '@/lib/route-draft'
-import { readPersonaPreference } from '@/lib/persona-preference'
 
 interface ProfileHeaderProps {
   onSignInClick: () => void
@@ -21,7 +20,6 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
   // Lazy initializers — both are one-time local reads, same pattern as
   // RoutePage's/LandingPage's mount-time localStorage reads.
   const [routeStopCount] = useState(() => readRouteDraft().length)
-  const [personaPreference] = useState(() => readPersonaPreference())
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
 
@@ -43,10 +41,6 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
       },
     )
   }
-
-  const personaLabel = personaPreference
-    ? t(`persona.themes.${personaPreference.theme}.details.${personaPreference.detail}.label`)
-    : t('profile.persona_unset')
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
@@ -91,11 +85,6 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
           <p className="mt-0.5 line-clamp-2 text-sm leading-5 text-muted-foreground">
             {user ? user.email : t('profile.guest_subtitle')}
           </p>
-          <div className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-            <Sparkles className="h-3 w-3 shrink-0" />
-            <span className="shrink-0 text-muted-foreground">{t('profile.persona_label')}</span>
-            <span className="truncate">{personaLabel}</span>
-          </div>
         </div>
       </div>
 

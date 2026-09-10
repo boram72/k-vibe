@@ -351,8 +351,6 @@
     "guest_subtitle": "로그인하면 찜한 장소와 루트를 동기화할 수 있어요.",
     "edit_name": "이름 수정",
     "edit_name_error": "이름을 저장하지 못했어요. 다시 시도해주세요.",
-    "persona_label": "페르소나",
-    "persona_unset": "아직 설정 안 함",
     "stats_places": "찜한 장소",
     "stats_routes": "루트",
     "saved_places": "찜한 장소",

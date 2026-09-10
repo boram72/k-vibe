@@ -351,8 +351,6 @@
     "guest_subtitle": "登录后可同步已保存的地点和路线。",
     "edit_name": "编辑名称",
     "edit_name_error": "保存名称失败，请重试。",
-    "persona_label": "人设",
-    "persona_unset": "尚未设置",
     "stats_places": "已保存地点",
     "stats_routes": "路线",
     "saved_places": "已保存的地点",

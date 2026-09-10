@@ -66,6 +66,14 @@ function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[]) {
 
 // Tapping the badge itself recenters the map on the user's current location —
 // no need to also parse the raw lat/lng it used to show underneath.
+//
+// z-10 on this and MapActionButtons below (2026-09 태스크보드 4번 버그 수정):
+// relying on plain DOM order for stacking over <KakaoMap> worked in the
+// percent-coordinate fallback, but the real Kakao Maps SDK renders its own
+// internal SVG layer that painted over these buttons once a real map key was
+// configured — confirmed on the deployed site via elementFromPoint() at the
+// button's own coordinates returning a kakao SVG node, not the button. Same
+// class of bug (and same fix) as route-mini-map.tsx's Directions button.
 function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: string; onRequestLocation: () => void }) {
   const { t } = useTranslation()
   return (
@@ -73,7 +81,7 @@ function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: 
       type="button"
       onClick={onRequestLocation}
       title={t('map.refresh_location')}
-      className="absolute left-3 top-3 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
+      className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
     >
       <LocateFixed className="h-3.5 w-3.5 text-primary" />
       <span className="text-xs font-semibold text-popover-foreground">{locationLabel}</span>
@@ -86,7 +94,7 @@ function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: 
 function MapActionButtons({ onRequestLocation }: { onRequestLocation: () => void }) {
   const { t } = useTranslation()
   return (
-    <div className="absolute bottom-3 right-3 flex flex-col gap-2">
+    <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
       <Button size="icon" onClick={onRequestLocation} title={t('map.refresh_location')} aria-label={t('map.refresh_location')}>
         <LocateFixed className="h-4 w-4" />
       </Button>
@@ -207,6 +215,21 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     fitKakaoMapToPlaces(map, boundedPlaces)
   }, [boundedPlaces, boundsKey, focusCenter, map])
 
+  // "현재 위치" 버튼 전용 — 팀 태스크보드 4번. react-kakao-maps-sdk의 <Map center>는
+  // center 값이 실제로 바뀔 때만 카메라를 움직이는데(내부적으로 kakao map의
+  // 실제 center와 비교), 지도를 손으로 드래그해도 이 center prop 값 자체는
+  // 안 바뀌어서 GPS를 다시 읽어도 좌표가 이전과 같으면 아무 일도 안 일어남
+  // (드래그는 카카오 지도 내부 상태만 바꾸고 React는 전혀 모름). 그래서 prop
+  // 값 비교에 기대지 않고 버튼 클릭 시 map 인스턴스에 직접 panTo를 호출해
+  // 값이 같아도 무조건 원위치로 돌아가게 한다.
+  function handleRequestLocation() {
+    onRequestLocation()
+    setFocusCenter(null)
+    if (map && typeof kakao !== 'undefined' && kakao.maps) {
+      map.panTo(new kakao.maps.LatLng(center.lat, center.lng))
+    }
+  }
+
   if (loading || error) {
     return <PercentMapCanvas {...props} />
   }
@@ -234,8 +257,8 @@ function KakaoMapCanvas(props: MapCanvasProps) {
         })}
       </KakaoMap>
 
-      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} />
-      <MapActionButtons onRequestLocation={onRequestLocation} />
+      <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} />
+      <MapActionButtons onRequestLocation={handleRequestLocation} />
     </div>
   )
 }

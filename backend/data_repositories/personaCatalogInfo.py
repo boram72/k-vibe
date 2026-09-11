@@ -474,6 +474,14 @@ def pick_tags(tags: dict, locale: str) -> list[str]:
     return tags["ko"] if locale == "ko" else tags["en"]
 
 
+def get_persona_labels(locale: str) -> dict[str, str]:
+    """persona_id -> 로컬라이즈된 label 매핑 (지도 스타별 필터의 place.tags 채울 때 재사용).
+
+    _load_personas()를 스팟 개수만큼 반복 호출하지 않도록 한 번만 불러 매핑을 만든다.
+    """
+    return {persona_id: pick_text(persona["label"], locale) for persona_id, persona in _load_personas().items()}
+
+
 def resolve_persona_id(theme: str | None = None, detail: str | None = None, persona_id: str | None = None) -> str:
     personas = _load_personas()
     if persona_id in personas:

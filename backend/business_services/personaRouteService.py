@@ -80,6 +80,54 @@ def list_personas(locale: str) -> list[dict]:
     return personaCatalogInfo.list_personas(locale)
 
 
+def get_persona_places(locale: str) -> list[dict]:
+    """persona(경로 정거장) ⋈ location 조인 결과 — 지도 스타별 필터용.
+
+    frontend star-filter.tsx는 선택된 스타의 로컬라이즈 label과 place.tags가 정확히
+    일치하는지로 필터링하므로, tags에 그 label을 그대로 담아 프론트 Place 타입과
+    동일한 모양으로 반환한다.
+    """
+    try:
+        stop_rows = personainfo.get_all_persona_stops()
+    except Exception:
+        return []
+
+    place_ids = [pid for pid in (_db_location_place_id(row) for row in stop_rows) if pid]
+    try:
+        locations_by_place_id = locationinfo.get_locations_by_place_ids(place_ids)
+    except Exception:
+        locations_by_place_id = {}
+
+    labels_by_persona_id = personaCatalogInfo.get_persona_labels(locale)
+
+    places: list[dict] = []
+    for row in stop_rows:
+        place_id = _db_location_place_id(row)
+        location_row = locations_by_place_id.get(place_id)
+        if not location_row:
+            continue
+        lat, lng = location_row.get("latitude"), location_row.get("longitude")
+        if lat is None or lng is None:
+            continue
+
+        persona_id = row.get("name")
+        label = labels_by_persona_id.get(persona_id, persona_id)
+
+        places.append(
+            {
+                "id": place_id,
+                "name": location_row.get("name") or place_id,
+                "category": location_row.get("category") or "culture",
+                "address": location_row.get("address") or "",
+                "lat": float(lat),
+                "lng": float(lng),
+                "imageUrl": location_row.get("image_url"),
+                "tags": [label],
+            }
+        )
+    return places
+
+
 def generate_route(theme: str | None, detail: str | None, start_time: str, locale: str, persona_id: str | None = None) -> dict:
     resolved_persona_id = personaCatalogInfo.resolve_persona_id(theme=theme, detail=detail, persona_id=persona_id)
     persona = personaCatalogInfo.get_persona(resolved_persona_id)

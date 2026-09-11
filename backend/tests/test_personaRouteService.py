@@ -131,6 +131,56 @@ def test_load_persona_route_from_db_returns_empty_when_query_fails(mock_get_rout
     assert personaRouteService._load_persona_route_from_db("BTS뷔") == []
 
 
+@patch("business_services.personaRouteService.personaCatalogInfo.get_persona_labels")
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
+@patch("business_services.personaRouteService.personainfo.get_all_persona_stops")
+def test_get_persona_places_joins_persona_and_location_with_star_label_tag(
+    mock_get_stops, mock_get_locations, mock_get_labels
+):
+    """place.tags에는 star-filter.tsx가 매칭에 쓰는 로컬라이즈 label이 그대로 담겨야 한다."""
+    mock_get_stops.return_value = [
+        {"name": "BTS뷔", "locationname": "3354946"},
+        {"name": "아이유", "locationname": "402994"},
+    ]
+    mock_get_locations.return_value = {
+        "3354946": {
+            "name": "경복궁", "latitude": 37.5796, "longitude": 126.977,
+            "category": "culture", "address": "서울 종로구", "image_url": "http://img/1.jpg",
+        },
+        "402994": {
+            "name": "삼청동수제비", "latitude": 37.5846, "longitude": 126.9819,
+            "category": "food", "address": "서울 종로구", "image_url": "http://img/2.jpg",
+        },
+    }
+    mock_get_labels.return_value = {"BTS뷔": "BTS뷔", "아이유": "IU"}
+
+    places = personaRouteService.get_persona_places("en")
+
+    assert len(places) == 2
+    mock_get_labels.assert_called_once_with("en")
+    assert places[0] == {
+        "id": "3354946", "name": "경복궁", "category": "culture", "address": "서울 종로구",
+        "lat": 37.5796, "lng": 126.977, "imageUrl": "http://img/1.jpg", "tags": ["BTS뷔"],
+    }
+    assert places[1]["tags"] == ["IU"]
+
+
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
+@patch("business_services.personaRouteService.personainfo.get_all_persona_stops")
+def test_get_persona_places_skips_stops_without_matching_location(mock_get_stops, mock_get_locations):
+    mock_get_stops.return_value = [{"name": "BTS뷔", "locationname": "missing"}]
+    mock_get_locations.return_value = {}
+
+    assert personaRouteService.get_persona_places("ko") == []
+
+
+@patch("business_services.personaRouteService.personainfo.get_all_persona_stops")
+def test_get_persona_places_returns_empty_when_query_fails(mock_get_stops):
+    mock_get_stops.side_effect = RuntimeError("network down")
+
+    assert personaRouteService.get_persona_places("ko") == []
+
+
 def test_build_pic_url_returns_none_without_path():
     from data_repositories import personainfo
 

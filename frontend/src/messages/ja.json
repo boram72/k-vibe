@@ -65,6 +65,8 @@
     "seoul_fallback": "ソウル（デフォルト）",
     "location_unavailable": "位置情報を取得できないためソウルを表示します",
     "refresh_location": "位置情報を更新",
+    "search_this_area": "このエリアを検索",
+    "search_area_not_found": "この地域が見つかりませんでした",
     "analysis_result": "分析結果",
     "show_saved": "お気に入りリストを見る",
     "saved_list_title": "お気に入りリスト",

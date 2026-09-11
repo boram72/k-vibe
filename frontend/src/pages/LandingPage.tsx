@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TopBar } from '@/blocks/layout/top-bar'
 import { SidebarNav } from '@/blocks/layout/sidebar-nav'
 import { BottomNav } from '@/blocks/layout/bottom-nav'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
+import { HomeBanner } from '@/blocks/landing/home-banner'
 import { PersonaPicker } from '@/blocks/landing/persona-picker'
 import { TrendingKeywords } from '@/blocks/landing/trending-keywords'
-import { Button } from '@/components/ui/button'
+import { SavedPlacesGrid } from '@/blocks/profile/saved-places-grid'
 import { usePageHelpStore } from '@/store/page-help-store'
 import type { KContentPersona } from '@/api/personas'
 
@@ -36,35 +37,11 @@ export default function LandingPage() {
         <SidebarNav />
         <main className="min-h-0 flex-1 overflow-y-auto">
           <ErrorBoundary>
-            <div className="mx-auto flex w-full flex-col items-center gap-6 px-4 py-4 md:max-w-5xl md:px-8 md:py-8">
-              <div className="w-full space-y-3 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0">
-                <div className="space-y-1">
-                  <h1 className="text-xl font-bold text-foreground md:text-2xl">
-                    {t("landing.headline")}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">{t("landing.subtitle")}</p>
-                </div>
-                <Button
-                  size="lg"
-                  className="hidden shrink-0 md:inline-flex"
-                  nativeButton={false}
-                  render={<Link to="map" />}
-                >
-                  {t("landing.start_btn")} →
-                </Button>
-              </div>
-
+            <div className="mx-auto flex w-full flex-col gap-6 px-4 py-4 md:max-w-5xl md:px-8 md:py-8">
+              <HomeBanner />
+              <SavedPlacesGrid />
               <PersonaPicker onSelect={handleSelectPersona} />
               <TrendingKeywords />
-
-              <Button
-                size="lg"
-                className="w-full max-w-sm md:hidden"
-                nativeButton={false}
-                render={<Link to="map" />}
-              >
-                {t("landing.start_btn")} →
-              </Button>
             </div>
           </ErrorBoundary>
         </main>

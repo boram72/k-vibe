@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
 /* Dark mode: set data-theme="dark" on <html> */
 @custom-variant dark (&:is([data-theme="dark"] *));
@@ -69,7 +69,7 @@
 
 /* ── shadcn @theme inline ────────────────────────────────────────── */
 @theme inline {
-  --font-sans:                        'Geist Variable', sans-serif;
+  --font-sans:                        'Pretendard Variable', sans-serif;
   --color-background:                 var(--background);
   --color-foreground:                 var(--foreground);
   --color-card:                       var(--card);
@@ -132,6 +132,22 @@ body {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* 2026-09 태스크보드 1번 — 홈 페르소나 카드 호버 슬라이드쇼(persona-picker.tsx)
+   전용. 이미지가 바뀔 때마다 오른쪽에서 슬라이드해 들어오는 효과. React가
+   `key`를 바꿔 이 요소를 새로 마운트할 때마다 애니메이션이 처음부터 다시
+   재생된다(CSS 애니메이션은 마운트 시 자동 재생). */
+@keyframes kv-slide-in-right {
+  from {
+    transform: translateX(16px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-persona-slide {
+  animation: kv-slide-in-right 400ms ease-out;
 }
 
 /* Softens the hard right-edge cutoff on horizontally-scrollable rows whose

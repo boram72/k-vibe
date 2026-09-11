@@ -28,6 +28,7 @@
   "landing": {
     "headline": "K-内容一日路线",
     "subtitle": "把SNS上看到的明星到访地点，变成你自己的旅行路线！",
+    "subtitle_mobile": "把SNS上看到的明星到访地点，变成你自己的旅行路线！",
     "trending_now": "韩国当下热门",
     "help_title": "欢迎来到 K-Vibe",
     "help_body": "看看韩国当下的热门关键词，然后点击「探索K-Vibe」在地图上发现更多地点。",
@@ -39,7 +40,12 @@
     "feature_persona": "我的路线",
     "feature_docent": "AI讲解",
     "feature_radar": "雷达",
-    "personalized_for": "为{{persona}}个性化推荐"
+    "personalized_for": "为{{persona}}个性化推荐",
+    "banner_eyebrow": "今日K内容路线",
+    "greeting": "{{name}}，你好 👋",
+    "greeting_guest": "欢迎回到K-Vibe 👋",
+    "build_route_cta": "创建我的路线",
+    "route_preview_title": "{{persona}}路线预览"
   },
   "home": {
     "title": "首页"
@@ -363,8 +369,6 @@
     "no_saved_places_hint": "在地图中选择地点并点击爱心即可保存。",
     "open_map": "在地图中查看",
     "open_saved_detail": "查看{{name}}详情",
-    "see_all": "查看全部",
-    "show_less": "收起",
     "saved_routes": "我的路线",
     "no_saved_routes": "还没有保存的路线",
     "no_saved_routes_hint": "生成或组合路线后会显示在这里。",

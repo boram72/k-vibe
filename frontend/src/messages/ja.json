@@ -28,6 +28,7 @@
   "landing": {
     "headline": "K-コンテンツ1日ルート",
     "subtitle": "SNSで見たスターゆかりの名所を、自分だけの旅ルートに！",
+    "subtitle_mobile": "SNSで見たスターゆかりの名所を、自分だけの旅ルートに！",
     "trending_now": "今韓国でホット",
     "help_title": "K-Vibeへようこそ",
     "help_body": "今韓国でトレンドのキーワードを確認して、「K-Vibeを探す」をタップして地図でスポットを探してみましょう。",
@@ -39,7 +40,12 @@
     "feature_persona": "マイルート",
     "feature_docent": "AIガイド",
     "feature_radar": "レーダー",
-    "personalized_for": "{{persona}}向けにパーソナライズ"
+    "personalized_for": "{{persona}}向けにパーソナライズ",
+    "banner_eyebrow": "今日のKコンテンツルート",
+    "greeting": "{{name}}さん、こんにちは 👋",
+    "greeting_guest": "今日もK-Vibeへようこそ 👋",
+    "build_route_cta": "マイルートを作る",
+    "route_preview_title": "{{persona}}ルートプレビュー"
   },
   "home": {
     "title": "ホーム"
@@ -363,8 +369,6 @@
     "no_saved_places_hint": "マップで場所を選んでハートをタップしてみましょう。",
     "open_map": "マップで見る",
     "open_saved_detail": "{{name}}の詳細を見る",
-    "see_all": "すべて見る",
-    "show_less": "閉じる",
     "saved_routes": "マイルート",
     "no_saved_routes": "まだ保存したルートはありません",
     "no_saved_routes_hint": "ルートを作成・編成するとここに表示されます。",

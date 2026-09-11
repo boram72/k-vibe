@@ -28,6 +28,7 @@
   "landing": {
     "headline": "K-Content Day Route",
     "subtitle": "Star-visited spots you saw on social, turned into your own route!",
+    "subtitle_mobile": "Star-visited spots you saw on social, turned into your own route!",
     "trending_now": "Trending in Korea",
     "help_title": "Welcome to K-Vibe",
     "help_body": "Check out what's trending in Korea right now, then tap \"Explore K-Vibe\" to start discovering spots on the map.",
@@ -39,7 +40,12 @@
     "feature_persona": "My Route",
     "feature_docent": "AI Docent",
     "feature_radar": "Radar",
-    "personalized_for": "Personalized for {{persona}}"
+    "personalized_for": "Personalized for {{persona}}",
+    "banner_eyebrow": "Today's K-Content Route",
+    "greeting": "Hi {{name}} 👋",
+    "greeting_guest": "Welcome back to K-Vibe 👋",
+    "build_route_cta": "Build My Route",
+    "route_preview_title": "{{persona}} route preview"
   },
   "home": {
     "title": "Home"
@@ -363,8 +369,6 @@
     "no_saved_places_hint": "Open the map, choose a place, and tap the heart.",
     "open_map": "Open in Map",
     "open_saved_detail": "Open {{name}} details",
-    "see_all": "See all",
-    "show_less": "Show less",
     "saved_routes": "My Route",
     "no_saved_routes": "No saved route yet",
     "no_saved_routes_hint": "Generate or assemble a route to keep it here.",

@@ -28,6 +28,7 @@
   "landing": {
     "headline": "K-콘텐츠 하루 루트",
     "subtitle": "SNS에서 본 스타 방문 명소, 나만의 여행루트로 !",
+    "subtitle_mobile": "SNS에서 본 스타 방문 명소\n나만의 여행루트로 !",
     "trending_now": "지금 한국에서 핫한",
     "help_title": "K-Vibe에 오신 걸 환영해요",
     "help_body": "지금 한국에서 뜨고 있는 키워드를 확인하고, \"K-Vibe 둘러보기\"를 눌러 지도에서 장소를 탐색해보세요.",
@@ -39,7 +40,12 @@
     "feature_persona": "내 루트",
     "feature_docent": "AI 도슨트",
     "feature_radar": "레이더",
-    "personalized_for": "{{persona}} 맞춤 피드 보기"
+    "personalized_for": "{{persona}} 맞춤 피드 보기",
+    "banner_eyebrow": "오늘의 K-콘텐츠 루트",
+    "greeting": "{{name}}님, 반가워요 👋",
+    "greeting_guest": "오늘도 K-Vibe와 함께해요 👋",
+    "build_route_cta": "내 루트 만들기",
+    "route_preview_title": "{{persona}} 루트 미리보기"
   },
   "home": {
     "title": "홈"
@@ -363,8 +369,6 @@
     "no_saved_places_hint": "지도에서 장소를 고르고 하트를 눌러보세요.",
     "open_map": "지도에서 보기",
     "open_saved_detail": "{{name}} 상세보기",
-    "see_all": "전체보기",
-    "show_less": "간략히 보기",
     "saved_routes": "내 루트",
     "no_saved_routes": "아직 저장된 루트가 없어요",
     "no_saved_routes_hint": "루트를 만들거나 구성하면 여기 표시돼요.",

@@ -1,20 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Compass, MapPin, Plus, Sparkles } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
-// 2026-09: 전체화면 스팟라이트 팝업(analysis-loading-spotlight.tsx)을 원복 —
-// 분석이 도는 동안 화면 전체를 덮어서 다른 탭 이동 등 아무 조작도 할 수 없었음
-// (사용자 피드백). 인라인 체크리스트 로딩으로 되돌린다. 스팟라이트 컴포넌트/
-// 이미지 에셋은 지우지 않고 그대로 둠 — 필요해지면 이 import만 되돌리면 됨.
-import { AnalysisLoading } from '@/blocks/analyze/analysis-loading'
+import { AnalysisProgress } from '@/blocks/analyze/analysis-progress'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { fetchAnalysis, type AnalysisPlace, type AnalysisResult } from '@/api/analyze'
+import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 import { EXAMPLE_URLS } from '@/blocks/analyze/analyze.data'
 import { detectSnsPlatform, extractVideoId } from '@/lib/youtube'
 import { addStopToRouteDraft, addStopsToRouteDraft } from '@/lib/route-draft'
@@ -28,7 +23,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
-  const { url, result, setUrl, setResult, clearResult } = useAnalyzeStore()
+  const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
 
   useEffect(() => {
@@ -36,24 +31,21 @@ export default function AnalyzePage() {
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
 
-  const mutation = useMutation({
-    mutationFn: (targetUrl: string) => fetchAnalysis(targetUrl, i18n.language as Locale),
-    onSuccess: (data) => setResult(data),
-  })
-
-  // Show the last completed result even right after remounting (e.g. coming back
-  // from Map), before any new mutation has run in this component instance.
-  const displayResult = mutation.data ?? result
+  const isAnalyzing = status === 'running'
+  const hasError = status === 'error'
+  // 2026-09: 분석이 store에서 백그라운드로 돌기 때문에(다른 탭으로 이동해도
+  // 계속 진행) 결과도 react-query가 아니라 store에서 바로 읽는다 — 이 컴포넌트가
+  // 언마운트됐다 다시 마운트돼도(다른 탭 갔다 옴) store 상태를 그대로 이어받는다.
+  const displayResult = result
 
   function runAnalysis(targetUrl: string) {
     const videoId = extractVideoId(targetUrl)
     if (detectSnsPlatform(targetUrl) !== 'youtube' || !videoId) return
-    mutation.mutate(targetUrl)
+    startAnalysis(targetUrl, i18n.language as Locale)
   }
 
   function handleSelectExample(exampleUrl: string) {
     setUrl(exampleUrl)
-    mutation.reset()
     runAnalysis(exampleUrl)
   }
 
@@ -111,7 +103,7 @@ export default function AnalyzePage() {
     viewOnMap([place], true)
   }
 
-  const showActionBar = !mutation.isPending && displayResult && displayResult.places.length > 0
+  const showActionBar = !isAnalyzing && displayResult && displayResult.places.length > 0
 
   return (
     <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-2xl">
@@ -127,18 +119,20 @@ export default function AnalyzePage() {
             onUrlChange={(next) => {
               setUrl(next)
               clearResult()
-              mutation.reset()
             }}
             onAnalyze={() => runAnalysis(url)}
-            isAnalyzing={mutation.isPending}
+            isAnalyzing={isAnalyzing}
             onSelectExample={handleSelectExample}
           />
 
-          {mutation.isPending && <AnalysisLoading />}
+          {isAnalyzing && <AnalysisProgress percent={progress} />}
 
-          {mutation.isError && (
+          {hasError && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
               <p className="text-sm font-semibold text-destructive">{t('analyze.error_title')}</p>
+              <p className="mt-1 text-xs leading-5 text-destructive/80">
+                {t(errorKind === 'timeout' ? 'analyze.error_timeout' : 'analyze.error_generic')}
+              </p>
               <button
                 type="button"
                 onClick={() => runAnalysis(url)}
@@ -149,7 +143,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {!mutation.isPending && !mutation.isError && displayResult && (
+          {!isAnalyzing && !hasError && displayResult && (
             <AnalysisResultList
               result={displayResult}
               onSelectPlace={setChoicePlace}
@@ -157,7 +151,7 @@ export default function AnalyzePage() {
             />
           )}
 
-          {!mutation.isPending && !mutation.isError && !displayResult && (
+          {!isAnalyzing && !hasError && !displayResult && (
             <div className="flex items-start gap-2.5 rounded-xl bg-muted p-3">
               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
               <div>

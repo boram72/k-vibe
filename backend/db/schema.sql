@@ -172,6 +172,29 @@ create table if not exists reviews (
 );
 create index if not exists reviews_place_id_created_at_idx on reviews (place_id, created_at desc);
 
+-- ============================================================
+-- 페르소나 카탈로그 (홈화면 카드 메타데이터)
+-- ============================================================
+
+-- PERSONA_CATALOG: 홈화면에 노출되는 페르소나 카드의 label/badge/이미지/설명/무드를 저장한다.
+-- 기존 PERSONA 테이블(경로 정거장 순서)과는 이름만 비슷할 뿐 무관한 도메인 —
+-- 정거장 데이터는 그대로 PERSONA/LOCATION 테이블에서 읽는다(personaRouteService 참고).
+-- id는 personaRouteService의 persona_id(예: "BTS뷔")와 동일한 한글 표기를 그대로 쓴다.
+-- 조회가 실패하거나 행이 없으면 data_repositories/personaCatalogInfo.py의 하드코딩
+-- PERSONAS로 자동 폴백한다.
+create table if not exists persona_catalog (
+  id text primary key,
+  label_en text,
+  badge text,
+  profile_img text,
+  theme text,
+  description_ko text,
+  description_en text,
+  moods_ko text[],
+  moods_en text[],
+  display_order int2
+);
+
 -- SNS 분석기 결과 캐시는 DB 테이블이 아니라 Redis 호환 저장소(Render Key Value)에
 -- 둔다 — data_repositories/analyzeCacheInfo.py 참고(key: analyze:{video_id}:{locale},
 -- TTL 30일). 휘발성 캐시 데이터라 주 DB에 섞지 않는다.

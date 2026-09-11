@@ -1,3 +1,7 @@
+from config.dependency import get_supabase_client
+
+PERSONA_CATALOG_TABLE = "persona_catalog"
+
 LOCATIONS = {
     "남산타워": {
         "label": {"ko": "남산타워", "en": "N Seoul Tower"},
@@ -287,6 +291,38 @@ LOCATIONS = {
         },
         "tags": ["한강", "야경", "반포"],
     },
+    "청계천": {
+        "label": {"ko": "청계천", "en": "Cheonggyecheon"},
+        "town": "서울 종로구",
+        "rating": 4.4,
+        "openingHour": "00:00~24:00",
+        "lat": 37.5696470253,
+        "lng": 127.00507432,
+        "category": "Walk",
+        "crowdLevel": "mid",
+        "stayMinutes": 50,
+        "description": {
+            "ko": "도심 한복판에서 물길을 따라 걷는 청량한 산책 코스예요.",
+            "en": "A refreshing downtown stream walk through central Seoul.",
+        },
+        "tags": ["산책", "도심", "물길"],
+    },
+    "롯데백화점 본점": {
+        "label": {"ko": "롯데백화점 본점", "en": "Lotte Department Store Main Branch"},
+        "town": "서울 중구",
+        "rating": 4.3,
+        "openingHour": "10:30~20:00",
+        "lat": 37.5646833187,
+        "lng": 126.9816989643,
+        "category": "Shopping",
+        "crowdLevel": "high",
+        "stayMinutes": 70,
+        "description": {
+            "ko": "명동 한복판에서 트렌디한 쇼핑과 스타일링을 한 번에 즐길 수 있는 곳이에요.",
+            "en": "A landmark Myeongdong department store for trend-forward shopping.",
+        },
+        "tags": ["쇼핑", "명동", "패션"],
+    },
 }
 
 PERSONAS = {
@@ -338,6 +374,30 @@ PERSONAS = {
         "moods": {"ko": ["화사한", "활기찬", "힐링되는"], "en": ["Bright", "Lively", "Healing"]},
         "locations": ["서울스카이", "석촌호수", "성수연방", "반포 세빛섬"],
     },
+    "코르티스 성현": {
+        "label": {"ko": "코르티스 성현", "en": "CORTIS Seonghyun"},
+        "badge": "SH",
+        "profileImg": "https://i.namu.wiki/i/ds2V_J8phtUmJKrjUHcnMoyJerXHK1-_v_KXBlYUPzSajyu-NGxwBVmJizSNjNDT10bGzaMvILwt2qcMah5yweEHdCge_d_6N9KmTK1pU4KOwV0Tkdb-vsWlPkf3bdV1BKBRNoGiPKlFHjRLRDqZ7w.webp",
+        "theme": "street",
+        "description": {
+            "ko": "성수 감성과 압구정·명동 스트리트 무드를 잇는 힙한 패션 코스.",
+            "en": "A hip fashion route linking Seongsu vibes with Apgujeong and Myeongdong street style.",
+        },
+        "moods": {"ko": ["힙한", "스트릿한", "감각적인"], "en": ["Hip", "Street", "Stylish"]},
+        "locations": ["성수동 대림창고", "성수연방", "나이키 압구정", "10 꼬르소꼬모 서울", "롯데백화점 본점"],
+    },
+    "투어스 신유": {
+        "label": {"ko": "투어스 신유", "en": "TWS Shinyu"},
+        "badge": "SY",
+        "profileImg": "https://i.namu.wiki/i/CCw7EG0BwSw0Yr_ryhqL7D82vNYfg6tlWurcq7DHDZjQ-vAlXNG3Q7HEfXjZMXLmLeFxZl4ttZ2IkxUdjbaVDotU0iw_uZb0XrNSG-svhfBVvoJMQjYQlziKoVvmwP0lVLfjsEjqQ9OKX4OG0ZPOuA.webp",
+        "theme": "bright",
+        "description": {
+            "ko": "한강 피크닉과 청계천 산책, 호수 둘레길을 잇는 청량한 청춘 코스.",
+            "en": "A refreshing youthful route through Hangang picnics, Cheonggyecheon walks, and lakeside strolls.",
+        },
+        "moods": {"ko": ["청량한", "발랄한", "우정어린"], "en": ["Fresh", "Bright", "Friendly"]},
+        "locations": ["뚝섬한강공원", "청계천", "도산공원", "청수당", "석촌호수"],
+    },
 }
 
 DETAIL_TO_PERSONA = {
@@ -365,6 +425,47 @@ THEME_TO_PERSONA = {
 }
 
 
+def _normalize_db_persona(row: dict, fallback: dict) -> dict:
+    persona_id = row["id"]
+    return {
+        "label": {"ko": persona_id, "en": row.get("label_en") or fallback.get("label", {}).get("en", persona_id)},
+        "badge": row.get("badge") or fallback.get("badge", ""),
+        "profileImg": row.get("profile_img") or fallback.get("profileImg", ""),
+        "theme": row.get("theme") or fallback.get("theme", ""),
+        "description": {
+            "ko": row.get("description_ko") or fallback.get("description", {}).get("ko", ""),
+            "en": row.get("description_en") or fallback.get("description", {}).get("en", ""),
+        },
+        "moods": {
+            "ko": row.get("moods_ko") or fallback.get("moods", {}).get("ko", []),
+            "en": row.get("moods_en") or fallback.get("moods", {}).get("en", []),
+        },
+        # 경로 정거장 이름 목록은 이 테이블로 옮기지 않았다 — 실제 정거장은 personaRouteService가
+        # persona/location 테이블에서 별도로 읽고, 여기 locations는 그 DB 조회가 비어있을 때만
+        # 쓰이는 하드코딩 폴백(get_locations_for_persona)용이라 그대로 기존 PERSONAS를 참조한다.
+        "locations": fallback.get("locations", []),
+    }
+
+
+def _load_personas() -> dict:
+    """persona_catalog 테이블에서 카드 메타데이터(label/badge/이미지/설명/무드)를 읽는다.
+
+    조회가 실패하거나 행이 없으면 하드코딩 PERSONAS로 폴백한다
+    (personaRouteService._load_persona_route_from_db와 동일한 DB-우선 + 폴백 패턴).
+    """
+    try:
+        client = get_supabase_client()
+        result = client.table(PERSONA_CATALOG_TABLE).select("*").order("display_order").execute()
+        rows = result.data or []
+    except Exception:
+        rows = []
+
+    if not rows:
+        return PERSONAS
+
+    return {row["id"]: _normalize_db_persona(row, PERSONAS.get(row["id"], {})) for row in rows}
+
+
 def pick_text(text: dict, locale: str) -> str:
     return text["ko"] if locale == "ko" else text["en"]
 
@@ -374,7 +475,8 @@ def pick_tags(tags: dict, locale: str) -> list[str]:
 
 
 def resolve_persona_id(theme: str | None = None, detail: str | None = None, persona_id: str | None = None) -> str:
-    if persona_id in PERSONAS:
+    personas = _load_personas()
+    if persona_id in personas:
         return persona_id
     return DETAIL_TO_PERSONA.get(detail or "") or THEME_TO_PERSONA.get(theme or "", "BTS뷔")
 
@@ -390,12 +492,12 @@ def list_personas(locale: str) -> list[dict]:
             "routeCnt": len(persona["locations"]),
             "moods": pick_tags(persona["moods"], locale),
         }
-        for persona_id, persona in PERSONAS.items()
+        for persona_id, persona in _load_personas().items()
     ]
 
 
 def get_persona(persona_id: str) -> dict:
-    return PERSONAS[persona_id]
+    return _load_personas()[persona_id]
 
 
 def get_locations_for_persona(persona_id: str) -> list[dict]:

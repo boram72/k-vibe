@@ -106,7 +106,20 @@ export function SpotListPanel({
             <RatingBadge placeId={place.id} />
           </div>
           <p className="truncate text-xs text-muted-foreground">{place.address}</p>
-          <p className="text-xs text-muted-foreground">{t(getCategoryLabelKey(place.category))}</p>
+          {/* 팀 태스크보드 12번 — 스타별 탭에서는 기존 카테고리 태그(음식/숙소 등)
+              대신 소속 persona.label을 뱃지로 보여준다(어느 스타 루트의 장소인지
+              한눈에 구분). 카테고리 탭에서는 기존 그대로 카테고리 라벨 표시. */}
+          {filterMode === 'star' && (place.tags?.length ?? 0) > 0 ? (
+            <div className="mt-0.5 flex flex-wrap gap-1">
+              {place.tags!.map((tag) => (
+                <span key={tag} className="inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t(getCategoryLabelKey(place.category))}</p>
+          )}
         </div>
         <div className="shrink-0 text-right">
           {place.distanceM !== undefined && (

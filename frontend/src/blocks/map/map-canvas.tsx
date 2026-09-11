@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { LocateFixed, MapPin } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { Button } from '@/components/ui/button'
+import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
 import { cn } from '@/lib/utils'
 import { getPlaceCategoryMeta, type Place } from '@/types/place'
 
@@ -23,6 +24,11 @@ interface MapCanvasProps {
   // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
   // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
   onSearchArea?: (coords: Coordinates) => void
+  // 팀 태스크보드 12번 — 실제 GPS 실측값일 때만 부모(MapPage)가 채워서 내려줌
+  // (마지막 위치 캐시/서울 폴백일 땐 null로 내려와 마커를 안 그림 — 실제로 그
+  // 자리에 있는 것처럼 오해하지 않도록). route-mini-map.tsx의 빨간 펄스
+  // 마커(`CurrentLocationPin`)를 그대로 재사용.
+  myLocation?: Coordinates | null
 }
 
 // Icon-badge pins colored per category (types/place.ts PLACE_CATEGORIES.pinBg) —
@@ -109,7 +115,7 @@ function MapActionButtons({ onRequestLocation }: { onRequestLocation: () => void
 // Percent-based pin placement — fallback used whenever VITE_KAKAO_MAP_KEY isn't
 // configured, or the real SDK fails to load. Mirrors src/api/client.ts's
 // withFallback() philosophy: degrade gracefully instead of breaking the page.
-function pinPosition(place: Place, center: Coordinates, fitPlaces: Place[] = []) {
+function pinPosition(coord: Coordinates, center: Coordinates, fitPlaces: Place[] = []) {
   const bounds = buildPlaceBounds(fitPlaces)
   if (bounds && fitPlaces.length > 1) {
     const minSpan = 0.01
@@ -124,19 +130,19 @@ function pinPosition(place: Place, center: Coordinates, fitPlaces: Place[] = [])
     const maxLng = centerLng + (lngSpan / 2) * (1 + pad)
 
     return {
-      left: `${Math.max(8, Math.min(92, ((place.lng - minLng) / (maxLng - minLng)) * 100))}%`,
-      top: `${Math.max(10, Math.min(88, ((maxLat - place.lat) / (maxLat - minLat)) * 100))}%`,
+      left: `${Math.max(8, Math.min(92, ((coord.lng - minLng) / (maxLng - minLng)) * 100))}%`,
+      top: `${Math.max(10, Math.min(88, ((maxLat - coord.lat) / (maxLat - minLat)) * 100))}%`,
     }
   }
 
-  const lngOffset = (place.lng - center.lng) * 2600
-  const latOffset = (center.lat - place.lat) * 3600
+  const lngOffset = (coord.lng - center.lng) * 2600
+  const latOffset = (center.lat - coord.lat) * 3600
   const left = Math.max(8, Math.min(92, 50 + lngOffset))
   const top = Math.max(10, Math.min(88, 50 + latOffset))
   return { left: `${left}%`, top: `${top}%` }
 }
 
-function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel }: MapCanvasProps) {
+function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation }: MapCanvasProps) {
   return (
     <div className="relative h-full min-h-70 w-full overflow-hidden bg-muted">
       <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
@@ -160,6 +166,15 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
         )
       })}
 
+      {myLocation && (
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+          style={pinPosition(myLocation, center, fitPlaces)}
+        >
+          <CurrentLocationPin />
+        </div>
+      )}
+
       <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} />
       <MapActionButtons onRequestLocation={onRequestLocation} />
     </div>
@@ -182,7 +197,7 @@ function SearchAreaButton({ onClick }: { onClick: () => void }) {
 }
 
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea } = props
+  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
@@ -305,6 +320,12 @@ function KakaoMapCanvas(props: MapCanvasProps) {
             </CustomOverlayMap>
           )
         })}
+
+        {myLocation && (
+          <CustomOverlayMap position={myLocation} zIndex={3}>
+            <CurrentLocationPin />
+          </CustomOverlayMap>
+        )}
       </KakaoMap>
 
       <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} />

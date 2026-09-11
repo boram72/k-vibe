@@ -16,9 +16,14 @@ export function useCurrentLocation() {
   const { t } = useTranslation()
   const [coords, setCoords] = useState(SEOUL_CENTER)
   const [locationLabel, setLocationLabel] = useState(t('map.seoul_fallback'))
+  // 2026-09 태스크보드 12번 — 지도에 "내 위치" 마커를 찍을 때, 진짜 GPS 실측값일
+  // 때만 찍고 마지막 위치 캐시/서울 폴백일 땐 안 찍기 위해 구분용으로 추가.
+  // (폴백 좌표에 마커를 찍으면 실제로 그 자리에 있는 것처럼 오해할 수 있음)
+  const [isPrecise, setIsPrecise] = useState(false)
 
   const fallbackToLastKnownOrSeoul = useCallback(() => {
     const cached = readLastKnownLocation()
+    setIsPrecise(false)
     if (cached) {
       setCoords(cached)
       setLocationLabel(t('map.last_known_location'))
@@ -39,6 +44,7 @@ export function useCurrentLocation() {
         const next = { lat: position.coords.latitude, lng: position.coords.longitude }
         setCoords(next)
         setLocationLabel(t('map.current_location'))
+        setIsPrecise(true)
         writeLastKnownLocation(next)
       },
       () => {
@@ -49,5 +55,5 @@ export function useCurrentLocation() {
     )
   }, [t, fallbackToLastKnownOrSeoul])
 
-  return { coords, locationLabel, requestLocation }
+  return { coords, locationLabel, requestLocation, isPrecise }
 }

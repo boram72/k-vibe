@@ -1,5 +1,5 @@
 import type { Locale } from '@/i18n'
-import { apiClient, withFallback } from '@/api/client'
+import { apiClient, API_BASE_URL } from '@/api/client'
 import { extractVideoId } from '@/lib/youtube'
 
 export interface AnalysisPlace {
@@ -175,27 +175,34 @@ function normalizeAnalysisResult(raw: RawAnalysisResult, fallbackVideoId: string
   }
 }
 
+// 백엔드 /analyze는 Gemini 네이티브 영상분석(요청당 15~60초) + Render 무료
+// 인스턴스 콜드스타트(최대 ~50초)가 겹칠 수 있어 넉넉하게 잡는다. 실측 최대
+// 케이스(콜드스타트+긴 영상)를 감안한 여유값 — analyze-store.ts가 이 시간
+// 동안 백그라운드로 기다리는 동안 진행률을 따로 시뮬레이션해서 보여준다.
+const ANALYZE_TIMEOUT_MS = 120000
+
 // Takes the raw URL (not a pre-parsed videoId) to match the real backend's
 // contract — it needs the full URL to do its own parsing (and to eventually
 // support Instagram, which can't be reduced to a YouTube-style video ID).
+//
+// 2026-09: 다른 api/*.ts 모듈과 달리 withFallback()을 안 쓴다 — 실제 백엔드가
+// 설정돼 있는데 호출이 실패(타임아웃 포함)하면, 조용히 mock으로 폴백해 분석이
+// 성공한 것처럼 보이지 않고 진짜 에러를 던져서 store가 사용자에게 에러 메시지를
+// 보여주게 한다(사용자 요청). 백엔드가 아예 설정 안 된 로컬 개발 환경에서만
+// 기존처럼 mock으로 체험 가능하게 둔다.
 export async function fetchAnalysis(url: string, locale: Locale): Promise<AnalysisResult> {
   const videoId = extractVideoId(url) ?? url
-  return withFallback(
-    async () => {
-      // 백엔드 /analyze는 Gemini 네이티브 영상분석(요청당 15~60초) + Render 무료
-      // 인스턴스 콜드스타트(최대 ~50초)가 겹칠 수 있어, apiClient 기본 timeout(8초)
-      // 로는 거의 매번 끊겨 mock으로 폴백해버린다. 이 호출만 넉넉하게 잡는다.
-      const response = await apiClient.post<RawAnalysisResult>(
-        '/analyze',
-        { youtube_url: url, locale },
-        { timeout: 90000 },
-      )
-      return normalizeAnalysisResult(response.data, videoId)
-    },
-    async () => {
-      await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
-      const localized = MOCK_ANALYSIS_BY_LOCALE[locale]
-      return { videoId, title: localized.title, places: localized.places, source: 'mock' }
-    },
+
+  if (!API_BASE_URL) {
+    await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+    const localized = MOCK_ANALYSIS_BY_LOCALE[locale]
+    return { videoId, title: localized.title, places: localized.places, source: 'mock' }
+  }
+
+  const response = await apiClient.post<RawAnalysisResult>(
+    '/analyze',
+    { youtube_url: url, locale },
+    { timeout: ANALYZE_TIMEOUT_MS },
   )
+  return normalizeAnalysisResult(response.data, videoId)
 }

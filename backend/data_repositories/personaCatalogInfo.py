@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from config.dependency import get_supabase_client
 
 PERSONA_CATALOG_TABLE = "persona_catalog"
@@ -447,11 +449,19 @@ def _normalize_db_persona(row: dict, fallback: dict) -> dict:
     }
 
 
+@lru_cache
 def _load_personas() -> dict:
     """persona_catalog 테이블에서 카드 메타데이터(label/badge/이미지/설명/무드)를 읽는다.
 
     조회가 실패하거나 행이 없으면 하드코딩 PERSONAS로 폴백한다
     (personaRouteService._load_persona_route_from_db와 동일한 DB-우선 + 폴백 패턴).
+
+    resolve_persona_id/get_persona/list_personas가 요청 하나당 이 함수를 여러 번
+    호출하고(예: generate_route 1회 실행에 resolve_persona_id+get_persona로 2회),
+    프론트도 홈 화면 진입 시 locale이 en->ko로 한 번 바뀌며 /personas를 2번 부른다.
+    응답이 자주 안 바뀌는 카탈로그 데이터라 _fetch_category_name(tourAPI.py)과 같은
+    패턴으로 프로세스 내 캐싱한다. persona_catalog을 갱신했다면 배포(프로세스 재시작)
+    전까지는 반영되지 않는다.
     """
     try:
         client = get_supabase_client()

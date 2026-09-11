@@ -176,3 +176,46 @@ export async function createPlaceReview(...): Promise<PlaceReview> {
 - `GET /personas/places?locale=`는 이미 구현/테스트 완료했습니다
   (`presentation_api/personas.py`, `business_services/personaRouteService.get_persona_places`).
 - N+1 없이 페르소나 스팟 조회 · location 배치 조회 · 라벨 조회, 총 3회 왕복으로 처리합니다.
+
+---
+
+# 백엔드 → 프론트 TODO: 홈 화면 진입 시 `/personas` 중복 호출(en→ko)
+
+**작성일**: 2026-09-11
+**대상**: 프론트엔드 담당자
+**배경**: 홈 화면 로딩이 가끔 느리다는 제보를 받아 Safari 네트워크 탭으로 확인해보니, `/personas`
+요청이 홈 화면 1회 진입에 **2번** 나가고 있었습니다(응답 크기가 서로 달라 로케일이 다른 두 번의
+실제 요청임을 확인했습니다 — `en`용, `ko`용). `/trending`은 1번만 나가서 대조됩니다.
+
+## 원인 (코드 기준)
+1. `src/i18n/index.ts`가 `i18n.init({ lng: 'en', ... })`로 항상 `'en'`으로 먼저 초기화됩니다.
+2. `PersonaPicker`(`src/blocks/landing/persona-picker.tsx`)의
+   `useQuery({ queryKey: ['k-content-personas', locale], ... })`가 마운트 직후
+   `i18n.language === 'en'`인 상태로 **1차 호출**을 보냅니다(`GET /personas?locale=en`).
+3. 곧이어 `src/router/LocaleGuard.tsx`의 `useEffect`가 URL 경로(예: `/ko/...`)에서 읽은 locale로
+   `i18n.changeLanguage('ko')`를 호출합니다. 이건 마운트 이후에 실행되는 별도 effect라서, 이 시점에
+   `PersonaPicker`가 새 `locale='ko'`로 리렌더되고 react-query의 `queryKey`가 바뀌며
+   **2차 호출**(`GET /personas?locale=ko`)이 다시 나갑니다.
+4. `TrendingKeywords`의 `queryKey`는 `['trending-keywords']`로 locale을 포함하지 않아 1번만
+   호출됩니다 — 네트워크 탭에서 `personas`만 2번, `trending`은 1번 찍히는 것과 정확히 일치합니다.
+
+즉 첫 응답(`en`)은 그대로 버려지고 곧바로 `ko`로 재요청하는 낭비 호출입니다.
+
+## 요청 사항
+`LocaleGuard`의 `useEffect`에서 사후에 `changeLanguage`를 부르는 대신, **첫 렌더 전에** URL의
+locale이 `i18n.language`에 반영되도록 해주세요. 예를 들면:
+- `i18n.init()` 호출 시 `lng`를 고정값 `'en'` 대신, 현재 URL 경로(또는 `localStorage`의
+  `k-vibe-locale`)에서 동기적으로 읽어 초기값으로 넣기, 또는
+- `LocaleGuard`가 `Outlet`을 렌더하기 전에 `i18n.changeLanguage`가 끝나도록(마운트 시 렌더 블로킹)
+  순서를 바꾸기
+
+어느 방식이든 `PersonaPicker`의 최초 렌더 시점에 이미 올바른 locale이 들어있으면 `/personas`
+호출이 1번으로 줄어듭니다. (`/routes/generate` 등 같은 `locale` 파라미터를 쓰는 다른 API 호출에도
+동일한 절감 효과가 있을 것으로 보입니다.)
+
+## 백엔드 쪽 대응
+- `personaCatalogInfo._load_personas()`가 `generate_route()` 1회 실행에도 내부적으로 2번
+  호출되던 문제(요청당 중복 DB 조회)는 프로세스 내 캐싱(`@lru_cache`)으로 해결했습니다
+  (`data_repositories/personaCatalogInfo.py`). 이건 프론트가 몇 번을 호출하든 각 호출의 응답
+  속도를 개선해주지만, 프론트가 2번 호출하는 구조 자체는 줄여주지 않습니다 — 위 프론트 수정과
+  함께 적용되어야 홈 화면 로딩이 최대한 빨라집니다.

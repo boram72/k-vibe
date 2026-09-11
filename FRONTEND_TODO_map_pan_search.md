@@ -115,3 +115,64 @@ export async function createPlaceReview(...): Promise<PlaceReview> {
 - `GET /reviews/{place_id}`, `POST /reviews/{place_id}`는 인증 상태와 무관하게 정상 동작하며
   추가 변경이 필요 없습니다 (`presentation_api/reviews.py`, `data_repositories/reviewinfo.py`).
 - 프로덕션 `reviews` 테이블은 정상적으로 존재하고 실제 데이터가 쌓이고 있음을 확인했습니다.
+
+---
+
+# 백엔드 → 프론트 TODO: 지도 스타별 필터에 페르소나 장소 연동
+
+**작성일**: 2026-09-11
+**대상**: 프론트엔드 담당자
+**배경**: PR #51에서 추가된 지도 스타별 필터(`frontend/src/blocks/map/star-filter.tsx`) 코드에
+"필터링은 place.tags에 이 label과 정확히 일치하는 값이 있는지로 판단(DB 태그 작업 완료되면 바로
+연동)"이라는 주석이 있었습니다. 그 "DB 태그 작업"에 해당하는 페르소나 ⋈ location 조인 엔드포인트를
+백엔드에 추가했습니다.
+
+## 설계 방향
+지도는 이미 사용자 위치 기준 `/places`(TourAPI)를 1회 호출해 그 지역 장소들을 가져오고, 스타
+필터 클릭은 서버를 다시 조회하지 않고 이미 가진 `place.tags`로 클라이언트에서 필터링하도록 짜여
+있습니다(`MapPage.tsx`의 `matchStar = place.tags?.includes(starFilter)`). 이 방식을 그대로 살리려면
+"페르소나로 등록된 장소"들도 tags가 채워진 채로 candidates 배열에 들어가 있어야 합니다. 페르소나-장소
+매칭(조인)은 백엔드가 한 번에 처리해서 내려주고, 프론트는 그 결과를 병합만 하면 되도록
+설계했습니다 — 장소를 하나하나 순회하며 프론트에서 태그를 매칭시키는 것보다 깔끔합니다.
+
+## 신규 엔드포인트
+`GET /personas/places?locale=ko|en`
+
+```json
+[
+  {
+    "id": "402994",
+    "name": "삼청동수제비",
+    "category": "food",
+    "address": "서울특별시 종로구 삼청로 101-1",
+    "lat": 37.5846049848,
+    "lng": 126.9819035323,
+    "imageUrl": "http://...jpg",
+    "tags": ["아이유"]
+  }
+]
+```
+`Place` 타입(`frontend/src/types/place.ts`)과 필드가 1:1로 맞습니다. `tags`에는
+`star-filter.tsx`가 비교하는 것과 동일한 로컬라이즈 label이 들어있어서(`persona.label`, 예:
+`locale=ko`면 "아이유", `locale=en`이면 "IU"), 기존 필터 로직을 코드 변경 없이 그대로 재사용할 수
+있습니다.
+
+## 요청 사항
+1. `MapPage.tsx`에서 `/personas/places?locale=`를 (지도 진입 시 1회, `focusPlaces`와 비슷한 방식으로)
+   불러와 `candidates` 배열에 병합해주세요. 페르소나 경로 데이터는 자주 바뀌지 않으니
+   `useQuery`의 `staleTime`을 길게 잡아도 됩니다.
+2. `/places`(TourAPI) 결과와 `id`가 겹칠 수 있으니, `focusPlaces` 병합 때처럼 `id` 기준으로
+   중복 제거해주세요.
+3. `matchStar` 필터 로직 자체는 변경할 필요 없습니다 — 이미 tags 기반이라 그대로 동작합니다.
+
+## 참고: 왜 반경 제한이 없는가
+`/personas/places`는 페르소나 경로에 등록된 장소 전체를 반환하며, `/places`(TourAPI 반경검색)와
+달리 사용자의 현재 위치/반경과 무관합니다. 지도 화면 밖 먼 장소의 핀도 뜰 수 있다는 뜻인데, 이는
+의도된 동작입니다 — 페르소나 루트가 서울 전역에 흩어져 있어서 "지금 보이는 근처"로만 제한하면
+스타 필터를 눌러도 아무것도 안 뜨는 경우가 많아지기 때문입니다. 지도가 그 핀 위치로 자동 이동하지는
+않으니, 필요하면 카메라 이동 여부는 별도로 판단해주세요.
+
+## 백엔드 쪽 대응
+- `GET /personas/places?locale=`는 이미 구현/테스트 완료했습니다
+  (`presentation_api/personas.py`, `business_services/personaRouteService.get_persona_places`).
+- N+1 없이 페르소나 스팟 조회 · location 배치 조회 · 라벨 조회, 총 3회 왕복으로 처리합니다.

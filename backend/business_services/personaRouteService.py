@@ -129,7 +129,6 @@ def get_persona_places(locale: str) -> list[dict]:
 
 
 def generate_route(theme: str | None, detail: str | None, start_time: str, locale: str, persona_id: str | None = None) -> dict:
-    resolved_persona_id = personaCatalogInfo.resolve_persona_id(theme=theme, detail=detail, persona_id=persona_id)
-    persona = personaCatalogInfo.get_persona(resolved_persona_id)
+    resolved_persona_id, persona = personaCatalogInfo.resolve_persona(theme=theme, detail=detail, persona_id=persona_id)
     locations = _load_persona_route_from_db(resolved_persona_id) or personaCatalogInfo.get_locations_for_persona(resolved_persona_id)
     return routingService.build_persona_route(resolved_persona_id, persona, locations, start_time, locale)

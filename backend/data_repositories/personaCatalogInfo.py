@@ -482,11 +482,24 @@ def get_persona_labels(locale: str) -> dict[str, str]:
     return {persona_id: pick_text(persona["label"], locale) for persona_id, persona in _load_personas().items()}
 
 
-def resolve_persona_id(theme: str | None = None, detail: str | None = None, persona_id: str | None = None) -> str:
+def resolve_persona(
+    theme: str | None = None, detail: str | None = None, persona_id: str | None = None
+) -> tuple[str, dict]:
+    """persona id 판별 + 데이터 조회를 한 번에 처리한다 (_load_personas() 단일 호출).
+
+    generate_route()가 resolve_persona_id()와 get_persona()를 따로 호출하면 매 요청마다
+    persona_catalog 조회가 두 번(직렬) 왕복해 페이지 로딩이 느려지는 문제가 있었다.
+    """
     personas = _load_personas()
-    if persona_id in personas:
-        return persona_id
-    return DETAIL_TO_PERSONA.get(detail or "") or THEME_TO_PERSONA.get(theme or "", "BTS뷔")
+    resolved_id = persona_id if persona_id in personas else (
+        DETAIL_TO_PERSONA.get(detail or "") or THEME_TO_PERSONA.get(theme or "", "BTS뷔")
+    )
+    return resolved_id, personas[resolved_id]
+
+
+def resolve_persona_id(theme: str | None = None, detail: str | None = None, persona_id: str | None = None) -> str:
+    resolved_id, _ = resolve_persona(theme=theme, detail=detail, persona_id=persona_id)
+    return resolved_id
 
 
 def list_personas(locale: str) -> list[dict]:

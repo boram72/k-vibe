@@ -181,6 +181,25 @@ def test_get_persona_places_returns_empty_when_query_fails(mock_get_stops):
     assert personaRouteService.get_persona_places("ko") == []
 
 
+@patch("business_services.personaRouteService.routingService.build_persona_route")
+@patch("business_services.personaRouteService._load_persona_route_from_db")
+@patch("data_repositories.personaCatalogInfo._load_personas")
+def test_generate_route_loads_persona_catalog_only_once(mock_load_personas, mock_load_route, mock_build_route):
+    """resolve_persona_id + get_persona를 각각 부르면 persona_catalog 조회가 두 번 왕복하던 버그가 있었다.
+
+    generate_route()는 이제 resolve_persona() 하나로 합쳐 _load_personas()를 한 번만 호출해야 한다.
+    (DB route가 비어 하드코딩 폴백(get_locations_for_persona)까지 타면 그쪽에서 다시 조회하므로,
+    여기서는 DB route가 있는 정상 경로를 검증한다.)
+    """
+    mock_load_personas.return_value = {"제니": {"locations": []}}
+    mock_load_route.return_value = [{"name": "도산공원"}]
+    mock_build_route.return_value = {"stops": []}
+
+    personaRouteService.generate_route(theme=None, detail=None, start_time="10:00", locale="ko", persona_id="제니")
+
+    mock_load_personas.assert_called_once()
+
+
 def test_build_pic_url_returns_none_without_path():
     from data_repositories import personainfo
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CustomOverlayMap, Map as KakaoMap, Polyline, useKakaoLoader } from 'react-kakao-maps-sdk'
-import { MapPinned, Navigation } from 'lucide-react'
+import { LocateFixed, MapPinned, Navigation } from 'lucide-react'
 import type { RouteStop } from '@/lib/route-draft'
 import { buildGoogleMapsDirectionsUrl, buildGoogleMapsPlaceUrl } from '@/lib/route-share'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,10 @@ interface RouteMiniMapProps {
   stops: RouteStop[]
   completedIds: Set<string>
   bounds: MinimapBounds
+  // 2026-09 — "현재 거리" 확인(RouteLocationCheck) 버튼을 눌러 실제 GPS 좌표를
+  // 얻은 뒤에만 채워짐(페이지 진입만으로 위치 권한을 자동 요청하지 않기 위해
+  // on-demand로 유지). 없으면(null/undefined) 핀을 안 그린다.
+  currentLocation?: { lat: number; lng: number } | null
 }
 
 interface Coordinates {
@@ -44,10 +48,10 @@ function getInitialMapLevel(bounds: MinimapBounds): number {
   return 8
 }
 
-function fitKakaoMapToRoute(map: kakao.maps.Map, stops: RouteStop[], center: Coordinates) {
+function fitKakaoMapToRoute(map: kakao.maps.Map, stops: RouteStop[], center: Coordinates, currentLocation?: Coordinates | null) {
   if (typeof kakao === 'undefined' || !kakao.maps) return
 
-  if (stops.length <= 1) {
+  if (stops.length <= 1 && !currentLocation) {
     map.setCenter(new kakao.maps.LatLng(center.lat, center.lng))
     map.setLevel(4)
     return
@@ -55,6 +59,10 @@ function fitKakaoMapToRoute(map: kakao.maps.Map, stops: RouteStop[], center: Coo
 
   const routeBounds = new kakao.maps.LatLngBounds()
   stops.forEach((stop) => routeBounds.extend(new kakao.maps.LatLng(stop.lat, stop.lng)))
+  // "현재 거리" 확인으로 실제 GPS 위치를 얻으면 그 위치도 화면 안에 들어오도록
+  // bounds에 같이 포함시킨다(내 위치가 루트에서 멀리 떨어져 있어도 카메라가
+  // 알아서 둘 다 보이게 넓혀줌).
+  if (currentLocation) routeBounds.extend(new kakao.maps.LatLng(currentLocation.lat, currentLocation.lng))
   map.setBounds(routeBounds, 32, 32, 32, 32)
 }
 
@@ -72,6 +80,20 @@ function MapHeader() {
       <MapPinned className="h-4.5 w-4.5 shrink-0 text-primary" />
       <h3 className="text-sm font-bold text-foreground">{t('route.mini_map_title')}</h3>
       <p className="ml-1 text-xs text-muted-foreground">{t('route.mini_map_subtitle')}</p>
+    </div>
+  )
+}
+
+// 스탑 번호 핀(primary/crowd-low)과 확실히 구분되도록 빨간색 + 펄스 링으로
+// "내 위치"임을 한눈에 알 수 있게 한다(대화로 확정). 두 미니맵 구현
+// (Percent/Kakao) 공용 — 지도 메뉴(map-canvas.tsx)에도 동일 마커를 쓸 예정.
+function CurrentLocationPin() {
+  return (
+    <div className="relative flex h-7 w-7 items-center justify-center">
+      <span className="absolute h-7 w-7 animate-ping rounded-full bg-red-500/50" />
+      <span className="relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-red-500 text-white shadow-lg">
+        <LocateFixed className="h-3 w-3" />
+      </span>
     </div>
   )
 }
@@ -95,7 +117,7 @@ function DirectionsButton({ stops }: { stops: RouteStop[] }) {
   )
 }
 
-function PercentRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
+function PercentRouteMiniMap({ stops, completedIds, bounds, currentLocation }: RouteMiniMapProps) {
   const { t } = useTranslation()
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
@@ -118,6 +140,16 @@ function PercentRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps)
     y: ((maxLat - stop.lat) / latRange) * 100,
   }))
   const polyline = points.map((p) => `${p.x},${p.y}`).join(' ')
+  // bounds 자체는 스팟 기준 고정(파일 상단 참고 — 미니맵 핀이 안 튀도록 부모가
+  // 소유). 내 위치가 그 범위 밖이어도 화면 가장자리 안쪽(4~96%)에 클램프해서
+  // 항상 어느 방향에 있는지는 보이게 한다 — map-canvas.tsx의 percent 폴백
+  // 핀과 동일한 클램핑 아이디어.
+  const currentLocationPoint = currentLocation
+    ? {
+        x: Math.max(4, Math.min(96, ((currentLocation.lng - minLng) / lngRange) * 100)),
+        y: Math.max(4, Math.min(96, ((maxLat - currentLocation.lat) / latRange) * 100)),
+      }
+    : null
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -181,6 +213,15 @@ function PercentRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps)
             </a>
           )
         })}
+
+        {currentLocationPoint && (
+          <div
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${currentLocationPoint.x}%`, top: `${currentLocationPoint.y}%` }}
+          >
+            <CurrentLocationPin />
+          </div>
+        )}
       </div>
 
       <DirectionsButton stops={stops} />
@@ -188,7 +229,7 @@ function PercentRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps)
   )
 }
 
-function KakaoRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
+function KakaoRouteMiniMap({ stops, completedIds, bounds, currentLocation }: RouteMiniMapProps) {
   const { t } = useTranslation()
   const validStops = useMemo(() => stops.filter(hasValidCoordinates), [stops])
   const mapCenter = useMemo(() => getMapCenter(bounds), [bounds])
@@ -206,11 +247,13 @@ function KakaoRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
 
   useEffect(() => {
     if (!map) return
-    fitKakaoMapToRoute(map, validStops, mapCenter)
-  }, [map, validStops, mapCenter, routeKey])
+    fitKakaoMapToRoute(map, validStops, mapCenter, currentLocation)
+  }, [map, validStops, mapCenter, routeKey, currentLocation])
 
   if (loading || error) {
-    return <PercentRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} />
+    return (
+      <PercentRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} currentLocation={currentLocation} />
+    )
   }
 
   return (
@@ -250,6 +293,12 @@ function KakaoRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
             </CustomOverlayMap>
           )
         })}
+
+        {currentLocation && (
+          <CustomOverlayMap position={currentLocation} zIndex={3}>
+            <CurrentLocationPin />
+          </CustomOverlayMap>
+        )}
       </KakaoMap>
 
       <DirectionsButton stops={validStops} />
@@ -257,7 +306,7 @@ function KakaoRouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
   )
 }
 
-export function RouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps) {
+export function RouteMiniMap({ stops, completedIds, bounds, currentLocation }: RouteMiniMapProps) {
   const { t } = useTranslation()
   const validStops = stops.filter(hasValidCoordinates)
   if (validStops.length === 0) return null
@@ -269,9 +318,9 @@ export function RouteMiniMap({ stops, completedIds, bounds }: RouteMiniMapProps)
     >
       <MapHeader />
       {import.meta.env.VITE_KAKAO_MAP_KEY ? (
-        <KakaoRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} />
+        <KakaoRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} currentLocation={currentLocation} />
       ) : (
-        <PercentRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} />
+        <PercentRouteMiniMap stops={validStops} completedIds={completedIds} bounds={bounds} currentLocation={currentLocation} />
       )}
     </section>
   )

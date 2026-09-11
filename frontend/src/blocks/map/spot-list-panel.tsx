@@ -1,6 +1,6 @@
-import { useRef, type Dispatch, type SetStateAction } from 'react'
+import { useRef, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Heart, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
+import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CategoryFilter } from '@/blocks/map/category-filter'
 import { StarFilter } from '@/blocks/map/star-filter'
@@ -31,6 +31,13 @@ interface SpotListPanelProps {
   onStarFilterChange: Dispatch<SetStateAction<string | null>>
   search: string
   onSearchChange: Dispatch<SetStateAction<string>>
+  // 팀 태스크보드 6번(동네검색) — 검색창은 이미 불러온 스팟을 텍스트로 거르는
+  // 용도 그대로 두고, 이 콜백은 검색어를 카카오 지역 검색으로 넘겨 "강남"처럼
+  // 목록에 없는 지역으로도 이동하게 한다. 모바일은 키보드에 Enter가 없는
+  // 경우가 많아 명시적 버튼이 필요 — 하트 토글 옆에 배치.
+  onSubmitAreaSearch: () => void
+  isSearchingArea: boolean
+  canSearchArea: boolean
   showSavedList: boolean
   onShowSavedListChange: Dispatch<SetStateAction<boolean>>
   savedPlaces: Place[]
@@ -52,6 +59,9 @@ export function SpotListPanel({
   onStarFilterChange,
   search,
   onSearchChange,
+  onSubmitAreaSearch,
+  isSearchingArea,
+  canSearchArea,
   showSavedList,
   onShowSavedListChange,
   savedPlaces,
@@ -143,6 +153,27 @@ export function SpotListPanel({
     </Button>
   )
 
+  // 팀 태스크보드 6번 — 모바일은 키보드에 Enter가 없는 경우가 많아 명시적 버튼이
+  // 필요하다는 요청으로 하트 토글 바로 옆에 배치, 모바일/데스크탑 동일 노출.
+  // 퍼센트 좌표 폴백(canSearchArea=false)에서는 카카오 지역검색 자체가 불가능해
+  // 버튼을 숨긴다.
+  const areaSearchButton = canSearchArea && (
+    <Button
+      size="icon"
+      variant="outline"
+      onClick={onSubmitAreaSearch}
+      disabled={isSearchingArea || !search.trim()}
+      aria-label={t('map.search_this_area')}
+      className="shrink-0"
+    >
+      {isSearchingArea ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+    </Button>
+  )
+
+  function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') onSubmitAreaSearch()
+  }
+
   const searchAndFilter = (
     <div className="space-y-2 px-4 pb-2">
       <div className="flex items-center gap-2">
@@ -151,10 +182,12 @@ export function SpotListPanel({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t('map.search_placeholder')}
             className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
           />
         </div>
+        {areaSearchButton}
         {savedToggleButton}
       </div>
       <Tabs value={filterMode} onValueChange={(v) => onFilterModeChange(v as 'category' | 'star')}>

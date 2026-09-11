@@ -65,6 +65,8 @@
     "seoul_fallback": "首尔（默认）",
     "location_unavailable": "无法获取位置，显示首尔",
     "refresh_location": "刷新位置",
+    "search_area_not_found": "找不到该地区",
+    "search_this_area": "搜索此区域",
     "analysis_result": "分析结果",
     "show_saved": "查看收藏列表",
     "saved_list_title": "收藏列表",

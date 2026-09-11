@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { MapCanvas } from '@/blocks/map/map-canvas'
 import { SpotListPanel } from '@/blocks/map/spot-list-panel'
 import { PlaceDetailSheet } from '@/blocks/map/place-detail-sheet'
 import { fetchMapPlaces, DEFAULT_MAP_SEARCH_RADIUS } from '@/api/places'
 import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
+import { searchKakaoArea } from '@/lib/kakao-area-search'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useCurrentLocation } from '@/lib/use-current-location'
 import { useMediaQuery } from '@/lib/use-media-query'
@@ -59,12 +61,48 @@ export default function MapPage() {
   // 찜 목록 섹션을 보여줄지만 결정한다.
   const [showSavedList, setShowSavedList] = useState(false)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
+  // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
+  // 이 값이 채워지고, 그 좌표를 기준으로 /places를 다시 조회한다("현재 위치"를
+  // 누르면 null로 되돌아가 GPS 좌표로 복귀). focusPlaces(다른 페이지에서 넘어온
+  // 핸드오프)가 있을 땐 그게 항상 우선이라 searchCenter는 무시된다.
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null)
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
   const effectiveCoords = focusPlaces[0]
     ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng }
-    : coords
+    : (searchCenter ?? coords)
+
+  function handleRequestLocation() {
+    setSearchCenter(null)
+    requestLocation()
+  }
+
+  // 팀 태스크보드 6번 — "동네검색". 기존 검색창(search)은 그대로 두고(이미 불러온
+  // 스팟을 텍스트로 필터링하는 용도), 이 버튼/Enter는 검색어를 카카오 장소검색으로
+  // 지역 좌표를 얻어 searchCenter로 승격한다(5번과 같은 메커니즘 재사용). 성공하면
+  // 이제 새 지역의 스팟 목록이 내려오므로 이전 검색어는 지운다 — 안 지우면 옛 텍스트로
+  // 새 목록이 다시 필터링돼 방금 이동한 지역이 빈 목록처럼 보일 수 있음.
+  const areaSearchMutation = useMutation({
+    mutationFn: searchKakaoArea,
+    onSuccess: (coords) => {
+      if (!coords) {
+        toast.error(t('map.search_area_not_found'))
+        return
+      }
+      setSearchCenter(coords)
+      setSearch('')
+    },
+  })
+
+  function handleSearchArea() {
+    if (!search.trim() || areaSearchMutation.isPending) return
+    areaSearchMutation.mutate(search)
+  }
+
+  // 실제 카카오 지도(services 라이브러리)가 있을 때만 의미 있는 기능 — 퍼센트
+  // 좌표 폴백 모드에서는 kakao.maps.services 자체가 없어 항상 null만 돌아온다.
+  const canSearchArea = Boolean(import.meta.env.VITE_KAKAO_MAP_KEY)
 
   const { data: places = [], isLoading } = useQuery({
     queryKey: ['map-places', effectiveCoords.lat, effectiveCoords.lng, i18n.language],
@@ -149,8 +187,9 @@ export default function MapPage() {
           fitPlaces={focusPlaces}
           selectedPlaceId={selectedPlace?.id}
           onSelectPlace={setSelectedPlace}
-          onRequestLocation={requestLocation}
+          onRequestLocation={handleRequestLocation}
           locationLabel={effectiveLocationLabel}
+          onSearchArea={setSearchCenter}
         />
       </div>
 
@@ -166,6 +205,9 @@ export default function MapPage() {
         onStarFilterChange={setStarFilter}
         search={search}
         onSearchChange={setSearch}
+        onSubmitAreaSearch={handleSearchArea}
+        isSearchingArea={areaSearchMutation.isPending}
+        canSearchArea={canSearchArea}
         showSavedList={showSavedList}
         onShowSavedListChange={setShowSavedList}
         savedPlaces={savedPlaces}

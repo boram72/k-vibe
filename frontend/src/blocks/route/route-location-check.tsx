@@ -7,6 +7,12 @@ import { cn } from '@/lib/utils'
 
 interface RouteLocationCheckProps {
   nextStop: RouteStop | null
+  // 2026-09: "현재 거리"를 확인할 때 얻은 실제 GPS 좌표를 부모(RoutePage)로
+  // 올려서 미니맵에 "내 위치" 핀으로도 표시한다. 별도로 위치를 다시 요청하지
+  // 않고 이 컴포넌트가 이미 하고 있는 온디맨드 조회 결과를 재사용 — 페이지
+  // 진입만으로 위치 권한을 묻지 않는 기존 동작(사용자가 버튼을 눌러야 요청)을
+  // 그대로 유지하기 위함.
+  onLocationChecked?: (coords: { lat: number; lng: number }) => void
 }
 
 interface LocationCheckState {
@@ -25,7 +31,7 @@ const TONE_CLASS: Record<LocationCheckState['tone'], string> = {
   error: 'text-destructive',
 }
 
-export function RouteLocationCheck({ nextStop }: RouteLocationCheckProps) {
+export function RouteLocationCheck({ nextStop, onLocationChecked }: RouteLocationCheckProps) {
   const { t } = useTranslation()
   // RoutePage remounts this component (via `key={nextStop?.id}`) whenever the
   // next stop changes, so this initial value doubles as the reset — no
@@ -55,6 +61,7 @@ export function RouteLocationCheck({ nextStop }: RouteLocationCheckProps) {
           message: t(near ? 'route.next_stop_near' : 'route.next_stop_far', { distance, name: nextStop.name }),
           tone: near ? 'success' : 'neutral',
         })
+        onLocationChecked?.({ lat: position.coords.latitude, lng: position.coords.longitude })
       },
       (error) => {
         setCheck({

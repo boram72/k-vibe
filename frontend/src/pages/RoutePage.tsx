@@ -63,6 +63,10 @@ export default function RoutePage() {
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
   const [personaPlan, setPersonaPlan] = useState<RoutePlan | null>(() => readPersonaRoutePlan())
   const [docentOpen, setDocentOpen] = useState(false)
+  // 2026-09 — "현재 거리" 확인(RouteLocationCheck) 결과를 미니맵의 "내 위치"
+  // 핀으로도 보여준다. 페이지 진입만으로 위치 권한을 요청하지 않도록 null로
+  // 시작(사용자가 버튼을 눌러야만 채워짐).
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     setHelp(t('route.help_title'), t('route.help_body'))
@@ -197,10 +201,18 @@ export default function RoutePage() {
 
         <div className="grid gap-4 md:grid-cols-[1fr_480px] md:items-start">
           <div className="space-y-4">
-            {minimapBounds && <RouteMiniMap stops={stops} completedIds={completedIds} bounds={minimapBounds} />}
+            {minimapBounds && (
+              <RouteMiniMap
+                stops={stops}
+                completedIds={completedIds}
+                bounds={minimapBounds}
+                currentLocation={currentLocation}
+              />
+            )}
             <RouteLocationCheck
               key={nextIncompleteStop?.id}
               nextStop={nextIncompleteStop}
+              onLocationChecked={setCurrentLocation}
             />
           </div>
 

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Sparkles, Video } from 'lucide-react'
+import { Sparkles, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 
@@ -57,59 +57,40 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
       </div>
 
       {showAiDisclaimer && (
-        <div className="flex items-start gap-2 rounded-lg bg-crowd-mid/10 px-3 py-2">
-          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-crowd-mid" />
-          <p className="text-[11px] leading-4 text-crowd-mid">{t('analyze.ai_disclaimer')}</p>
+        // 2026-09: 기존 노란 계열(crowd-mid)이 눈에 잘 안 띈다는 피드백으로 빨간
+        // 계열(destructive)로 교체 — 카드 안 다른 경고성 요소(에러 박스, YouTube
+        // 배지)와 같은 톤이라 배경/글자색 조합도 이미 검증된 조합.
+        <div className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2">
+          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
+          <p className="text-[11px] leading-4 text-destructive">{t('analyze.ai_disclaimer')}</p>
         </div>
       )}
 
-      {result.places.map((place, idx) => {
-        const confidencePercent = Math.max(0, Math.min(100, Math.round(place.confidence * 100)))
-        const showEstimated = confidencePercent < 80
-
-        return (
-          <button
-            key={`${place.name}-${idx}`}
-            type="button"
-            onClick={() => onSelectPlace(place)}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted p-3 text-left transition-colors hover:border-primary/35"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-              {idx + 1}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{place.name}</p>
-              {showEstimated && (
-                <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-crowd-mid/10 px-2 py-0.5 text-[10px] font-semibold text-crowd-mid">
-                  <AlertCircle className="h-2.5 w-2.5" />
-                  {t('analyze.estimated_location')}
-                </p>
-              )}
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
-              <div
-                className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"
-                role="progressbar"
-                aria-label={`${t('analyze.confidence')} ${confidencePercent}%`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={confidencePercent}
-              >
-                <div
-                  className="h-full rounded-full bg-primary transition-all duration-300"
-                  style={{ width: `${confidencePercent}%` }}
-                />
-              </div>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-xs font-semibold text-primary">{confidencePercent}%</p>
-              <p className="text-[10px] text-muted-foreground">{t('analyze.confidence')}</p>
-              <span className="mt-2 inline-flex rounded-lg bg-border px-2 py-1 text-[10px] font-semibold text-foreground">
-                {t('analyze.map')}
-              </span>
-            </div>
-          </button>
-        )
-      })}
+      {/* 2026-09: 장소별 "신뢰도 %"와 "추정 위치" 배지를 제거했다 — 실제 분석
+          경로(Gemini 영상분석)에서는 장소명만 추출되고 좌표는 Kakao 검색으로
+          붙이기 때문에 place.confidence가 항상 고정값(0.75)이라 신뢰도라는
+          이름에 걸맞은 실제 값이 아니었음(사용자 피드백으로 확인). place.confidence
+          자체는 API 응답에 남아있고 다른 곳(루트에 추가 시 혼잡도 추정)에서
+          여전히 쓰이므로 타입/백엔드는 그대로, 이 화면의 표시만 없앤다. */}
+      {result.places.map((place, idx) => (
+        <button
+          key={`${place.name}-${idx}`}
+          type="button"
+          onClick={() => onSelectPlace(place)}
+          className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted p-3 text-left transition-colors hover:border-primary/35"
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            {idx + 1}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground">{place.name}</p>
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
+          </div>
+          <span className="shrink-0 rounded-lg bg-border px-2 py-1 text-[10px] font-semibold text-foreground">
+            {t('analyze.map')}
+          </span>
+        </button>
+      ))}
     </div>
   )
 }

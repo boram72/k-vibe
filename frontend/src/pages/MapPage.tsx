@@ -9,10 +9,12 @@ import { PlaceDetailSheet } from '@/blocks/map/place-detail-sheet'
 import { fetchMapPlaces, DEFAULT_MAP_SEARCH_RADIUS } from '@/api/places'
 import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
+import { fetchPersonaPlaces } from '@/api/personas'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useCurrentLocation } from '@/lib/use-current-location'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { type Place, type PlaceCategory } from '@/types/place'
+import type { Locale } from '@/i18n'
 import { cn } from '@/lib/utils'
 
 // Other features (e.g. Analyze) can hand off a one-time map focus via
@@ -34,7 +36,7 @@ export default function MapPage() {
   const { t, i18n } = useTranslation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
-  const { coords, locationLabel, requestLocation } = useCurrentLocation()
+  const { coords, locationLabel, requestLocation, isPrecise } = useCurrentLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const routerLocation = useLocation()
   const focusState = routerLocation.state as MapFocusState | null
@@ -115,6 +117,16 @@ export default function MapPage() {
       }),
   })
 
+  // 팀 태스크보드 12번 — 스타별 필터에서 쓰는, 페르소나 태그가 붙은 실제 장소
+  // 목록. /places(TourAPI 반경검색)와 달리 위치/반경과 무관하게 페르소나 루트
+  // 전체를 내려주므로(FRONTEND_TODO_map_pan_search.md), 자주 안 바뀐다고 보고
+  // staleTime을 길게 잡는다.
+  const { data: personaPlaces = [] } = useQuery({
+    queryKey: ['persona-places', i18n.language],
+    queryFn: () => fetchPersonaPlaces(i18n.language as Locale),
+    staleTime: 30 * 60 * 1000,
+  })
+
   const queryClient = useQueryClient()
   const { data: savedPlaces = [] } = useQuery({
     queryKey: ['saved-places'],
@@ -147,18 +159,27 @@ export default function MapPage() {
 
   const effectiveLocationLabel = focusPlaces.length ? t('map.analysis_result') : locationLabel
 
+  // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
+  // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
+  // 그 의미가 깨진다(대화로 확정, plan.md 12번 참고).
   const candidates = useMemo(() => {
-    if (!focusPlaces.length) return places
-    const focusIds = new Set(focusPlaces.map((p) => p.id))
-    return [...focusPlaces, ...places.filter((p) => !focusIds.has(p.id))]
-  }, [places, focusPlaces])
+    const base = focusPlaces.length
+      ? [...focusPlaces, ...places.filter((p) => !focusPlaces.some((f) => f.id === p.id))]
+      : places
+    if (filterMode !== 'star') return base
+    const baseIds = new Set(base.map((p) => p.id))
+    return [...base, ...personaPlaces.filter((p) => !baseIds.has(p.id))]
+  }, [places, focusPlaces, filterMode, personaPlaces])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return candidates.filter((place) => {
       const matchCategory =
         filterMode !== 'category' || categories.includes('all') || categories.includes(place.category)
-      const matchStar = filterMode !== 'star' || !starFilter || place.tags?.includes(starFilter)
+      // 스타별 "전체"(starFilter 없음)는 페르소나 태그가 붙은 장소 전체를 보여주고,
+      // 특정 스타를 고르면 그 태그와 일치하는 장소만 남긴다.
+      const matchStar =
+        filterMode !== 'star' || (starFilter ? place.tags?.includes(starFilter) : (place.tags?.length ?? 0) > 0)
       const matchSearch =
         !q ||
         place.name.toLowerCase().includes(q) ||
@@ -190,6 +211,7 @@ export default function MapPage() {
           onRequestLocation={handleRequestLocation}
           locationLabel={effectiveLocationLabel}
           onSearchArea={setSearchCenter}
+          myLocation={isPrecise ? coords : null}
         />
       </div>
 

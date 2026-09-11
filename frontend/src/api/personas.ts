@@ -1,6 +1,7 @@
 import type { Locale } from '@/i18n'
 import { apiClient, withFallback } from '@/api/client'
 import { scheduleStops, type RouteStop, type ScheduledRoute } from '@/lib/route-timing'
+import type { Place } from '@/types/place'
 
 export interface KContentPersona {
   id: string
@@ -372,6 +373,32 @@ export async function fetchKContentPersonas(locale: Locale): Promise<KContentPer
   return withFallback(
     async () => (await apiClient.get<KContentPersona[]>('/personas', { params: { locale } })).data,
     () => PERSONA_FALLBACKS.map((persona) => toPersona(persona, locale)),
+  )
+}
+
+// 팀 태스크보드 12번 — 지도 스타별 필터에서 쓰는 "페르소나가 태그된 실제 장소"
+// 목록. 백엔드가 location ⋈ persona 조인을 한 번에 처리해서 내려주고(3회
+// 왕복), 프론트는 그 결과를 MapPage.tsx의 candidates에 병합만 하면 된다
+// (FRONTEND_TODO_map_pan_search.md 참고). tags에 star-filter.tsx가 비교하는
+// 것과 동일한 로케일 label이 이미 들어있어서 기존 matchStar 로직 그대로 재사용.
+export async function fetchPersonaPlaces(locale: Locale): Promise<Place[]> {
+  return withFallback(
+    async () => (await apiClient.get<Place[]>('/personas/places', { params: { locale } })).data,
+    () =>
+      PERSONA_FALLBACKS.flatMap((persona) =>
+        persona.locations
+          .filter((loc) => Number.isFinite(loc.lat) && Number.isFinite(loc.lng))
+          .map((loc) => ({
+            id: loc.id,
+            name: loc.name,
+            category: 'culture',
+            address: loc.address,
+            lat: loc.lat,
+            lng: loc.lng,
+            imageUrl: undefined,
+            tags: [pickText(persona.label, locale)],
+          })),
+      ),
   )
 }
 

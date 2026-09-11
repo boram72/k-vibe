@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CustomOverlayMap, Map as KakaoMap, Polyline, useKakaoLoader } from 'react-kakao-maps-sdk'
-import { LocateFixed, MapPinned, Navigation } from 'lucide-react'
+import { MapPinned, Navigation } from 'lucide-react'
 import type { RouteStop } from '@/lib/route-draft'
 import { buildGoogleMapsDirectionsUrl, buildGoogleMapsPlaceUrl } from '@/lib/route-share'
+import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
 import { cn } from '@/lib/utils'
 
 export interface MinimapBounds {
@@ -80,20 +81,6 @@ function MapHeader() {
       <MapPinned className="h-4.5 w-4.5 shrink-0 text-primary" />
       <h3 className="text-sm font-bold text-foreground">{t('route.mini_map_title')}</h3>
       <p className="ml-1 text-xs text-muted-foreground">{t('route.mini_map_subtitle')}</p>
-    </div>
-  )
-}
-
-// 스탑 번호 핀(primary/crowd-low)과 확실히 구분되도록 빨간색 + 펄스 링으로
-// "내 위치"임을 한눈에 알 수 있게 한다(대화로 확정). 두 미니맵 구현
-// (Percent/Kakao) 공용 — 지도 메뉴(map-canvas.tsx)에도 동일 마커를 쓸 예정.
-function CurrentLocationPin() {
-  return (
-    <div className="relative flex h-7 w-7 items-center justify-center">
-      <span className="absolute h-7 w-7 animate-ping rounded-full bg-red-500/50" />
-      <span className="relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-red-500 text-white shadow-lg">
-        <LocateFixed className="h-3 w-3" />
-      </span>
     </div>
   )
 }

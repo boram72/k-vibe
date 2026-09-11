@@ -1,4 +1,4 @@
-import { apiClient, withFallback } from '@/api/client'
+import { apiClient } from '@/api/client'
 
 export interface PlaceReview {
   id: string
@@ -18,29 +18,6 @@ interface RawReview {
   created_at?: unknown
 }
 
-// 실제 백엔드(Supabase reviews 테이블)가 아직 없거나 호출이 실패할 때를 위한 로컬
-// 폴백 저장소. 다른 api/*.ts 모듈들의 mock 데이터와 달리 "쓰기"가 있는 기능이라
-// 새로고침해도 유지되도록 localStorage에 둔다(브라우저 로컬 한정, 다른 사용자와는
-// 공유되지 않음 — 실제 백엔드가 붙으면 그쪽이 우선되고 이 저장소는 안 쓰임).
-const MOCK_REVIEWS_STORAGE_KEY = 'k-vibe-mock-reviews'
-
-function readMockReviewsStore(): Record<string, PlaceReview[]> {
-  try {
-    const raw = localStorage.getItem(MOCK_REVIEWS_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as Record<string, PlaceReview[]>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function writeMockReviewsStore(store: Record<string, PlaceReview[]>) {
-  try {
-    localStorage.setItem(MOCK_REVIEWS_STORAGE_KEY, JSON.stringify(store))
-  } catch {
-    // localStorage unavailable (private mode, quota) — mock review just won't persist.
-  }
-}
-
 function normalizeReview(raw: RawReview): PlaceReview | null {
   if (typeof raw.id !== 'string' || typeof raw.content !== 'string') return null
   const placeId = typeof raw.place_id === 'string' ? raw.place_id : ''
@@ -52,14 +29,17 @@ function normalizeReview(raw: RawReview): PlaceReview | null {
   return { id: raw.id, placeId, username, rating, content: raw.content, createdAt }
 }
 
+// 2026-09 버그 수정(FRONTEND_TODO_map_pan_search.md) — 예전엔 다른 api/*.ts처럼
+// withFallback()으로 실패 시 조용히 브라우저별 localStorage mock으로 새는
+// 구조였다. 다른 모듈들은 "백엔드가 아직 없을 수도 있다"는 전제라 그게
+// 맞지만, 리뷰는 백엔드가 이미 정상 동작 중이라 실패는 대부분 일시적
+// 네트워크/콜드스타트 문제 — 조용히 mock으로 새면 "리뷰가 보였다 안 보였다"
+// (기기/시크릿창마다 다른 mock 저장소를 봄)처럼 보여서 오히려 혼란을 키웠다.
+// 그래서 여기선 폴백 없이 그대로 던지고, 호출부(place-review-tab.tsx)가
+// 실패를 사용자에게 보여주고 재시도하게 한다.
 export async function fetchPlaceReviews(placeId: string): Promise<PlaceReview[]> {
-  return withFallback(
-    async () => {
-      const response = await apiClient.get<RawReview[]>(`/reviews/${encodeURIComponent(placeId)}`)
-      return response.data.map(normalizeReview).filter((review): review is PlaceReview => Boolean(review))
-    },
-    () => readMockReviewsStore()[placeId] ?? [],
-  )
+  const response = await apiClient.get<RawReview[]>(`/reviews/${encodeURIComponent(placeId)}`)
+  return response.data.map(normalizeReview).filter((review): review is PlaceReview => Boolean(review))
 }
 
 export async function createPlaceReview(
@@ -68,30 +48,12 @@ export async function createPlaceReview(
   rating: number,
   content: string,
 ): Promise<PlaceReview> {
-  return withFallback(
-    async () => {
-      const response = await apiClient.post<RawReview>(`/reviews/${encodeURIComponent(placeId)}`, {
-        username,
-        rating,
-        content,
-      })
-      const normalized = normalizeReview(response.data)
-      if (!normalized) throw new Error('Invalid review response')
-      return normalized
-    },
-    () => {
-      const store = readMockReviewsStore()
-      const review: PlaceReview = {
-        id: `mock-${Date.now()}`,
-        placeId,
-        username,
-        rating,
-        content,
-        createdAt: new Date().toISOString(),
-      }
-      store[placeId] = [review, ...(store[placeId] ?? [])]
-      writeMockReviewsStore(store)
-      return review
-    },
-  )
+  const response = await apiClient.post<RawReview>(`/reviews/${encodeURIComponent(placeId)}`, {
+    username,
+    rating,
+    content,
+  })
+  const normalized = normalizeReview(response.data)
+  if (!normalized) throw new Error('Invalid review response')
+  return normalized
 }

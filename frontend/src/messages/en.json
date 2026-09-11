@@ -89,6 +89,7 @@
     "review_login_required": "Log in to write a review.",
     "review_submit": "Post review",
     "review_submitted": "Review posted",
+    "review_submit_error": "Couldn't post your review. Please try again.",
     "review_empty": "No reviews yet. Be the first to write one!"
   },
   "analyze": {

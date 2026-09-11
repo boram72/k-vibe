@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { MessageSquare, Star } from 'lucide-react'
+import { AlertCircle, MessageSquare, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/use-auth'
@@ -81,7 +81,7 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
       queryClient.invalidateQueries({ queryKey: ['place-reviews', placeId] })
       toast.success(t('placeDetail.review_submitted'))
     },
-    onError: () => toast.error(t('common.error_title')),
+    onError: () => toast.error(t('placeDetail.review_submit_error')),
   })
 
   function handleSubmit() {
@@ -119,14 +119,28 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
         </div>
       )}
 
-      {!reviewsQuery.isPending && (reviewsQuery.data ?? []).length === 0 && (
+      {reviewsQuery.isError && (
+        // 2026-09 버그 수정 — 예전엔 실패해도 조용히 mock으로 새서 사용자가
+        // 실패 자체를 몰랐음(FRONTEND_TODO_map_pan_search.md). 이제는 실패를
+        // 그대로 보여주고 재시도할 수 있게 한다.
+        <div className="flex flex-col items-center gap-2 py-6 text-center">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <p className="text-xs font-semibold text-foreground">{t('common.error_title')}</p>
+          <p className="text-xs text-muted-foreground">{t('common.error_desc')}</p>
+          <Button variant="outline" size="sm" onClick={() => reviewsQuery.refetch()}>
+            {t('common.retry_btn')}
+          </Button>
+        </div>
+      )}
+
+      {!reviewsQuery.isPending && !reviewsQuery.isError && (reviewsQuery.data ?? []).length === 0 && (
         <div className="flex flex-col items-center gap-1.5 py-6 text-center">
           <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
           <p className="text-xs text-muted-foreground">{t('placeDetail.review_empty')}</p>
         </div>
       )}
 
-      {!reviewsQuery.isPending && (reviewsQuery.data ?? []).length > 0 && (
+      {!reviewsQuery.isPending && !reviewsQuery.isError && (reviewsQuery.data ?? []).length > 0 && (
         <div className="space-y-2">
           {reviewsQuery.data!.map((review) => (
             <div key={review.id} className="rounded-xl border border-border bg-background p-3">

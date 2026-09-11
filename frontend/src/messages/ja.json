@@ -89,6 +89,7 @@
     "review_login_required": "ログイン後にご利用いただけます。",
     "review_submit": "レビューを投稿",
     "review_submitted": "レビューを投稿しました",
+    "review_submit_error": "レビューの投稿に失敗しました。もう一度お試しください。",
     "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！"
   },
   "analyze": {

@@ -35,6 +35,17 @@ def get_persona_route(name: str) -> list[dict]:
     return sorted([row for row in rows if is_enabled(row)], key=order_key)
 
 
+def get_all_persona_stops() -> list[dict]:
+    """모든 페르소나의 활성화된 스팟을 한 번에 조회한다 (지도 스타별 필터용).
+
+    name(페르소나 id)으로 나눠 여러 번 조회하지 않고, isuse=Y인 행 전체를 한 번의
+    왕복으로 가져온 뒤 호출부에서 필요한 대로 그룹핑한다.
+    """
+    client = get_supabase_client()
+    result = client.table(TABLE).select("*").eq("isuse", "Y").execute()
+    return result.data or []
+
+
 def create_persona_stop(
     persona_id: str, name: str, routecnt: int, order: int, location_name: str
 ) -> dict | None:

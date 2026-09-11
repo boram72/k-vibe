@@ -5,10 +5,11 @@ import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Compass, MapPin, Plus, Sparkles } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
-// 되돌리려면 이 import를 `AnalysisLoading` ('@/blocks/analyze/analysis-loading')으로
-// 바꾸고 아래 렌더 한 줄을 <AnalysisLoading />로 되돌리면 됨. 인라인 로딩
-// 컴포넌트(analysis-loading.tsx)는 삭제하지 않고 그대로 둔다.
-import { AnalysisLoadingSpotlight } from '@/blocks/analyze/analysis-loading-spotlight'
+// 2026-09: 전체화면 스팟라이트 팝업(analysis-loading-spotlight.tsx)을 원복 —
+// 분석이 도는 동안 화면 전체를 덮어서 다른 탭 이동 등 아무 조작도 할 수 없었음
+// (사용자 피드백). 인라인 체크리스트 로딩으로 되돌린다. 스팟라이트 컴포넌트/
+// 이미지 에셋은 지우지 않고 그대로 둠 — 필요해지면 이 import만 되돌리면 됨.
+import { AnalysisLoading } from '@/blocks/analyze/analysis-loading'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { Button } from '@/components/ui/button'
@@ -133,7 +134,7 @@ export default function AnalyzePage() {
             onSelectExample={handleSelectExample}
           />
 
-          {mutation.isPending && <AnalysisLoadingSpotlight />}
+          {mutation.isPending && <AnalysisLoading />}
 
           {mutation.isError && (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">

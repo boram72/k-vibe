@@ -97,8 +97,6 @@ export function UrlInputCard({ url, onUrlChange, onAnalyze, isAnalyzing, onSelec
           {EXAMPLE_URLS.map((exampleUrl) => {
             const exPlatform = detectSnsPlatform(exampleUrl)
             const ExampleIcon = exPlatform === 'instagram' ? Camera : Video
-            const platformLabel =
-              exPlatform === 'instagram' ? t('analyze.instagram_pending') : t('analyze.youtube_supported')
 
             return (
               <button
@@ -116,10 +114,7 @@ export function UrlInputCard({ url, onUrlChange, onAnalyze, isAnalyzing, onSelec
                 >
                   <ExampleIcon className="h-3.5 w-3.5" />
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-xs font-semibold text-foreground">{platformLabel}</span>
-                  <span className="block truncate font-mono text-[11px] text-muted-foreground">{exampleUrl}</span>
-                </span>
+                <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">{exampleUrl}</span>
               </button>
             )
           })}

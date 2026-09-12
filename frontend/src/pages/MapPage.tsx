@@ -32,6 +32,16 @@ function hasValidCoordinates(place: Place): boolean {
   return Number.isFinite(place.lat) && Number.isFinite(place.lng)
 }
 
+// mobilePanelState가 커질수록(minimized -> default -> full) 지도가 차지하는
+// 비율은 반대로 줄어든다 — full일 땐 지도를 작은 조각(h-16)만 남기고 목록에
+// 화면을 거의 다 내준다. md: 쪽에서 항상 md:flex-none/md:h-full로 덮어써서
+// 데스크탑엔 영향 없음(기존 flex-4 하드코딩과 동일한 안전장치).
+function mobileMapFlexClass(state: 'minimized' | 'default' | 'full') {
+  if (state === 'minimized') return 'flex-1'
+  if (state === 'full') return 'flex-none h-16'
+  return 'flex-4'
+}
+
 export default function MapPage() {
   const { t, i18n } = useTranslation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
@@ -63,6 +73,12 @@ export default function MapPage() {
   // 찜 목록 섹션을 보여줄지만 결정한다.
   const [showSavedList, setShowSavedList] = useState(false)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
+  // 팀 태스크보드 — 모바일 전용 3단계 스와이프(데스크탑의 isPanelCollapsed
+  // 접기/펴기와는 별개 상태). 기본(default, 지금까지의 "펼침"과 동일) 상태에서
+  // 위로 스와이프하면 전체화면(full, 목록이 화면을 거의 다 차지)으로, 아래로
+  // 스와이프하면 최소화면(minimized, 검색창만 남고 필터/타이틀/목록 전부 숨김
+  // — 기존 "접힘"은 필터까지 같이 보여서 더 축소하기로 함)으로 이동.
+  const [mobilePanelState, setMobilePanelState] = useState<'minimized' | 'default' | 'full'>('default')
   // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
   // 이 값이 채워지고, 그 좌표를 기준으로 /places를 다시 조회한다("현재 위치"를
   // 누르면 null로 되돌아가 GPS 좌표로 복귀). focusPlaces(다른 페이지에서 넘어온
@@ -201,7 +217,7 @@ export default function MapPage() {
         isDesktop && isPanelCollapsed ? 'md:grid-cols-[1fr_64px]' : 'md:grid-cols-[1fr_380px]',
       )}
     >
-      <div className={cn('min-h-0 md:h-full md:flex-none', !isDesktop && isPanelCollapsed ? 'flex-1' : 'flex-4')}>
+      <div className={cn('min-h-0 md:h-full md:flex-none', !isDesktop ? mobileMapFlexClass(mobilePanelState) : 'flex-4')}>
         <MapCanvas
           center={effectiveCoords}
           places={filtered}
@@ -212,6 +228,7 @@ export default function MapPage() {
           locationLabel={effectiveLocationLabel}
           onSearchArea={setSearchCenter}
           myLocation={isPrecise ? coords : null}
+          compact={!isDesktop && mobilePanelState === 'full'}
         />
       </div>
 
@@ -219,6 +236,8 @@ export default function MapPage() {
         isDesktop={isDesktop}
         isCollapsed={isPanelCollapsed}
         onCollapsedChange={setIsPanelCollapsed}
+        mobilePanelState={mobilePanelState}
+        onMobilePanelStateChange={setMobilePanelState}
         filterMode={filterMode}
         onFilterModeChange={setFilterMode}
         categories={categories}

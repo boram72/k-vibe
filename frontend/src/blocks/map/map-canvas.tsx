@@ -29,6 +29,12 @@ interface MapCanvasProps {
   // 자리에 있는 것처럼 오해하지 않도록). route-mini-map.tsx의 빨간 펄스
   // 마커(`CurrentLocationPin`)를 그대로 재사용.
   myLocation?: Coordinates | null
+  // 모바일 스팟 목록 패널이 "전체화면" 단계일 때 지도를 아주 작게 눌러줘야
+  // 하는데, 아래 두 렌더러의 루트 div가 원래 min-h-70(280px)을 갖고 있어서
+  // 부모가 h-16(64px)만 줘도 이 min-height가 이겨버려 지도가 그대로 280px를
+  // 차지하며 패널 상단(스와이프 핸들 등)을 덮어버리는 버그가 있었다
+  // (elementFromPoint()로 실제 확인). true면 그 최소 높이 자체를 없앤다.
+  compact?: boolean
 }
 
 // Icon-badge pins colored per category (types/place.ts PLACE_CATEGORIES.pinBg) —
@@ -142,9 +148,9 @@ function pinPosition(coord: Coordinates, center: Coordinates, fitPlaces: Place[]
   return { left: `${left}%`, top: `${top}%` }
 }
 
-function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation }: MapCanvasProps) {
+function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation, compact }: MapCanvasProps) {
   return (
-    <div className="relative h-full min-h-70 w-full overflow-hidden bg-muted">
+    <div className={cn('relative h-full w-full overflow-hidden bg-muted', compact ? 'min-h-0' : 'min-h-70')}>
       <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
         <MapPin className="h-12 w-12" />
       </div>
@@ -197,7 +203,7 @@ function SearchAreaButton({ onClick }: { onClick: () => void }) {
 }
 
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation } = props
+  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
@@ -257,6 +263,25 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     fitKakaoMapToPlaces(map, boundedPlaces)
   }, [boundedPlaces, boundsKey, focusCenter, map])
 
+  // 버그 수정 — 모바일 패널 "전체화면" 전환처럼 지도 컨테이너 크기가 CSS로
+  // 바뀔 때, 카카오 지도는 이걸 스스로 감지하지 못해서 마지막으로 그려졌던
+  // 크기 기준 타일만 남아있다가 줌 레벨에 따라 빈 공간이 남거나 잘려 보이는
+  // 문제가 있었다(대부분의 지도 SDK 공통 특성 — 구글맵의
+  // `google.maps.event.trigger(map,'resize')`와 동일한 역할을 카카오는
+  // `map.relayout()`이 함). setTimeout(0)으로 한 틱 미뤄서 컨테이너의 새
+  // 크기가 실제로 반영된 뒤에 호출되게 함(레이아웃 엔진이 막 바뀐 크기를
+  // 안정시킬 시간을 준다는 관용적인 방어 코드).
+  useEffect(() => {
+    if (!map) return
+    const timer = window.setTimeout(() => {
+      map.relayout()
+      const target = focusCenter ?? center
+      map.setCenter(new kakao.maps.LatLng(target.lat, target.lng))
+    }, 0)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compact, map])
+
   // "현재 위치" 버튼 전용 — 팀 태스크보드 4번. react-kakao-maps-sdk의 <Map center>는
   // center 값이 실제로 바뀔 때만 카메라를 움직이는데(내부적으로 kakao map의
   // 실제 center와 비교), 지도를 손으로 드래그해도 이 center prop 값 자체는
@@ -295,7 +320,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   const mapCenter = focusCenter ?? center
 
   return (
-    <div className="relative h-full min-h-70 w-full overflow-hidden">
+    <div className={cn('relative h-full w-full overflow-hidden', compact ? 'min-h-0' : 'min-h-70')}>
       <KakaoMap
         center={mapCenter}
         level={4}

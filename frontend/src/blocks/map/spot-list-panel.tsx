@@ -13,16 +13,29 @@ import { getCategoryLabelKey, type Place, type PlaceCategory } from '@/types/pla
 import { cn } from '@/lib/utils'
 
 const SWIPE_THRESHOLD = 20
+const MOBILE_PANEL_STATES: MobilePanelState[] = ['minimized', 'default', 'full']
+
+function stepMobilePanelState(current: MobilePanelState, direction: 1 | -1): MobilePanelState {
+  const nextIndex = MOBILE_PANEL_STATES.indexOf(current) + direction
+  return MOBILE_PANEL_STATES[Math.min(MOBILE_PANEL_STATES.length - 1, Math.max(0, nextIndex))]
+}
 
 function formatDistance(meters?: number) {
   if (meters === undefined) return ''
   return meters < 1000 ? `${meters}m` : `${(meters / 1000).toFixed(1)}km`
 }
 
+type MobilePanelState = 'minimized' | 'default' | 'full'
+
 interface SpotListPanelProps {
   isDesktop: boolean
   isCollapsed: boolean
   onCollapsedChange: Dispatch<SetStateAction<boolean>>
+  // 모바일 전용 3단계 스와이프 — 데스크탑의 isCollapsed(접기/펴기 버튼)와는
+  // 완전히 별개 상태. minimized: 검색창만, default: 지금까지의 기본 모습,
+  // full: 목록이 화면을 거의 다 차지.
+  mobilePanelState: MobilePanelState
+  onMobilePanelStateChange: Dispatch<SetStateAction<MobilePanelState>>
   filterMode: 'category' | 'star'
   onFilterModeChange: Dispatch<SetStateAction<'category' | 'star'>>
   categories: PlaceCategory[]
@@ -51,6 +64,8 @@ export function SpotListPanel({
   isDesktop,
   isCollapsed,
   onCollapsedChange,
+  mobilePanelState,
+  onMobilePanelStateChange,
   filterMode,
   onFilterModeChange,
   categories,
@@ -87,8 +102,10 @@ export function SpotListPanel({
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
     if (touchStartY.current === null) return
     const delta = e.clientY - touchStartY.current
-    if (delta > SWIPE_THRESHOLD) onCollapsedChange(true)
-    else if (delta < -SWIPE_THRESHOLD) onCollapsedChange(false)
+    // 아래로 스와이프 = 최소화 방향(-1), 위로 스와이프 = 전체화면 방향(+1).
+    // 이미 끝(minimized/full)에 있으면 그 자리에 그대로 머문다(clamp).
+    if (delta > SWIPE_THRESHOLD) onMobilePanelStateChange((prev) => stepMobilePanelState(prev, -1))
+    else if (delta < -SWIPE_THRESHOLD) onMobilePanelStateChange((prev) => stepMobilePanelState(prev, 1))
     touchStartY.current = null
   }
 
@@ -187,22 +204,27 @@ export function SpotListPanel({
     if (e.key === 'Enter') onSubmitAreaSearch()
   }
 
-  const searchAndFilter = (
-    <div className="space-y-2 px-4 pb-2">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            placeholder={t('map.search_placeholder')}
-            className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
-          />
-        </div>
-        {areaSearchButton}
-        {savedToggleButton}
+  // 모바일 최소화면(minimized)에서는 검색창 줄만 남기고 필터 탭은 숨겨야 해서
+  // 두 조각으로 분리 — 데스크탑/기본·전체화면 모바일은 여전히 같이 렌더링.
+  const searchRow = (
+    <div className="flex items-center gap-2 px-4 pb-2">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+          placeholder={t('map.search_placeholder')}
+          className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
+        />
       </div>
+      {areaSearchButton}
+      {savedToggleButton}
+    </div>
+  )
+
+  const filterTabs = (
+    <div className="px-4 pb-2">
       <Tabs value={filterMode} onValueChange={(v) => onFilterModeChange(v as 'category' | 'star')}>
         <TabsList className="w-full">
           <TabsTrigger value="category" className="flex-1">
@@ -219,6 +241,13 @@ export function SpotListPanel({
           <StarFilter selected={starFilter} onChange={onStarFilterChange} />
         </TabsContent>
       </Tabs>
+    </div>
+  )
+
+  const searchAndFilter = (
+    <div className="space-y-2 pb-2">
+      {searchRow}
+      {filterTabs}
     </div>
   )
 
@@ -256,11 +285,16 @@ export function SpotListPanel({
     </div>
   )
 
+  // 모바일 3단계(minimized/default/full)와 데스크탑 접기/펴기(isCollapsed)는
+  // 서로 별개 상태라 분리해서 계산 — 데스크탑 쪽은 기존 로직 그대로.
+  const mobileFlexClass =
+    mobilePanelState === "minimized" ? "flex-none" : mobilePanelState === "full" ? "min-h-0 flex-1" : "min-h-0 flex-3"
+
   return (
     <div
       className={cn(
         "flex flex-col border-t border-border md:border-l md:border-t-0",
-        !isDesktop && isCollapsed ? "flex-none" : "min-h-0 flex-3 md:flex-1",
+        isDesktop ? (isCollapsed ? "flex-none" : "min-h-0 flex-3 md:flex-1") : mobileFlexClass,
       )}
     >
       {isDesktop && (
@@ -301,11 +335,18 @@ export function SpotListPanel({
             <div className="flex justify-center pb-1 pt-2">
               <div className="h-1 w-10 rounded-full bg-muted" />
             </div>
-            {searchAndFilter}
-            {savedListSection}
-            {titleRow}
+            {searchRow}
+            {/* 최소화면(minimized)에서는 검색창 줄만 남기고 필터/찜목록/타이틀
+                전부 숨김(대화로 확정) — 기존 "접힘"은 필터까지 같이 보였음. */}
+            {mobilePanelState !== "minimized" && (
+              <>
+                {filterTabs}
+                {savedListSection}
+                {titleRow}
+              </>
+            )}
           </div>
-          {!isCollapsed && listRegion}
+          {mobilePanelState !== "minimized" && listRegion}
         </>
       ) : (
         <>

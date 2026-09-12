@@ -53,11 +53,13 @@ export default function MapPage() {
   const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
 
   const [categories, setCategories] = useState<PlaceCategory[]>(['all'])
-  // 2026-09 태스크보드 9번: 카테고리별/스타별 탭. 스타별일 때만 starFilter가
-  // 실제로 필터링에 관여하고, 탭 전환 시 서로의 선택값은 안 지움(다시
-  // 돌아왔을 때 그대로 유지되는 게 자연스럽다고 판단).
+  // 2026-09 태스크보드 9번: 카테고리별/페르소나별 탭. 페르소나별일 때만
+  // starFilter가 실제로 필터링에 관여하고, 탭 전환 시 서로의 선택값은 안 지움
+  // (다시 돌아왔을 때 그대로 유지되는 게 자연스럽다고 판단). 다중선택(대화 중
+  // 요청) — 빈 배열이 "전체"를 의미(CategoryFilter의 'all' 리터럴 대신 빈
+  // 배열을 쓰는 이유는 star-filter.tsx 주석 참고).
   const [filterMode, setFilterMode] = useState<'category' | 'star'>('category')
-  const [starFilter, setStarFilter] = useState<string | null>(null)
+  const [starFilter, setStarFilter] = useState<string[]>([])
   // Lazy initializer for the same reason as `selectedPlace` below — the
   // trending-keyword handoff (LandingPage → `navigate('../map', { state })`)
   // is router state available synchronously at first render.
@@ -187,15 +189,30 @@ export default function MapPage() {
     return [...base, ...personaPlaces.filter((p) => !baseIds.has(p.id))]
   }, [places, focusPlaces, filterMode, personaPlaces])
 
+  // 페르소나별 탭에서 특정 페르소나(또는 "전체")를 고르면, 그 장소들이 지금
+  // 화면(현재 위치 주변 반경) 밖에 있어도 안 보인다고 헷갈리지 않도록 지도가
+  // 그 장소들을 다 담도록 자동으로 줌아웃/이동한다. `filtered`(검색어까지 반영된
+  // 최종 목록) 대신 태그 일치 여부만으로 계산 — 검색창에 글자 하나 칠 때마다
+  // 지도가 다시 튀는 걸 막고, 페르소나/스타 선택이 바뀔 때만 재조정되게 한다.
+  // focusPlaces(다른 페이지에서 넘어온 1회성 핸드오프)가 있으면 그게 항상 우선.
+  const personaFocusPlaces = useMemo(() => {
+    if (filterMode !== 'star') return []
+    return personaPlaces.filter((p) => starFilter.length === 0 || p.tags?.some((tag) => starFilter.includes(tag)))
+  }, [filterMode, starFilter, personaPlaces])
+  const fitPlaces = focusPlaces.length ? focusPlaces : personaFocusPlaces
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return candidates.filter((place) => {
       const matchCategory =
         filterMode !== 'category' || categories.includes('all') || categories.includes(place.category)
-      // 스타별 "전체"(starFilter 없음)는 페르소나 태그가 붙은 장소 전체를 보여주고,
-      // 특정 스타를 고르면 그 태그와 일치하는 장소만 남긴다.
+      // 페르소나별 "전체"(starFilter 빈 배열)는 페르소나 태그가 붙은 장소 전체를
+      // 보여주고, 하나 이상 고르면 그중 하나라도 일치하는 장소만 남긴다(다중선택).
       const matchStar =
-        filterMode !== 'star' || (starFilter ? place.tags?.includes(starFilter) : (place.tags?.length ?? 0) > 0)
+        filterMode !== 'star' ||
+        (starFilter.length > 0
+          ? place.tags?.some((tag) => starFilter.includes(tag))
+          : (place.tags?.length ?? 0) > 0)
       const matchSearch =
         !q ||
         place.name.toLowerCase().includes(q) ||
@@ -221,7 +238,7 @@ export default function MapPage() {
         <MapCanvas
           center={effectiveCoords}
           places={filtered}
-          fitPlaces={focusPlaces}
+          fitPlaces={fitPlaces}
           selectedPlaceId={selectedPlace?.id}
           onSelectPlace={setSelectedPlace}
           onRequestLocation={handleRequestLocation}

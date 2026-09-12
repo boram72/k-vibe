@@ -40,8 +40,8 @@ interface SpotListPanelProps {
   onFilterModeChange: Dispatch<SetStateAction<'category' | 'star'>>
   categories: PlaceCategory[]
   onCategoriesChange: Dispatch<SetStateAction<PlaceCategory[]>>
-  starFilter: string | null
-  onStarFilterChange: Dispatch<SetStateAction<string | null>>
+  starFilter: string[]
+  onStarFilterChange: Dispatch<SetStateAction<string[]>>
   search: string
   onSearchChange: Dispatch<SetStateAction<string>>
   // 팀 태스크보드 6번(동네검색) — 검색창은 이미 불러온 스팟을 텍스트로 거르는
@@ -91,7 +91,7 @@ export function SpotListPanel({
   function resetFilters() {
     onSearchChange('')
     onCategoriesChange(['all'])
-    onStarFilterChange(null)
+    onStarFilterChange([])
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {

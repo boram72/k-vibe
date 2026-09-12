@@ -121,12 +121,17 @@ export default function PersonaPage() {
     if (isQuickEntry) navigate('..')
   }
 
-  function handleAddToRoute() {
+  // 팀 태스크보드 — 페르소나 step2에서 스팟별로 추가/제거를 골랐다면(route-result.tsx의
+  // excludedIds, 이 페이지엔 저장 안 됨) 그 결과로 걸러진 stops만 넘어온다.
+  // savePersonaRoutePlan(plan)은 원본 전체 계획 그대로 저장 — 도슨트 등 다른
+  // 기능이 참조하는 "이 루트가 어느 페르소나의 어떤 계획이었는지" 원본 기록이라
+  // 선별 여부와 무관하게 보존한다.
+  function handleAddToRoute(stops: RoutePlan['stops']) {
     if (!plan) return
     savePersonaRoutePlan(plan)
     const ts = Date.now()
     addStopsToRouteDraft(
-      plan.stops.map((s) => ({ ...s, id: `${s.id}-${ts}`, placeId: s.id, fromPersona: true })),
+      stops.map((s) => ({ ...s, id: `${s.id}-${ts}`, placeId: s.id, fromPersona: true })),
     )
     toast.success(t('persona.route_saved'))
     navigate('../route')

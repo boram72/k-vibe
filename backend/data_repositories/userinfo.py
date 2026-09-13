@@ -48,3 +48,16 @@ def update_display_name(username: str, display_name: str) -> dict | None:
     client = get_supabase_client()
     result = client.table(TABLE).update({"display_name": display_name}).eq("username", username).execute()
     return result.data[0] if result.data else None
+
+
+def get_display_names(usernames: list[str]) -> dict[str, str | None]:
+    """여러 username의 display_name을 한 번의 조회로 가져온다(N+1 방지).
+
+    리뷰 목록마다 get_user를 개별 호출하면 리뷰 수만큼 Supabase 왕복이 늘어난다
+    (locationinfo.get_locations_by_place_ids와 동일한 배치조회 패턴).
+    """
+    if not usernames:
+        return {}
+    client = get_supabase_client()
+    result = client.table(TABLE).select("username, display_name").in_("username", usernames).execute()
+    return {row["username"]: row.get("display_name") for row in (result.data or [])}

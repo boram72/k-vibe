@@ -74,7 +74,7 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
   })
 
   const mutation = useMutation({
-    mutationFn: () => createPlaceReview(placeId, user!.name, rating, content.trim()),
+    mutationFn: () => createPlaceReview(placeId, user!.id, rating, content.trim()),
     onSuccess: () => {
       setContent('')
       setRating(5)

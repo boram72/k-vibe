@@ -2,13 +2,18 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from data_repositories import personaCatalogInfo
 from main import app
 
 client = TestClient(app)
 
 
+@patch("data_repositories.personaCatalogInfo.personainfo.get_all_persona_stops", return_value=[])
 @patch("data_repositories.personaCatalogInfo.get_supabase_client", side_effect=RuntimeError("no db in tests"))
-def test_list_personas_returns_k_content_selector_data(_mock_get_client):
+def test_list_personas_returns_k_content_selector_data(_mock_get_client, _mock_get_stops):
+    personaCatalogInfo._load_personas.cache_clear()
+    personaCatalogInfo._count_stops_by_persona.cache_clear()
+
     response = client.get("/personas?locale=ko")
 
     assert response.status_code == 200

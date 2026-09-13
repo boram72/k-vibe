@@ -33,6 +33,17 @@ def get_locations_by_place_ids(place_ids: list[str]) -> dict[str, dict]:
     return {row["place_id"]: row for row in (result.data or [])}
 
 
+def update_location_rating(place_id: str, rating: float | None) -> None:
+    """reviews 평균 평점을 location.rating에 반영한다(reviewinfo._recompute_location_rating 호출부).
+
+    upsert가 아니라 update만 한다 — reviews.place_id가 location.place_id를 참조하는
+    FK라 이미 존재하는 행만 대상이 되고, 존재하지 않는 place_id로 신규 행을 만들
+    이유가 없다.
+    """
+    client = get_supabase_client()
+    client.table(TABLE).update({"rating": rating}).eq("place_id", place_id).execute()
+
+
 def upsert_location(location_data: dict) -> dict | None:
     """place_id(PK) 기준으로 없으면 insert, 있으면 update한다.
 

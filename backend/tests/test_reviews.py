@@ -75,7 +75,7 @@ def test_delete_review_success(mock_delete_review):
 
     assert response.status_code == 200
     assert response.json() == {"deleted": True}
-    mock_delete_review.assert_called_once_with("r2", "leesw")
+    mock_delete_review.assert_called_once_with("place-1", "r2", "leesw")
 
 
 @patch("data_repositories.reviewinfo.delete_review")

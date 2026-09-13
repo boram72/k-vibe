@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from config.dependency import get_supabase_client
+from data_repositories import personainfo
 
 PERSONA_CATALOG_TABLE = "persona_catalog"
 
@@ -476,6 +477,30 @@ def _load_personas() -> dict:
     return {row["id"]: _normalize_db_persona(row, PERSONAS.get(row["id"], {})) for row in rows}
 
 
+@lru_cache
+def _count_stops_by_persona() -> dict[str, int]:
+    """persona(경로 정거장) 테이블의 실제 스팟 개수를 persona_id별로 센다.
+
+    persona_catalog엔 개수 컬럼이 없고, 컬럼을 추가해도 개발자가 persona 테이블에
+    스팟을 추가/삭제할 때마다 수동으로 맞춰줘야 해서 같은 종류의 동기화 누락 버그가
+    재발할 수 있다. 대신 get_persona_places()가 이미 get_all_persona_stops()로
+    전체 활성 스팟을 단일 쿼리로 가져오는 걸 재사용해, 여기서는 Python에서
+    persona_id별로 groupby만 한다 — DB에 별도 GROUP BY 쿼리를 새로 날리지 않는다.
+    _load_personas()와 동일하게 프로세스 캐싱(재배포 전까진 최초 1회만 조회)한다.
+    """
+    try:
+        rows = personainfo.get_all_persona_stops()
+    except Exception:
+        return {}
+
+    counts: dict[str, int] = {}
+    for row in rows:
+        name = row.get("name")
+        if name:
+            counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
 def pick_text(text: dict, locale: str) -> str:
     return text["ko"] if locale == "ko" else text["en"]
 
@@ -513,6 +538,7 @@ def resolve_persona_id(theme: str | None = None, detail: str | None = None, pers
 
 
 def list_personas(locale: str) -> list[dict]:
+    stop_counts = _count_stops_by_persona()
     return [
         {
             "id": persona_id,
@@ -520,7 +546,10 @@ def list_personas(locale: str) -> list[dict]:
             "description": pick_text(persona["description"], locale),
             "badge": persona["badge"],
             "profileImg": persona["profileImg"],
-            "routeCnt": len(persona["locations"]),
+            # 실제 persona 테이블에 등록된 스팟 개수를 우선 쓰고(실제 루트 생성 결과와
+            # 항상 일치), 아직 DB에 스팟이 없는 페르소나만 하드코딩 locations 개수로
+            # 폴백한다.
+            "routeCnt": stop_counts.get(persona_id) or len(persona["locations"]),
             "moods": pick_tags(persona["moods"], locale),
         }
         for persona_id, persona in _load_personas().items()

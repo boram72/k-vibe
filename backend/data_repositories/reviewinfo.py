@@ -6,11 +6,19 @@
 import uuid
 
 from config.dependency import get_supabase_client
+from data_repositories import userinfo
 
 TABLE = "reviews"
 
 
 def get_reviews(place_id: str) -> list[dict]:
+    """리뷰 목록을 조회하고, 각 리뷰 작성자의 display_name을 붙여서 반환한다.
+
+    reviews.username은 화면에 노출하기엔 부적절한 내부 식별자라(예: OAuth 유저는
+    "google_1029384756" 형태), 프론트가 이름 대신 표시할 display_name을 함께
+    내려준다(BACKEND_REQUESTS.md 후속 요청). display_name이 없는 유저는 None —
+    프론트가 username으로 폴백해서 표시한다.
+    """
     client = get_supabase_client()
     result = (
         client.table(TABLE)
@@ -19,7 +27,12 @@ def get_reviews(place_id: str) -> list[dict]:
         .order("created_at", desc=True)
         .execute()
     )
-    return result.data
+    reviews = result.data
+    usernames = list({review["username"] for review in reviews})
+    display_names = userinfo.get_display_names(usernames)
+    for review in reviews:
+        review["display_name"] = display_names.get(review["username"])
+    return reviews
 
 
 def create_review(place_id: str, username: str, rating: int, content: str) -> dict:

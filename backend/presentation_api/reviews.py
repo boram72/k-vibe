@@ -33,7 +33,7 @@ def create_review(place_id: str, body: ReviewCreateRequest):
 
 @router.delete("/{place_id}/{review_id}")
 def delete_review(place_id: str, review_id: str, username: str):
-    deleted = reviewinfo.delete_review(review_id, username)
+    deleted = reviewinfo.delete_review(place_id, review_id, username)
     if not deleted:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다.")
     return {"deleted": True}

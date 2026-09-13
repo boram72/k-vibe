@@ -10,7 +10,6 @@ import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
-import { EXAMPLE_URLS } from '@/blocks/analyze/analyze.data'
 import { detectSnsPlatform, extractVideoId } from '@/lib/youtube'
 import { addStopToRouteDraft, addStopsToRouteDraft } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
@@ -42,11 +41,6 @@ export default function AnalyzePage() {
     const videoId = extractVideoId(targetUrl)
     if (detectSnsPlatform(targetUrl) !== 'youtube' || !videoId) return
     startAnalysis(targetUrl, i18n.language as Locale)
-  }
-
-  function handleSelectExample(exampleUrl: string) {
-    setUrl(exampleUrl)
-    runAnalysis(exampleUrl)
   }
 
   function toFocusPlace(place: AnalysisPlace) {
@@ -122,7 +116,6 @@ export default function AnalyzePage() {
             }}
             onAnalyze={() => runAnalysis(url)}
             isAnalyzing={isAnalyzing}
-            onSelectExample={handleSelectExample}
           />
 
           {isAnalyzing && <AnalysisProgress percent={progress} />}
@@ -144,11 +137,7 @@ export default function AnalyzePage() {
           )}
 
           {!isAnalyzing && !hasError && displayResult && (
-            <AnalysisResultList
-              result={displayResult}
-              onSelectPlace={setChoicePlace}
-              onTryExample={() => handleSelectExample(EXAMPLE_URLS[0])}
-            />
+            <AnalysisResultList result={displayResult} onSelectPlace={setChoicePlace} />
           )}
 
           {!isAnalyzing && !hasError && !displayResult && (

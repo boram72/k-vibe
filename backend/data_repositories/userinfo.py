@@ -39,3 +39,12 @@ def upsert_oauth_user(username: str, email: str | None) -> dict:
     client = get_supabase_client()
     result = client.table(TABLE).upsert({"username": username, "email": email}, on_conflict="username").execute()
     return result.data[0]
+
+
+def update_display_name(username: str, display_name: str) -> dict | None:
+    """username(내부 식별자, 불변)과 별개로 화면 표시용 display_name을 갱신한다.
+    대상 유저가 없으면 None(호출부에서 404 처리).
+    """
+    client = get_supabase_client()
+    result = client.table(TABLE).update({"display_name": display_name}).eq("username", username).execute()
+    return result.data[0] if result.data else None

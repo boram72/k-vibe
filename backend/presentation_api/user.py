@@ -20,6 +20,11 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class DisplayNameRequest(BaseModel):
+    username: str
+    display_name: str
+
+
 @router.post("/signup")
 def signup(body: SignupRequest):
     try:
@@ -34,4 +39,12 @@ def login(body: LoginRequest):
     user = userinfo.get_user(body.username)
     if user is None or user.get("password") != body.password:
         raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+    return {k: v for k, v in user.items() if k != "password"}
+
+
+@router.post("/display-name")
+def update_display_name(body: DisplayNameRequest):
+    user = userinfo.update_display_name(body.username, body.display_name)
+    if user is None:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     return {k: v for k, v in user.items() if k != "password"}

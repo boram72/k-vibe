@@ -1,12 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { Sparkles, Video } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Sparkles } from 'lucide-react'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 
 interface AnalysisResultListProps {
   result: AnalysisResult
   onSelectPlace: (place: AnalysisPlace) => void
-  onTryExample: () => void
 }
 
 // AI(모델)가 실제로 추론해서 만든 결과인 소스들 — worker(규칙기반 매칭)/mock은
@@ -24,7 +22,7 @@ const SOURCE_LABEL_KEYS: Record<string, string> = {
 // sticky footer (so they stay reachable while this list scrolls), not in here.
 // Tapping an individual place card opens a choice popup (view this one on the map,
 // or add just this one to the route) — see AnalyzePage's `choicePlace` dialog.
-export function AnalysisResultList({ result, onSelectPlace, onTryExample }: AnalysisResultListProps) {
+export function AnalysisResultList({ result, onSelectPlace }: AnalysisResultListProps) {
   const { t } = useTranslation()
   const sourceLabel = t(SOURCE_LABEL_KEYS[result.source] ?? 'analyze.source_worker')
   const showAiDisclaimer = AI_SOURCES.has(result.source)
@@ -34,10 +32,6 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
       <div className="rounded-xl border border-border bg-muted p-4">
         <p className="text-sm font-semibold text-foreground">{t('analyze.empty_title')}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('analyze.empty_body')}</p>
-        <Button variant="outline" size="sm" className="mt-3" onClick={onTryExample}>
-          <Video className="h-3.5 w-3.5" />
-          {t('analyze.try_example')}
-        </Button>
       </div>
     )
   }
@@ -86,8 +80,12 @@ export function AnalysisResultList({ result, onSelectPlace, onTryExample }: Anal
             <p className="text-sm font-semibold text-foreground">{place.name}</p>
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
           </div>
+          {/* 2026-09: "지도"라는 라벨이 실제 동작(눌렀을 때 "지도에서 보기"/
+              "루트에 추가" 중 고르는 선택 팝업이 뜸)과 안 맞는다는 피드백으로
+              "선택"으로 교체 — AnalyzePage의 choicePlace 다이얼로그 안내문
+              (choose_action_hint: "이 장소로 할 작업을 선택하세요")과 어휘를 맞췄다. */}
           <span className="shrink-0 rounded-lg bg-border px-2 py-1 text-[10px] font-semibold text-foreground">
-            {t('analyze.map')}
+            {t('analyze.select_action')}
           </span>
         </button>
       ))}

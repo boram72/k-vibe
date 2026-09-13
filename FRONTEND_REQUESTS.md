@@ -9,7 +9,7 @@
 
 ---
 
-## 1. 리뷰 작성 시 실제 username 대신 표시용 display_name을 보내고 있음 (버그) — 2026-09-13
+## 1. [해결됨] 리뷰 작성 시 실제 username 대신 표시용 display_name을 보내고 있음 (버그) — 2026-09-13
 
 ### 배경
 프로필 표시 이름(`display_name`) 기능이 추가되면서(`POST /user/display-name`, PR#67),
@@ -32,6 +32,10 @@ mutationFn: () => createPlaceReview(placeId, user!.name, rating, content.trim())
 `createPlaceReview(placeId, user!.id, ...)`로 변경해달라(`user.id`가 실제 username,
 `lib/auth.ts`의 `toAuthUser` 참고). `user.name`은 화면 표시 전용으로만 쓰고, 서버로 보내는
 식별자는 항상 `user.id`를 써야 한다.
+
+### 처리 완료
+이번 PR에서 백엔드가 직접 `user!.name` → `user!.id`로 수정함(프론트 팀 확인 전이라 별도 반영
+불필요).
 
 ---
 

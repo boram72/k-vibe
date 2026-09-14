@@ -166,7 +166,7 @@ def test_find_nearby_places_returns_parsed_list(mock_get):
         {
             "id": "126508",
             "name": "경복궁",
-            "category": "culture",
+            "category": "attraction",
             "address": "서울 종로구 사직로 161",
             "lat": 37.5796,
             "lng": 126.977,

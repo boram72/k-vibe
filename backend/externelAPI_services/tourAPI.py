@@ -50,13 +50,21 @@ AREA_CODES_PATH = Path(__file__).parent / "data" / "tour_area_codes.json"
 
 # TourAPI contentTypeId -> 프론트엔드 PlaceCategory(src/types/place.ts) 매핑.
 # 25(여행코스)는 단일 지점이 아니라 조회 대상에서 제외한다(find_nearby_places 참고).
+#
+# 2026-09 QA 피드백 반영 — 기존엔 15(축제행사)/28(레포츠)/38(쇼핑)을 전부 "fun"
+# 하나로 뭉쳐서 사용자가 축제/쇼핑을 따로 찾을 수 없었음(실제로는 TourAPI에 세
+# 콘텐츠타입 모두 데이터가 있는데 카테고리 구분만 안 해준 것 — 서울 도심 기준
+# 100건 중 15번 7건/38번 14건 확인). "관광지/문화/음식/숙소/축제/쇼핑" 6개로
+# 재분류(대화로 확정): 12(관광지)+28(레포츠, 도심 기준 데이터 희소해 관광지에
+# 편입)는 "attraction", 14(문화시설)는 기존 "culture" 그대로 유지(범위만 좁아짐),
+# 15(축제행사)는 신규 "festival", 38(쇼핑)은 신규 "shopping"으로 분리.
 CONTENT_TYPE_TO_CATEGORY = {
-    "12": "culture",  # 관광지
+    "12": "attraction",  # 관광지
     "14": "culture",  # 문화시설
-    "15": "fun",  # 축제공연행사
-    "28": "fun",  # 레포츠
+    "15": "festival",  # 축제행사
+    "28": "attraction",  # 레포츠 (관광지에 편입)
     "32": "stay",  # 숙박
-    "38": "fun",  # 쇼핑
+    "38": "shopping",  # 쇼핑
     "39": "food",  # 음식점
 }
 

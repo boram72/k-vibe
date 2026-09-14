@@ -8,7 +8,8 @@
     "retry_btn": "再試行",
     "save": "保存",
     "unsave": "保存解除",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "already_in_route": "すでにルートに追加されています"
   },
   "homeFeed": {
     "eyebrow": "ソウル ライブフィード",
@@ -59,6 +60,9 @@
     "filter_culture": "文化",
     "filter_food": "グルメ",
     "filter_stay": "宿泊",
+    "filter_attraction": "観光地",
+    "filter_festival": "祭り",
+    "filter_shopping": "ショッピング",
     "trending_spots": "トレンドスポット",
     "help_title": "マップを見る",
     "help_body": "検索やカテゴリで絞り込み、ピンやリストをタップして詳細を確認できます。ナビゲーションボタンで現在地に移動します。",
@@ -75,6 +79,7 @@
     "search_area_not_found": "この地域が見つかりませんでした",
     "analysis_result": "分析結果",
     "show_saved": "お気に入りリストを見る",
+    "show_attractions": "おすすめ観光地を見る",
     "saved_list_title": "お気に入りリスト",
     "saved_list_empty": "まだお気に入りの場所がありません。",
     "filter_mode_category": "カテゴリ別",
@@ -87,6 +92,7 @@
   "placeDetail": {
     "add_to_route": "ルートに追加",
     "added_to_route": "ルートに追加しました",
+    "info_unavailable": "サービス準備中",
     "share": "共有",
     "share_copied": "リンクをコピーしました",
     "tab_detail": "詳細",

@@ -51,8 +51,13 @@ export function SavedPlacesGrid() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ startX: number; startScrollLeft: number } | null>(null)
 
+  // 2026-09 QA 2번(추가 발견) — 카드 안의 버튼(상세보기/찜취소/루트추가) 위에서
+  // 눌러도 이 핸들러가 무조건 스크롤 컨테이너로 포인터를 캡처해버려서, 버튼
+  // 자신의 클릭이 먹지 않는 버그였다(찜취소가 안 되는 것도 이게 원인). 버튼
+  // 위에서 시작된 포인터는 캡처하지 않고 그대로 통과시킨다.
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (!scrollRef.current) return
+    if ((e.target as HTMLElement).closest('button')) return
     dragRef.current = { startX: e.clientX, startScrollLeft: scrollRef.current.scrollLeft }
     scrollRef.current.setPointerCapture(e.pointerId)
   }
@@ -72,13 +77,16 @@ export function SavedPlacesGrid() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['saved-places'] }),
   })
 
+  // 2026-09 QA 2번 — 이 컴포넌트가 프로필에서 홈(index 라우트)으로 옮겨온 뒤로
+  // '../map'이 한 단계 더 올라가버려 이동이 안 됐음. 현재 위치가 이미
+  // `/:locale`이라 앞에 '../' 없이 상대경로만 쓰면 됨.
   function openPlace(place: Place) {
     const state: MapFocusState = { focusPlaces: [place], openDetail: true }
-    navigate('../map', { state })
+    navigate('map', { state })
   }
 
   function handleAddToRoute(place: Place) {
-    addStopToRouteDraft({
+    const { added } = addStopToRouteDraft({
       id: place.id,
       placeId: place.id,
       name: place.name,
@@ -89,8 +97,8 @@ export function SavedPlacesGrid() {
       crowdLevel: place.crowdLevel,
     })
     setRouteStopIds((prev) => new Set(prev).add(place.id))
-    toast.success(t('placeDetail.added_to_route'))
-    navigate('../route')
+    toast.success(added ? t('placeDetail.added_to_route') : t('common.already_in_route'))
+    navigate('route')
   }
 
   if (places.length === 0) {
@@ -103,7 +111,7 @@ export function SavedPlacesGrid() {
         <div className="rounded-xl border border-border bg-muted p-5 text-center">
           <p className="text-sm font-semibold text-foreground">{t('profile.no_saved_places')}</p>
           <p className="mt-1 text-xs text-muted-foreground">{t('profile.no_saved_places_hint')}</p>
-          <Button className="mt-4" onClick={() => navigate('../map')}>
+          <Button className="mt-4" onClick={() => navigate('map')}>
             <Map className="h-3.5 w-3.5" />
             {t('profile.open_map')}
           </Button>

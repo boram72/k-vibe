@@ -59,11 +59,35 @@ export function readRouteDraft(): RouteStop[] {
   }
 }
 
-export function addStopToRouteDraft(stop: RouteStop): RouteStop[] {
-  const next = [...readRouteDraft().filter((s) => s.id !== stop.id), stop]
+// 2026-09 QA 10번 — 같은 장소를 중복 추가할 수 있던 버그. `id`는 스팟
+// *인스턴스* 식별자라 PersonaPage가 매번 `${s.id}-${ts}`로 새 id를 만들어서
+// (같은 페르소나 루트를 두 번 "추가"하면) 기존 `id` 기준 upsert로는 못
+// 잡았음 — 실제 장소 정체성인 `placeId`(없으면 `id`) 기준으로 같은 장소인지
+// 판단한다.
+function isSamePlace(a: RouteStop, b: RouteStop): boolean {
+  return (a.placeId ?? a.id) === (b.placeId ?? b.id)
+}
+
+export interface AddStopOutcome {
+  stops: RouteStop[]
+  // false면 같은 장소가 이미 루트에 있어서 새로 추가되지 않았음 — 호출부가
+  // "루트에 추가됐어요" 대신 "이미 추가된 루트예요"를 보여줄 때 사용.
+  added: boolean
+}
+
+export function addStopToRouteDraft(stop: RouteStop): AddStopOutcome {
+  const existing = readRouteDraft()
+  const added = !existing.some((s) => isSamePlace(s, stop))
+  const next = [...existing.filter((s) => !isSamePlace(s, stop)), stop]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   scheduleDraftSync(next)
-  return next
+  return { stops: next, added }
+}
+
+export interface AddStopsOutcome {
+  stops: RouteStop[]
+  addedCount: number
+  skippedCount: number
 }
 
 /**
@@ -72,12 +96,13 @@ export function addStopToRouteDraft(stop: RouteStop): RouteStop[] {
  * draft (e.g. from Map) rather than replacing it, so stops added from
  * different entry points can be combined into one route.
  */
-export function addStopsToRouteDraft(stops: RouteStop[]): RouteStop[] {
-  const incomingIds = new Set(stops.map((s) => s.id))
-  const next = [...readRouteDraft().filter((s) => !incomingIds.has(s.id)), ...stops]
+export function addStopsToRouteDraft(stops: RouteStop[]): AddStopsOutcome {
+  const existing = readRouteDraft()
+  const addedCount = stops.filter((s) => !existing.some((e) => isSamePlace(e, s))).length
+  const next = [...existing.filter((s) => !stops.some((incoming) => isSamePlace(incoming, s))), ...stops]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   scheduleDraftSync(next)
-  return next
+  return { stops: next, addedCount, skippedCount: stops.length - addedCount }
 }
 
 /**

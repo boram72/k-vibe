@@ -399,7 +399,8 @@
     "settings_title": "Settings",
     "settings_language": "Language",
     "sign_in": "Sign in",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "signing_out": "Signing out..."
   },
   "login": {
     "title": "Sign in",

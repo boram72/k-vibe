@@ -399,7 +399,8 @@
     "settings_title": "설정",
     "settings_language": "언어",
     "sign_in": "로그인",
-    "sign_out": "로그아웃"
+    "sign_out": "로그아웃",
+    "signing_out": "로그아웃 중..."
   },
   "login": {
     "title": "로그인",

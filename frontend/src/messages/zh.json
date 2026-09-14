@@ -399,7 +399,8 @@
     "settings_title": "设置",
     "settings_language": "语言",
     "sign_in": "登录",
-    "sign_out": "退出登录"
+    "sign_out": "退出登录",
+    "signing_out": "正在退出登录..."
   },
   "login": {
     "title": "登录",

@@ -9,6 +9,7 @@ import {
   type SignupPayload,
 } from '@/lib/auth'
 import { mergeGuestSavedPlacesIntoUser } from '@/lib/saved-places'
+import { restoreRouteDraftFromServer } from '@/lib/route-draft'
 
 const AUTH_QUERY_KEY = ['auth-user']
 const SAVED_PLACES_QUERY_KEY = ['saved-places']
@@ -35,7 +36,7 @@ export function useAuth() {
   })
 
   const onCredentialsSuccess = async (loggedInUser: { id: string }) => {
-    await mergeGuestSavedPlacesIntoUser(loggedInUser.id)
+    await Promise.all([mergeGuestSavedPlacesIntoUser(loggedInUser.id), restoreRouteDraftFromServer()])
     queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
     queryClient.invalidateQueries({ queryKey: SAVED_PLACES_QUERY_KEY })
   }
@@ -61,6 +62,7 @@ export function useAuth() {
     user,
     isLoading,
     logout: logoutMutation.mutate,
+    isLoggingOut: logoutMutation.isPending,
     signup: signupMutation.mutate,
     isSigningUp: signupMutation.isPending,
     signupError: signupMutation.error,

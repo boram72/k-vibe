@@ -399,7 +399,8 @@
     "settings_title": "設定",
     "settings_language": "言語",
     "sign_in": "ログイン",
-    "sign_out": "ログアウト"
+    "sign_out": "ログアウト",
+    "signing_out": "ログアウト中..."
   },
   "login": {
     "title": "ログイン",

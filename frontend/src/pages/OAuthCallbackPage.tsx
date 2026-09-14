@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { completeOAuthLogin, type AuthProvider } from '@/lib/auth'
 import { mergeGuestSavedPlacesIntoUser } from '@/lib/saved-places'
+import { restoreRouteDraftFromServer } from '@/lib/route-draft'
 
 const AUTH_QUERY_KEY = ['auth-user']
 const SAVED_PLACES_QUERY_KEY = ['saved-places']
@@ -38,7 +39,7 @@ export default function OAuthCallbackPage() {
     }
 
     const user = completeOAuthLogin({ username, email, provider })
-    mergeGuestSavedPlacesIntoUser(user.id).finally(() => {
+    Promise.all([mergeGuestSavedPlacesIntoUser(user.id), restoreRouteDraftFromServer()]).finally(() => {
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: SAVED_PLACES_QUERY_KEY })
       navigate('/', { replace: true })

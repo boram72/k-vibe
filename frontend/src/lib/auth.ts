@@ -1,5 +1,5 @@
 import { API_BASE_URL, apiClient } from '@/api/client'
-import { clearPersonaRoutePlan, saveRouteDraft } from '@/lib/route-draft'
+import { clearPersonaRoutePlan, flushRouteDraftSync, saveRouteDraft } from '@/lib/route-draft'
 import { useRouteProgressStore } from '@/store/route-progress-store'
 
 export type AuthProvider = 'google'
@@ -62,8 +62,18 @@ export function completeOAuthLogin(data: { username: string; email: string; prov
 // 2026-09 QA 11번 — 로그아웃해도 "내 루트"(k-vibe-current-route 등)가 그대로
 // 남아 다음 사람(게스트 포함, 같은 브라우저)이 이전 계정의 루트를 그대로
 // 보던 버그. saved-places.ts처럼 계정별 버킷을 새로 만들기보다, 로그아웃
-// 시점에 루트 관련 상태를 통째로 비우는 쪽으로 확정.
+// 시점에 화면(로컬)만 게스트 상태로 비우는 쪽으로 확정 — 계정 데이터 자체는
+// 서버(route-draft 테이블)에 남아있다가 다음 로그인 때 복원된다
+// (route-draft.ts의 restoreRouteDraftFromServer 참고).
+//
+// 후속 발견·수정 — 로그아웃 버튼을 누른 시점에 아직 서버로 안 나간 편집(드래그
+// 재정렬 등, 디바운스 대기 중)이 있으면 세션을 먼저 지워버려서 그 편집이
+// 영영 서버에 반영되지 못하고 로컬도 비워지는 버그가 있었음(디바운스 타이머가
+// 나중에 실행돼도 이미 로그아웃된 상태라 getCurrentUser()가 null이라 조용히
+// 무시됨) — 세션을 지우기 전에 대기 중인 동기화를 먼저 flush로 보내고 나서
+// 로컬을 비우도록 순서 변경.
 export async function logout(): Promise<void> {
+  await flushRouteDraftSync()
   localStorage.removeItem(STORAGE_KEY)
   saveRouteDraft([])
   clearPersonaRoutePlan()

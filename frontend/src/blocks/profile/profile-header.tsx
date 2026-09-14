@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Check, LogOut, Pencil, User, X } from 'lucide-react'
+import { Check, Loader2, LogOut, Pencil, User, X } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/use-auth'
@@ -15,7 +15,7 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
   const { t } = useTranslation()
-  const { user, logout, updateDisplayName, isUpdatingDisplayName } = useAuth()
+  const { user, logout, isLoggingOut, updateDisplayName, isUpdatingDisplayName } = useAuth()
   const { data: savedPlaces = [] } = useQuery({ queryKey: ['saved-places'], queryFn: fetchSavedPlaces })
   // Lazy initializers — both are one-time local reads, same pattern as
   // RoutePage's/LandingPage's mount-time localStorage reads.
@@ -100,9 +100,9 @@ export function ProfileHeader({ onSignInClick }: ProfileHeaderProps) {
       </div>
 
       {user ? (
-        <Button variant="outline" className="mt-4 w-full" onClick={() => logout()}>
-          <LogOut className="h-4 w-4" />
-          {t('profile.sign_out')}
+        <Button variant="outline" className="mt-4 w-full" disabled={isLoggingOut} onClick={() => logout()}>
+          {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          {t(isLoggingOut ? 'profile.signing_out' : 'profile.sign_out')}
         </Button>
       ) : (
         <Button className="mt-4 w-full" onClick={onSignInClick}>

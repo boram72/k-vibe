@@ -1,6 +1,6 @@
 import type { CrowdLevel } from '@/types/place'
 import type { RoutePlan } from '@/lib/route-timing'
-import { createDebouncedSync } from '@/lib/db-sync'
+import { createDebouncedSync, pullFromServer } from '@/lib/db-sync'
 
 // Same storage key as the hslee reference (`lib/routes.ts`) so Step 10's
 // RoutePage can read this draft directly once it's built.
@@ -134,4 +134,15 @@ export function readPersonaRoutePlan(): RoutePlan | null {
 export function clearPersonaRoutePlan(): void {
   localStorage.removeItem(PERSONA_PLAN_KEY)
   scheduleDraftSync(readRouteDraft())
+}
+
+// 로그인 시 서버(GET /route-draft/{username})에 저장된 루트를 로컬로 복원.
+// 로그인 전 게스트 상태에서 이미 로컬에 담아둔 스팟은 비우거나 덮어쓰지
+// 않고, addStopsToRouteDraft의 기존 병합(placeId 중복 제거) 로직으로 합친다
+// — 로그인 직전에 만든 로컬 편집을 잃지 않기 위함.
+export async function restoreRouteDraftFromServer(): Promise<void> {
+  const data = await pullFromServer<{ stops: RouteStop[]; plan: RoutePlan | null }>('/route-draft')
+  if (!data) return
+  if (data.stops?.length) addStopsToRouteDraft(data.stops)
+  if (data.plan && !readPersonaRoutePlan()) savePersonaRoutePlan(data.plan)
 }

@@ -28,19 +28,38 @@ export function syncImmediately(path: string, payload: unknown): void {
   void pushToServer(path, payload)
 }
 
+// 로그인 시 서버에 저장된 값을 로컬로 복원할 때 사용(pushToServer의 반대 방향).
+// 같은 규칙 적용: API_BASE_URL 없거나 로그인 안 돼있으면 null.
+export async function pullFromServer<T>(path: string): Promise<T | null> {
+  if (!API_BASE_URL) return null
+  const user = await getCurrentUser()
+  if (!user) return null
+  try {
+    const { data } = await apiClient.get<T>(`${path}/${user.id}`)
+    return data
+  } catch (err) {
+    console.warn(`[db-sync] failed to pull ${path}:`, err)
+    return null
+  }
+}
+
 // For data that can change continuously during editing (route-draft drag
 // reorder) — sends the latest full payload once activity settles, instead of
 // once per intermediate change. `flush()` is for boundary events (page leave,
-// tab hidden) so a debounce in flight isn't lost.
+// tab hidden) so a debounce in flight isn't lost — it returns the in-flight
+// push's promise so a caller (e.g. logout) can await it before clearing local
+// state, instead of firing-and-forgetting.
 export function createDebouncedSync(path: string, delayMs = 1500) {
   let timer: ReturnType<typeof setTimeout> | null = null
   let pending: unknown = null
 
-  function flush(): void {
+  function flush(): Promise<void> {
     if (timer) clearTimeout(timer)
     timer = null
-    if (pending !== null) void pushToServer(path, pending)
+    if (pending === null) return Promise.resolve()
+    const payload = pending
     pending = null
+    return pushToServer(path, payload)
   }
 
   function schedule(payload: unknown): void {

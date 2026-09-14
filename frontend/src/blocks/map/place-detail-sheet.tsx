@@ -44,7 +44,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
 
   function handleAddToRoute() {
     if (!place) return
-    addStopToRouteDraft({
+    const { added } = addStopToRouteDraft({
       id: place.id,
       placeId: place.id,
       name: place.name,
@@ -54,7 +54,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
       lng: place.lng,
       crowdLevel: place.crowdLevel,
     })
-    toast.success(t('placeDetail.added_to_route'))
+    toast.success(added ? t('placeDetail.added_to_route') : t('common.already_in_route'))
     onClose()
   }
 
@@ -103,9 +103,9 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
       {isDetailLoading && <div className="h-4 w-40 animate-pulse rounded bg-muted" />}
       {detail?.phone &&
         (detail.phone === '-' ? (
-          <p className="flex items-center gap-2 text-foreground">
+          <p className="flex items-center gap-2 text-muted-foreground">
             <Phone className="h-4 w-4 shrink-0 text-primary" />
-            {detail.phone}
+            {t('placeDetail.info_unavailable')}
           </p>
         ) : (
           <a href={`tel:${detail.phone}`} className="flex items-center gap-2 text-foreground hover:underline">
@@ -116,7 +116,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
       {detail?.businessHours && (
         <p className="flex items-center gap-2 text-muted-foreground">
           <Clock className="h-4 w-4 shrink-0 text-primary" />
-          {detail.businessHours}
+          {detail.businessHours === '-' ? t('placeDetail.info_unavailable') : detail.businessHours}
         </p>
       )}
     </div>

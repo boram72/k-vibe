@@ -1,4 +1,6 @@
 import { API_BASE_URL, apiClient } from '@/api/client'
+import { clearPersonaRoutePlan, saveRouteDraft } from '@/lib/route-draft'
+import { useRouteProgressStore } from '@/store/route-progress-store'
 
 export type AuthProvider = 'google'
 
@@ -57,8 +59,15 @@ export function completeOAuthLogin(data: { username: string; email: string; prov
   return toAuthUser({ username: data.username, email: data.email }, data.provider)
 }
 
+// 2026-09 QA 11번 — 로그아웃해도 "내 루트"(k-vibe-current-route 등)가 그대로
+// 남아 다음 사람(게스트 포함, 같은 브라우저)이 이전 계정의 루트를 그대로
+// 보던 버그. saved-places.ts처럼 계정별 버킷을 새로 만들기보다, 로그아웃
+// 시점에 루트 관련 상태를 통째로 비우는 쪽으로 확정.
 export async function logout(): Promise<void> {
   localStorage.removeItem(STORAGE_KEY)
+  saveRouteDraft([])
+  clearPersonaRoutePlan()
+  useRouteProgressStore.getState().clear()
 }
 
 // ID/PW 하이브리드 로그인 — OAuth와 달리 mock이 아니라 실제 backend(user.py)를

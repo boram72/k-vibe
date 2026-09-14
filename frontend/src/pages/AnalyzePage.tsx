@@ -80,15 +80,15 @@ export default function AnalyzePage() {
 
   function addAllToRoute() {
     if (!displayResult || displayResult.places.length === 0) return
-    addStopsToRouteDraft(displayResult.places.map((place) => toRouteStop(displayResult, place)))
-    toast.success(t('analyze.route_saved'))
+    const { addedCount } = addStopsToRouteDraft(displayResult.places.map((place) => toRouteStop(displayResult, place)))
+    toast.success(addedCount > 0 ? t('analyze.route_saved') : t('common.already_in_route'))
     navigate('../route')
   }
 
   function addOneToRoute(place: AnalysisPlace) {
     if (!displayResult) return
-    addStopToRouteDraft(toRouteStop(displayResult, place))
-    toast.success(t('analyze.route_saved'))
+    const { added } = addStopToRouteDraft(toRouteStop(displayResult, place))
+    toast.success(added ? t('analyze.route_saved') : t('common.already_in_route'))
     setChoicePlace(null)
   }
 

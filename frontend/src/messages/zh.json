@@ -8,7 +8,8 @@
     "retry_btn": "重试",
     "save": "收藏",
     "unsave": "取消收藏",
-    "cancel": "取消"
+    "cancel": "取消",
+    "already_in_route": "已添加到路线中"
   },
   "homeFeed": {
     "eyebrow": "首尔实时动态",
@@ -91,6 +92,7 @@
   "placeDetail": {
     "add_to_route": "添加到路线",
     "added_to_route": "已添加到路线",
+    "info_unavailable": "服务筹备中",
     "share": "分享",
     "share_copied": "链接已复制",
     "tab_detail": "详情",

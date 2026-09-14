@@ -86,7 +86,7 @@ export function SavedPlacesGrid() {
   }
 
   function handleAddToRoute(place: Place) {
-    addStopToRouteDraft({
+    const { added } = addStopToRouteDraft({
       id: place.id,
       placeId: place.id,
       name: place.name,
@@ -97,7 +97,7 @@ export function SavedPlacesGrid() {
       crowdLevel: place.crowdLevel,
     })
     setRouteStopIds((prev) => new Set(prev).add(place.id))
-    toast.success(t('placeDetail.added_to_route'))
+    toast.success(added ? t('placeDetail.added_to_route') : t('common.already_in_route'))
     navigate('route')
   }
 

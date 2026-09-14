@@ -8,7 +8,8 @@
     "retry_btn": "再試行",
     "save": "保存",
     "unsave": "保存解除",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "already_in_route": "すでにルートに追加されています"
   },
   "homeFeed": {
     "eyebrow": "ソウル ライブフィード",
@@ -91,6 +92,7 @@
   "placeDetail": {
     "add_to_route": "ルートに追加",
     "added_to_route": "ルートに追加しました",
+    "info_unavailable": "サービス準備中",
     "share": "共有",
     "share_copied": "リンクをコピーしました",
     "tab_detail": "詳細",

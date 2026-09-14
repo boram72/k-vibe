@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
 import { RouteResult } from '@/blocks/persona/route-result'
@@ -58,15 +58,19 @@ export default function PersonaPage() {
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
 
   const locale = i18n.language as Locale
-  const [selectedPersona, setSelectedPersona] = useState<KContentPersona | null>(null)
-  const [plan, setPlan] = useState<RoutePlan | null>(null)
 
-  // 홈 화면 페르소나 카드에서 곧장 들어온 경우(state.autoPersonaId) — 카드 목록을
-  // 다시 보여주지 않고 곧바로 해당 페르소나의 루트를 생성해 미리보기로 넘어간다.
-  // useRef 가드는 StrictMode의 effect 이중 실행 및 재선택 시 재트리거를 막는다.
-  const autoPersonaId = (location.state as { autoPersonaId?: string } | null)?.autoPersonaId
-  const autoTriggeredRef = useRef(false)
-  const isQuickEntry = Boolean(autoPersonaId)
+  // 2026-09 QA 5번 — "뒤로가기 시 내 루트로 잘못 이동"의 실제 원인은 목적지가
+  // 아니라 이 화면의 step1(카드 선택)→step2(생성 결과) 전환이 실제 브라우저
+  // 히스토리에 안 쌓이고 컴포넌트 로컬 state로만 처리되던 것 — 그래서
+  // "뒤로가기"가 이 화면 안에서의 이전 단계가 아니라 이 페이지 진입 이전의
+  // 아무 화면으로 튀었음(사이드바에서 "내 루트"를 거쳐 들어온 경우엔 거기로).
+  // 홈 카드 클릭(state.autoPersonaId)이든 이 화면 자체의 카드 선택(아래
+  // state.selectedPersonaId)이든 전부 "실제 navigate 호출로 새 히스토리
+  // 항목을 쌓는" 방식으로 통일 — 그러면 브라우저 뒤로가기가 항상 "그
+  // 항목을 만들기 직전 화면"으로 정확히 돌아간다: 홈에서 왔으면 홈으로,
+  // 이 페이지의 카드 목록(step1)에서 왔으면 그 목록으로.
+  const locationState = location.state as { autoPersonaId?: string; selectedPersonaId?: string } | null
+  const activePersonaId = locationState?.selectedPersonaId ?? locationState?.autoPersonaId ?? null
 
   useEffect(() => {
     setHelp(t('persona.help_title'), t('persona.help_body'))
@@ -78,8 +82,13 @@ export default function PersonaPage() {
     queryFn: () => fetchKContentPersonas(locale),
   })
 
-  const mutation = useMutation({
-    mutationFn: async (persona: KContentPersona) => {
+  const activePersona = personasQuery.data?.find((p) => p.id === activePersonaId) ?? null
+  const personaNotFound = Boolean(activePersonaId) && Boolean(personasQuery.data) && !activePersona
+
+  const routeQuery = useQuery({
+    queryKey: ['k-content-persona-route', activePersonaId, locale],
+    queryFn: async () => {
+      const persona = activePersona!
       const scheduled = await fetchKContentPersonaRoute(persona.id, START_TIME, locale)
       const title = buildRouteTitle(persona, locale)
       const result: RoutePlan = {
@@ -90,35 +99,24 @@ export default function PersonaPage() {
       }
       return result
     },
-    onSuccess: (result) => {
-      setPlan(result)
-      toast.success(t('persona.route_generated'))
-    },
+    enabled: Boolean(activePersonaId) && Boolean(activePersona),
   })
 
-  function handleSelectPersona(persona: KContentPersona) {
-    setSelectedPersona(persona)
-    mutation.mutate(persona)
+  useEffect(() => {
+    if (routeQuery.data) toast.success(t('persona.route_generated'))
+  }, [routeQuery.data, t])
+
+  function selectPersona(persona: KContentPersona) {
+    // 같은 경로(/persona)에 새 state로 push — 브라우저 뒤로가기가 이 카드
+    // 목록(step1)으로 정확히 돌아오게 하는 핵심.
+    navigate('.', { state: { selectedPersonaId: persona.id } })
   }
 
-  useEffect(() => {
-    if (!isQuickEntry || autoTriggeredRef.current || !personasQuery.data) return
-    const persona = personasQuery.data.find((p) => p.id === autoPersonaId)
-    if (!persona) return
-    autoTriggeredRef.current = true
-    // mutate() is an imperative call to an external system (the route-generation
-    // request), not a direct setState — the effect only reads selectedPersona
-    // back out via the retryPersona fallback below, so no setState happens here.
-    mutation.mutate(persona)
-  }, [isQuickEntry, autoPersonaId, personasQuery.data, mutation])
-
+  // "다른 루트 만들기" 버튼 = 브라우저 뒤로가기와 완전히 동일한 동작으로
+  // 통일 — 홈에서 왔으면 홈으로, 이 페이지 카드 목록에서 왔으면 그
+  // 목록으로, 어느 경로로 들어왔든 항상 "그 직전 화면"으로 돌아간다.
   function reset() {
-    setSelectedPersona(null)
-    setPlan(null)
-    mutation.reset()
-    // 홈에서 바로 들어온 경우 초기화하면 빈 카드 목록이 아니라 홈으로 돌려보낸다 —
-    // 이 페이지엔 더 이상 수동 선택 목록이 없을 수 있으므로(quick entry 실패 시 예외).
-    if (isQuickEntry) navigate('..')
+    navigate(-1)
   }
 
   // 팀 태스크보드 — 페르소나 step2에서 스팟별로 추가/제거를 골랐다면(route-result.tsx의
@@ -127,17 +125,19 @@ export default function PersonaPage() {
   // 기능이 참조하는 "이 루트가 어느 페르소나의 어떤 계획이었는지" 원본 기록이라
   // 선별 여부와 무관하게 보존한다.
   function handleAddToRoute(stops: RoutePlan['stops']) {
+    const plan = routeQuery.data
     if (!plan) return
     savePersonaRoutePlan(plan)
     const ts = Date.now()
-    addStopsToRouteDraft(
+    const { addedCount } = addStopsToRouteDraft(
       stops.map((s) => ({ ...s, id: `${s.id}-${ts}`, placeId: s.id, fromPersona: true })),
     )
-    toast.success(t('persona.route_saved'))
+    toast.success(addedCount > 0 ? t('persona.route_saved') : t('common.already_in_route'))
     navigate('../route')
   }
 
   async function handleShare() {
+    const plan = routeQuery.data
     if (!plan) return
     try {
       if (navigator.share) {
@@ -152,41 +152,38 @@ export default function PersonaPage() {
     }
   }
 
-  if (plan) {
-    return (
-      <div className="mx-auto w-full space-y-4 px-4 py-4 md:max-w-2xl">
-        <RouteResult plan={plan} onReset={reset} onAddToRoute={handleAddToRoute} onShare={handleShare} />
-      </div>
-    )
-  }
+  if (activePersonaId) {
+    if (routeQuery.data) {
+      return (
+        <div className="mx-auto w-full space-y-4 px-4 py-4 md:max-w-2xl">
+          <RouteResult plan={routeQuery.data} onReset={reset} onAddToRoute={handleAddToRoute} onShare={handleShare} />
+        </div>
+      )
+    }
 
-  // 홈에서 곧장 들어온 경우, 결과가 나오기 전까지는 수동 선택 목록을 다시 보여주지
-  // 않고(이미 홈에서 골랐으므로) 생성 중 로딩만 보여준다.
-  if (isQuickEntry && !mutation.isError) {
+    if (routeQuery.isError || personaNotFound) {
+      return (
+        <div className="mx-auto flex min-h-full w-full flex-col items-center justify-center gap-3 px-4 py-10 text-center md:max-w-2xl">
+          <p className="text-sm font-semibold text-destructive">{t('persona.error_title')}</p>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={!activePersona || routeQuery.isFetching}
+            onClick={() => routeQuery.refetch()}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {t('persona.retry')}
+          </Button>
+        </div>
+      )
+    }
+
+    // personasQuery 로딩 중이거나(activePersona 확정 전) routeQuery 생성 중 —
+    // 둘 다 같은 전체화면 스피너로 보여준다.
     return (
       <div className="mx-auto flex min-h-full w-full flex-col items-center justify-center gap-3 px-4 py-10 text-center md:max-w-2xl">
         <span className="h-8 w-8 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
         <p className="text-sm text-muted-foreground">{t('persona.generating')}</p>
-      </div>
-    )
-  }
-
-  if (isQuickEntry && mutation.isError) {
-    // 자동 트리거 경로라 setSelectedPersona가 아직 한 번도 안 불렸을 수 있어(효과 안
-    // setState 금지 규칙 때문에 effect에서는 mutate()만 호출) autoPersonaId로 다시 찾는다.
-    const retryPersona = selectedPersona ?? personasQuery.data?.find((p) => p.id === autoPersonaId) ?? null
-    return (
-      <div className="mx-auto flex min-h-full w-full flex-col items-center justify-center gap-3 px-4 py-10 text-center md:max-w-2xl">
-        <p className="text-sm font-semibold text-destructive">{t('persona.error_title')}</p>
-        <Button
-          variant="destructive"
-          size="sm"
-          disabled={!retryPersona || mutation.isPending}
-          onClick={() => retryPersona && handleSelectPersona(retryPersona)}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {t('persona.retry')}
-        </Button>
       </div>
     )
   }
@@ -198,12 +195,6 @@ export default function PersonaPage() {
     <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-6xl">
       <div className="flex-1 space-y-4 py-4">
         <div>
-          {/* <p className="text-xs font-semibold text-primary">{t('persona.generator_eyebrow')}</p>
-          <h2 className="mt-1 text-lg font-bold text-foreground">{t('persona.title')}</h2>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.subtitle')}</p> */}
-          {/* <p className="text-xs font-semibold text-primary">
-            {t("persona.k_content_eyebrow")}
-          </p> */}
           <h3 className="mt-0.5 text-base font-bold text-foreground">
             {t("persona.k_content_title")}
           </h3>
@@ -226,66 +217,35 @@ export default function PersonaPage() {
               ))}
 
             {!personasQuery.isPending &&
-              (personasQuery.data ?? []).map((persona) => {
-                const isSelected = selectedPersona?.id === persona.id;
-                return (
-                  <button
-                    key={persona.id}
-                    type="button"
-                    onClick={() => handleSelectPersona(persona)}
-                    disabled={mutation.isPending}
-                    className={cn(
-                      "overflow-hidden rounded-xl border text-left transition-all disabled:opacity-70 md:rounded-2xl",
-                      isSelected
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-background hover:border-primary/60 hover:bg-primary/10",
-                    )}
-                  >
-                    <div className="aspect-square w-full bg-muted">
-                      <PersonaCardImage persona={persona} />
-                    </div>
-                    <div className="space-y-0.5 p-2 md:space-y-1 md:p-3">
-                      <div className="flex items-center gap-1.5">
-                        <p className="truncate text-xs font-semibold text-foreground md:text-sm">
-                          {persona.label}
-                        </p>
-                        {mutation.isPending && isSelected && (
-                          <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
-                        )}
-                      </div>
-                      <span className="inline-block rounded-full bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground md:px-2 md:text-[10px]">
-                        {persona.routeCnt}
-                        {t("persona.stops_suffix")}
-                      </span>
-                      <p className="line-clamp-2 text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5">
-                        {persona.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+              (personasQuery.data ?? []).map((persona) => (
+                <button
+                  key={persona.id}
+                  type="button"
+                  onClick={() => selectPersona(persona)}
+                  className={cn(
+                    "overflow-hidden rounded-xl border text-left transition-all md:rounded-2xl",
+                    "border-border bg-background hover:border-primary/60 hover:bg-primary/10",
+                  )}
+                >
+                  <div className="aspect-square w-full bg-muted">
+                    <PersonaCardImage persona={persona} />
+                  </div>
+                  <div className="space-y-0.5 p-2 md:space-y-1 md:p-3">
+                    <p className="truncate text-xs font-semibold text-foreground md:text-sm">
+                      {persona.label}
+                    </p>
+                    <span className="inline-block rounded-full bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground md:px-2 md:text-[10px]">
+                      {persona.routeCnt}
+                      {t("persona.stops_suffix")}
+                    </span>
+                    <p className="line-clamp-2 text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5">
+                      {persona.description}
+                    </p>
+                  </div>
+                </button>
+              ))}
           </div>
         </div>
-
-        {mutation.isError && (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-            <p className="text-sm font-semibold text-destructive">
-              {t("persona.error_title")}
-            </p>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="mt-2"
-              disabled={!selectedPersona || mutation.isPending}
-              onClick={() =>
-                selectedPersona && mutation.mutate(selectedPersona)
-              }
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {t("persona.retry")}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

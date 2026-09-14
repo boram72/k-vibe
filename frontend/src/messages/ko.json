@@ -8,7 +8,8 @@
     "retry_btn": "다시 시도",
     "save": "찜",
     "unsave": "찜 취소",
-    "cancel": "취소"
+    "cancel": "취소",
+    "already_in_route": "이미 추가된 루트예요"
   },
   "homeFeed": {
     "eyebrow": "실시간 서울 피드",
@@ -91,6 +92,7 @@
   "placeDetail": {
     "add_to_route": "루트에 추가",
     "added_to_route": "루트에 추가됐어요",
+    "info_unavailable": "서비스 준비중",
     "share": "공유",
     "share_copied": "링크가 복사됐어요",
     "tab_detail": "상세",

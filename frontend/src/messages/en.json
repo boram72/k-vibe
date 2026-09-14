@@ -8,7 +8,8 @@
     "retry_btn": "Try Again",
     "save": "Save",
     "unsave": "Remove",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "already_in_route": "Already in your route"
   },
   "homeFeed": {
     "eyebrow": "Live Seoul Feed",
@@ -91,6 +92,7 @@
   "placeDetail": {
     "add_to_route": "Add to Route",
     "added_to_route": "Added to your route",
+    "info_unavailable": "Service coming soon",
     "share": "Share",
     "share_copied": "Link copied",
     "tab_detail": "Details",

@@ -138,6 +138,8 @@
     "choose_action_hint": "이 장소로 할 작업을 선택하세요",
     "local_mode_title": "백엔드 분석 준비",
     "local_mode_body": "YouTube 링크를 넣으면 백엔드가 영상 맥락을 읽고 지도와 루트에 보낼 후보 스팟을 준비합니다.",
+    "tutorial_title": "이렇게 사용해요",
+    "tutorial_gif_alt": "URL을 붙여넣고 분석 결과에서 장소를 선택하는 SNS 분석기 사용 방법을 보여주는 GIF",
     "detected_address": "YouTube 분석에서 감지됨",
     "route_saved": "루트를 저장했어요",
     "completion_toast_title": "분석이 완료되었어요! 결과를 확인해 보세요.",

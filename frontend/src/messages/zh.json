@@ -138,6 +138,8 @@
     "choose_action_hint": "选择对该地点要执行的操作",
     "local_mode_title": "后端分析已准备",
     "local_mode_body": "输入YouTube链接后，后端会读取视频语境并准备可在地图或路线中使用的候选地点。",
+    "tutorial_title": "使用方法",
+    "tutorial_gif_alt": "展示SNS分析器使用方法的GIF：粘贴链接后从分析结果中选择地点",
     "detected_address": "从YouTube分析中检测",
     "route_saved": "路线已保存",
     "completion_toast_title": "分析完成啦！快去看看结果吧。",

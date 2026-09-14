@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Compass, MapPin, Plus, Sparkles } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
+import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
 import { AnalysisProgress } from '@/blocks/analyze/analysis-progress'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
@@ -141,13 +142,16 @@ export default function AnalyzePage() {
           )}
 
           {!isAnalyzing && !hasError && !displayResult && (
-            <div className="flex items-start gap-2.5 rounded-xl bg-muted p-3">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-              <div>
-                <p className="text-xs font-semibold text-foreground/80">{t('analyze.local_mode_title')}</p>
-                <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.local_mode_body')}</p>
+            <>
+              <div className="flex items-start gap-2.5 rounded-xl bg-muted p-3">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <div>
+                  <p className="text-xs font-semibold text-foreground/80">{t('analyze.local_mode_title')}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.local_mode_body')}</p>
+                </div>
               </div>
-            </div>
+              <UsageTutorial />
+            </>
           )}
         </ErrorBoundary>
       </div>

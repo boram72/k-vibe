@@ -138,6 +138,8 @@
     "choose_action_hint": "このスポットで行う操作を選んでください",
     "local_mode_title": "バックエンド分析準備完了",
     "local_mode_body": "YouTubeリンクを入力すると、バックエンドが動画の文脈を読み取り、地図やルートに送れる候補スポットを準備します。",
+    "tutorial_title": "使い方",
+    "tutorial_gif_alt": "URLを貼り付けて分析結果から場所を選ぶ、SNS分析機能の使い方を示すGIF",
     "detected_address": "YouTube分析から検出",
     "route_saved": "ルートを保存しました",
     "completion_toast_title": "分析が完了しました！結果を確認してみましょう。",

@@ -138,6 +138,8 @@
     "choose_action_hint": "Choose what to do with this spot",
     "local_mode_title": "Backend analysis ready",
     "local_mode_body": "Paste a YouTube link and the backend will prepare candidate spots that can be opened on the map or added to a route.",
+    "tutorial_title": "How it works",
+    "tutorial_gif_alt": "GIF showing how to use the SNS analyzer: paste a URL, then pick a place from the results",
     "detected_address": "Detected from YouTube analysis",
     "route_saved": "Route saved",
     "completion_toast_title": "Your analysis is ready! Check out the results.",

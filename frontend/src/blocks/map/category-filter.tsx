@@ -3,23 +3,19 @@ import { PLACE_CATEGORIES, type PlaceCategory } from '@/types/place'
 import { cn } from '@/lib/utils'
 
 interface CategoryFilterProps {
-  selected: PlaceCategory[]
-  onChange: (categories: PlaceCategory[]) => void
+  selected: PlaceCategory
+  onChange: (category: PlaceCategory) => void
   collapsed?: boolean
 }
 
+// 2026-09 QA 피드백 7번 — 원래 다중선택이었는데, 음식/숙소처럼 보통 동시에
+// 보지 않는 카테고리들이라 하나 고르면 이전 선택이 자동으로 풀리는 단일선택
+// (라디오 버튼 방식)으로 변경. 이미 선택된 걸 다시 누르면 "전체"로 되돌아감.
 export function CategoryFilter({ selected, onChange, collapsed = false }: CategoryFilterProps) {
   const { t } = useTranslation()
 
   function toggle(id: PlaceCategory) {
-    if (id === 'all') {
-      onChange(['all'])
-      return
-    }
-    const next = selected.includes(id)
-      ? selected.filter((category) => category !== id)
-      : [...selected.filter((category) => category !== 'all'), id]
-    onChange(next.length === 0 ? ['all'] : next)
+    onChange(id === selected ? 'all' : id)
   }
 
   return (
@@ -31,7 +27,7 @@ export function CategoryFilter({ selected, onChange, collapsed = false }: Catego
       )}
     >
       {PLACE_CATEGORIES.map(({ id, icon: Icon, labelKey }) => {
-        const active = selected.includes(id)
+        const active = selected === id
         return (
           <button
             key={id}

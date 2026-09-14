@@ -101,12 +101,18 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
   const info = (isDetailLoading || detail?.phone || detail?.businessHours) && (
     <div className="space-y-1.5 text-sm">
       {isDetailLoading && <div className="h-4 w-40 animate-pulse rounded bg-muted" />}
-      {detail?.phone && (
-        <a href={`tel:${detail.phone}`} className="flex items-center gap-2 text-foreground hover:underline">
-          <Phone className="h-4 w-4 shrink-0 text-primary" />
-          {detail.phone}
-        </a>
-      )}
+      {detail?.phone &&
+        (detail.phone === '-' ? (
+          <p className="flex items-center gap-2 text-foreground">
+            <Phone className="h-4 w-4 shrink-0 text-primary" />
+            {detail.phone}
+          </p>
+        ) : (
+          <a href={`tel:${detail.phone}`} className="flex items-center gap-2 text-foreground hover:underline">
+            <Phone className="h-4 w-4 shrink-0 text-primary" />
+            {detail.phone}
+          </a>
+        ))}
       {detail?.businessHours && (
         <p className="flex items-center gap-2 text-muted-foreground">
           <Clock className="h-4 w-4 shrink-0 text-primary" />

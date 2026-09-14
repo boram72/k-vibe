@@ -52,7 +52,8 @@ export default function MapPage() {
   const focusState = routerLocation.state as MapFocusState | null
   const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
 
-  const [categories, setCategories] = useState<PlaceCategory[]>(['all'])
+  // 2026-09 QA 7번 — 다중선택에서 단일선택(라디오 버튼 방식)으로 변경.
+  const [categories, setCategories] = useState<PlaceCategory>('all')
   // 2026-09 태스크보드 9번: 카테고리별/페르소나별 탭. 페르소나별일 때만
   // starFilter가 실제로 필터링에 관여하고, 탭 전환 시 서로의 선택값은 안 지움
   // (다시 돌아왔을 때 그대로 유지되는 게 자연스럽다고 판단). 다중선택(대화 중
@@ -64,6 +65,14 @@ export default function MapPage() {
   // trending-keyword handoff (LandingPage → `navigate('../map', { state })`)
   // is router state available synchronously at first render.
   const [search, setSearch] = useState(() => focusState?.initialSearch ?? '')
+  // 2026-09 QA 8번(추가 요청) — 검색창 텍스트가 그대로 남아있는 동안엔 방금
+  // 지역검색으로 받아온 목록을 다시 텍스트로 거르지 않기 위한 값(위 설명 참고).
+  const [areaSearchedQuery, setAreaSearchedQuery] = useState<string | null>(null)
+
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    setAreaSearchedQuery(null)
+  }
   // Lazy initializer instead of an effect+setState — focusState is already
   // available synchronously at first render (it's router state, not async),
   // so there's no need to "react" to it after the fact.
@@ -74,6 +83,9 @@ export default function MapPage() {
   // 바뀜 — 더 이상 places를 필터링하지 않고, SpotListPanel이 이 값으로 위쪽에
   // 찜 목록 섹션을 보여줄지만 결정한다.
   const [showSavedList, setShowSavedList] = useState(false)
+  // 2026-09 QA 6번 — "이 지역 연관 관광지 추천"을 항상 노출하던 것을 토글로
+  // 전환(대화로 확정, 기본은 꺼짐).
+  const [showAttractions, setShowAttractions] = useState(false)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
   // 팀 태스크보드 — 모바일 전용 3단계 스와이프(데스크탑의 isPanelCollapsed
   // 접기/펴기와는 별개 상태). 기본(default, 지금까지의 "펼침"과 동일) 상태에서
@@ -86,6 +98,11 @@ export default function MapPage() {
   // 누르면 null로 되돌아가 GPS 좌표로 복귀). focusPlaces(다른 페이지에서 넘어온
   // 핸드오프)가 있을 땐 그게 항상 우선이라 searchCenter는 무시된다.
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null)
+  // 2026-09 QA 8번 — "이 지역에서 검색"으로 얻은 카카오 결과 원본. 지역명 검색은
+  // 기존처럼 첫 결과 좌표로 searchCenter를 옮겨 /places(TourAPI)를 재조회하지만,
+  // 상호명(예: "스타벅스 종로점")은 TourAPI에 그 가게 자체가 없어 재조회 결과에
+  // 안 잡히므로, 카카오가 찾은 결과 자체를 그대로 후보에 더해 지도에 보여준다.
+  const [kakaoSearchResults, setKakaoSearchResults] = useState<Place[]>([])
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
@@ -95,6 +112,7 @@ export default function MapPage() {
 
   function handleRequestLocation() {
     setSearchCenter(null)
+    setKakaoSearchResults([])
     requestLocation()
   }
 
@@ -103,21 +121,55 @@ export default function MapPage() {
   // 지역 좌표를 얻어 searchCenter로 승격한다(5번과 같은 메커니즘 재사용). 성공하면
   // 이제 새 지역의 스팟 목록이 내려오므로 이전 검색어는 지운다 — 안 지우면 옛 텍스트로
   // 새 목록이 다시 필터링돼 방금 이동한 지역이 빈 목록처럼 보일 수 있음.
+  //
+  // 2026-09 QA 8번 — 첫 결과 좌표로 searchCenter를 옮겨 /places를 재조회하는
+  // 기존 동작은 그대로 두고, 카카오가 찾은 결과 전부(kakaoSearchResults)도
+  // 같이 후보에 더한다 — 상호명 검색은 TourAPI 재조회만으로는 그 가게 자체가
+  // 안 나오기 때문.
+  // 버그 수정 — "스타벅스"처럼 지역명 없는 상호명 검색이 위치 힌트 없이는
+  // 전국 아무 지점(예: 북한산 인근)으로 튈 수 있어(실사용 확인), 검색 시점의
+  // 지도 중심(effectiveCoords)을 같이 넘겨 가까운 지점 우선으로 찾는다.
   const areaSearchMutation = useMutation({
-    mutationFn: searchKakaoArea,
-    onSuccess: (coords) => {
-      if (!coords) {
+    mutationFn: ({ query, near }: { query: string; near: { lat: number; lng: number } }) =>
+      searchKakaoArea(query, near),
+    onSuccess: (result, variables) => {
+      if (!result) {
         toast.error(t('map.search_area_not_found'))
         return
       }
-      setSearchCenter(coords)
-      setSearch('')
+      setSearchCenter(result.center)
+      setKakaoSearchResults(result.places)
+      // 검색어를 지우지 않고 남겨서 뭘 검색했는지 보이게 함(대화 중 요청) —
+      // areaSearchedQuery를 같이 기록해서, 이 텍스트가 그대로인 동안은 방금
+      // 받아온 결과를 다시 텍스트로 거르지 않게 한다(아래 filtered 참고).
+      setAreaSearchedQuery(variables.query)
     },
   })
 
   function handleSearchArea() {
     if (!search.trim() || areaSearchMutation.isPending) return
-    areaSearchMutation.mutate(search)
+    areaSearchMutation.mutate({ query: search, near: effectiveCoords })
+  }
+
+  // 6번 — "관광지 추천" 리스트 항목 클릭. TourAPI 연관관광지 응답엔 좌표가
+  // 없어서(이름/지역명뿐) 이름으로 카카오 검색을 직접 날려 위치를 찾는다.
+  // 검색창(search)은 건드리지 않음 — 사용자가 타이핑한 검색어가 아니라
+  // 목록 클릭이라 검색창에 남길 이유가 없음(대화 중 요청).
+  const attractionSearchMutation = useMutation({
+    mutationFn: (name: string) => searchKakaoArea(name, effectiveCoords),
+    onSuccess: (result) => {
+      if (!result) {
+        toast.error(t('map.search_area_not_found'))
+        return
+      }
+      setSearchCenter(result.center)
+      setKakaoSearchResults(result.places)
+    },
+  })
+
+  function handleSelectAttraction(name: string) {
+    if (attractionSearchMutation.isPending) return
+    attractionSearchMutation.mutate(name)
   }
 
   // 실제 카카오 지도(services 라이브러리)가 있을 때만 의미 있는 기능 — 퍼센트
@@ -184,10 +236,17 @@ export default function MapPage() {
     const base = focusPlaces.length
       ? [...focusPlaces, ...places.filter((p) => !focusPlaces.some((f) => f.id === p.id))]
       : places
-    if (filterMode !== 'star') return base
     const baseIds = new Set(base.map((p) => p.id))
-    return [...base, ...personaPlaces.filter((p) => !baseIds.has(p.id))]
-  }, [places, focusPlaces, filterMode, personaPlaces])
+    const withKakaoResults = kakaoSearchResults.length
+      ? [...base, ...kakaoSearchResults.filter((k) => !baseIds.has(k.id))]
+      : base
+    if (filterMode !== 'star') return withKakaoResults
+    const withKakaoIds = new Set(withKakaoResults.map((p) => p.id))
+    return [...withKakaoResults, ...personaPlaces.filter((p) => !withKakaoIds.has(p.id))]
+  }, [places, focusPlaces, filterMode, personaPlaces, kakaoSearchResults])
+
+  // 2026-09 QA 8번 — 상호명 검색 결과 핀을 빨간색으로 강조하기 위한 id 집합.
+  const kakaoSearchResultIds = useMemo(() => new Set(kakaoSearchResults.map((p) => p.id)), [kakaoSearchResults])
 
   // 페르소나별 탭에서 특정 페르소나(또는 "전체")를 고르면, 그 장소들이 지금
   // 화면(현재 위치 주변 반경) 밖에 있어도 안 보인다고 헷갈리지 않도록 지도가
@@ -202,10 +261,12 @@ export default function MapPage() {
   const fitPlaces = focusPlaces.length ? focusPlaces : personaFocusPlaces
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    // 지역검색 직후 검색창에 남겨둔 텍스트 그대로인 동안은 방금 받아온 결과를
+    // 다시 텍스트로 거르지 않는다(위 areaSearchMutation.onSuccess 참고).
+    const q = search === areaSearchedQuery ? '' : search.trim().toLowerCase()
     return candidates.filter((place) => {
       const matchCategory =
-        filterMode !== 'category' || categories.includes('all') || categories.includes(place.category)
+        filterMode !== 'category' || categories === 'all' || categories === place.category
       // 페르소나별 "전체"(starFilter 빈 배열)는 페르소나 태그가 붙은 장소 전체를
       // 보여주고, 하나 이상 고르면 그중 하나라도 일치하는 장소만 남긴다(다중선택).
       const matchStar =
@@ -220,7 +281,7 @@ export default function MapPage() {
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
       return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, filterMode, starFilter, search])
+  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery])
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -245,6 +306,7 @@ export default function MapPage() {
           locationLabel={effectiveLocationLabel}
           onSearchArea={setSearchCenter}
           myLocation={isPrecise ? coords : null}
+          highlightIds={kakaoSearchResultIds}
           compact={!isDesktop && mobilePanelState === 'full'}
         />
       </div>
@@ -262,12 +324,15 @@ export default function MapPage() {
         starFilter={starFilter}
         onStarFilterChange={setStarFilter}
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
         onSubmitAreaSearch={handleSearchArea}
         isSearchingArea={areaSearchMutation.isPending}
         canSearchArea={canSearchArea}
         showSavedList={showSavedList}
         onShowSavedListChange={setShowSavedList}
+        showAttractions={showAttractions}
+        onShowAttractionsChange={setShowAttractions}
+        onSelectAttraction={handleSelectAttraction}
         savedPlaces={savedPlaces}
         places={filtered}
         isLoading={isLoading}

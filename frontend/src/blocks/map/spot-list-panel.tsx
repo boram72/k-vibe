@@ -1,6 +1,6 @@
 import { useRef, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
+import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search, Sparkles } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CategoryFilter } from '@/blocks/map/category-filter'
 import { StarFilter } from '@/blocks/map/star-filter'
@@ -38,12 +38,16 @@ interface SpotListPanelProps {
   onMobilePanelStateChange: Dispatch<SetStateAction<MobilePanelState>>
   filterMode: 'category' | 'star'
   onFilterModeChange: Dispatch<SetStateAction<'category' | 'star'>>
-  categories: PlaceCategory[]
-  onCategoriesChange: Dispatch<SetStateAction<PlaceCategory[]>>
+  categories: PlaceCategory
+  onCategoriesChange: Dispatch<SetStateAction<PlaceCategory>>
   starFilter: string[]
   onStarFilterChange: Dispatch<SetStateAction<string[]>>
   search: string
-  onSearchChange: Dispatch<SetStateAction<string>>
+  // 2026-09 QA 8번 — 지역검색 성공 후에도 검색어를 지우지 않고 남겨두는
+  // 로직(MapPage.handleSearchChange)이 일반 setter가 아니라 별도 처리가
+  // 필요해서, Dispatch<SetStateAction<string>>이 아닌 평범한 콜백으로 좁힘
+  // (실제로도 이 파일에선 항상 문자열만 넘기지 updater 함수를 쓴 적 없음).
+  onSearchChange: (value: string) => void
   // 팀 태스크보드 6번(동네검색) — 검색창은 이미 불러온 스팟을 텍스트로 거르는
   // 용도 그대로 두고, 이 콜백은 검색어를 카카오 지역 검색으로 넘겨 "강남"처럼
   // 목록에 없는 지역으로도 이동하게 한다. 모바일은 키보드에 Enter가 없는
@@ -53,6 +57,12 @@ interface SpotListPanelProps {
   canSearchArea: boolean
   showSavedList: boolean
   onShowSavedListChange: Dispatch<SetStateAction<boolean>>
+  // 2026-09 QA 6번 — 지도 진입 시 항상(스크롤해야만 보일 만큼 아래에) 떠 있던
+  // "이 지역 연관 관광지 추천"을 토글로 켜고 끌 수 있게 변경. 켜면 찜 목록
+  // 다음, 주변 스팟 목록보다 위(우선순위: 찜 > 관광지 추천 > 주변 스팟)에 노출.
+  showAttractions: boolean
+  onShowAttractionsChange: Dispatch<SetStateAction<boolean>>
+  onSelectAttraction: (name: string) => void
   savedPlaces: Place[]
   places: Place[]
   isLoading: boolean
@@ -79,6 +89,9 @@ export function SpotListPanel({
   canSearchArea,
   showSavedList,
   onShowSavedListChange,
+  showAttractions,
+  onShowAttractionsChange,
+  onSelectAttraction,
   savedPlaces,
   places,
   isLoading,
@@ -90,7 +103,7 @@ export function SpotListPanel({
 
   function resetFilters() {
     onSearchChange('')
-    onCategoriesChange(['all'])
+    onCategoriesChange('all')
     onStarFilterChange([])
   }
 
@@ -183,6 +196,21 @@ export function SpotListPanel({
     </Button>
   )
 
+  // 2026-09 QA 6번 — "이 지역 연관 관광지 추천"을 항상 스크롤해서 봐야 하던
+  // 것을 토글로 전환.
+  const attractionsToggleButton = (
+    <Button
+      size="icon"
+      variant={showAttractions ? 'default' : 'outline'}
+      onClick={() => onShowAttractionsChange((v) => !v)}
+      aria-pressed={showAttractions}
+      aria-label={t('map.show_attractions')}
+      className="shrink-0"
+    >
+      <Sparkles className="h-4 w-4" />
+    </Button>
+  )
+
   // 팀 태스크보드 6번 — 모바일은 키보드에 Enter가 없는 경우가 많아 명시적 버튼이
   // 필요하다는 요청으로 하트 토글 바로 옆에 배치, 모바일/데스크탑 동일 노출.
   // 퍼센트 좌표 폴백(canSearchArea=false)에서는 카카오 지역검색 자체가 불가능해
@@ -215,11 +243,17 @@ export function SpotListPanel({
           onChange={(e) => onSearchChange(e.target.value)}
           onKeyDown={handleSearchKeyDown}
           placeholder={t('map.search_placeholder')}
-          className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
+          // 2026-09 QA 9번 — 모바일 검색 시 화면 비율이 안 유지되던 원인:
+          // iOS Safari는 포커스한 input의 글자 크기가 16px보다 작으면 화면을
+          // 자동으로 확대(줌인)해버려서, 그 상태로 지도/하단 메뉴 일부가
+          // 화면 밖으로 밀려나 보였다. 모바일에서만 16px(text-base) 이상으로,
+          // 데스크탑은 기존 14px(text-sm) 그대로 유지.
+          className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 md:text-sm"
         />
       </div>
       {areaSearchButton}
       {savedToggleButton}
+      {attractionsToggleButton}
     </div>
   )
 
@@ -278,12 +312,16 @@ export function SpotListPanel({
     </div>
   )
 
-  const listRegion = (
-    <div className="min-h-0 flex-1 overflow-y-auto pb-4">
-      {renderList()}
-      <RelatedAttractionsList lat={center.lat} lng={center.lng} />
+  // 우선순위: 찜 > 관광지 추천 > 주변 스팟 — savedListSection과 동일하게
+  // 자체 높이 제한(overflow-y-auto)을 둬서, 추천 개수가 많아도 아래 "주변
+  // 스팟" 목록이 화면 밖으로 밀려나지 않게 한다.
+  const attractionsSection = showAttractions && (
+    <div className="max-h-72 overflow-y-auto border-b border-border">
+      <RelatedAttractionsList lat={center.lat} lng={center.lng} onSelect={onSelectAttraction} />
     </div>
   )
+
+  const listRegion = <div className="min-h-0 flex-1 overflow-y-auto pb-4">{renderList()}</div>
 
   // 모바일 3단계(minimized/default/full)와 데스크탑 접기/펴기(isCollapsed)는
   // 서로 별개 상태라 분리해서 계산 — 데스크탑 쪽은 기존 로직 그대로.
@@ -319,6 +357,7 @@ export function SpotListPanel({
       {isDesktop && isCollapsed ? (
         <div className="flex flex-col items-center gap-2 px-2 pb-4">
           {savedToggleButton}
+          {attractionsToggleButton}
           <CategoryFilter
             selected={categories}
             onChange={onCategoriesChange}
@@ -342,6 +381,7 @@ export function SpotListPanel({
               <>
                 {filterTabs}
                 {savedListSection}
+                {attractionsSection}
                 {titleRow}
               </>
             )}
@@ -352,6 +392,7 @@ export function SpotListPanel({
         <>
           {searchAndFilter}
           {savedListSection}
+          {attractionsSection}
           {titleRow}
           {listRegion}
         </>

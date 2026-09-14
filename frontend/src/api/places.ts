@@ -161,11 +161,13 @@ export interface PlaceDetail {
   tags?: string[]
 }
 
+// 카카오 검색으로 찾은 스팟(백엔드에 없는 id라 상세조회가 항상 이 폴백으로
+// 빠짐)이 실제론 없는 전화번호/영업시간/태그를 있는 것처럼 보여주지 않도록
+// '-'로 고정하고 tags는 아예 비움.
 const MOCK_PLACE_DETAIL: PlaceDetail = {
-  phone: '02-1234-5678',
-  businessHours: '10:00~18:00 (월요일 휴무)',
+  phone: '-',
+  businessHours: '-',
   overview: '설명 정보가 준비 중입니다.',
-  tags: ['고궁'],
 }
 
 export async function fetchPlaceDetail(contentId: string): Promise<PlaceDetail> {

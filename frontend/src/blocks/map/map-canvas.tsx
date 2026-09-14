@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocateFixed, MapPin } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
@@ -29,6 +29,10 @@ interface MapCanvasProps {
   // 자리에 있는 것처럼 오해하지 않도록). route-mini-map.tsx의 빨간 펄스
   // 마커(`CurrentLocationPin`)를 그대로 재사용.
   myLocation?: Coordinates | null
+  // 2026-09 QA 8번 — "이 지역에서 검색"(카카오 상호명 검색)으로 찾은 결과는
+  // 다른 핀들 사이에 카테고리색 그대로 섞여 있으면 눈에 잘 안 띈다는 피드백
+  // (실사용 확인) — 여기 담긴 id의 핀만 카테고리색 대신 빨간색으로 강조 표시.
+  highlightIds?: Set<string>
   // 모바일 스팟 목록 패널이 "전체화면" 단계일 때 지도를 아주 작게 눌러줘야
   // 하는데, 아래 두 렌더러의 루트 div가 원래 min-h-70(280px)을 갖고 있어서
   // 부모가 h-16(64px)만 줘도 이 min-height가 이겨버려 지도가 그대로 280px를
@@ -46,6 +50,24 @@ function pinClassName(selected: boolean, pinBg: string) {
     'flex h-8 w-8 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-105',
     pinBg,
     selected && 'scale-110 ring-2 ring-white',
+  )
+}
+
+// 2026-09 QA 8번 — "이 지역에서 검색" 결과는 다른 카테고리 원형 배지와 섞이면
+// 안 띈다는 피드백으로, 실제 지도 마커에 가까운(아래가 뾰족한) 핀 모양으로
+// 따로 표시한다. lucide MapPin 자체가 그 핀 실루엣이라 원형 배지 없이
+// 아이콘만 크게 채워서 씀 — 뾰족한 끝이 실제 좌표를 가리키게 앵커도 아래쪽으로.
+function SearchResultPin({ selected }: { selected: boolean }) {
+  return (
+    <MapPin
+      className={cn(
+        // MapPin은 몸통(path)과 가운데 점(circle)이 같은 fill을 상속받아서,
+        // circle만 따로 흰색으로 덮어써 실제 핀처럼 가운데가 뚫려 보이게 함.
+        'h-9 w-9 fill-red-500 stroke-red-800 drop-shadow-md transition-transform hover:scale-105 [&_circle]:fill-white',
+        selected && 'scale-110',
+      )}
+      strokeWidth={1.5}
+    />
   )
 }
 
@@ -148,7 +170,7 @@ function pinPosition(coord: Coordinates, center: Coordinates, fitPlaces: Place[]
   return { left: `${left}%`, top: `${top}%` }
 }
 
-function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation, compact }: MapCanvasProps) {
+function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation, compact, highlightIds }: MapCanvasProps) {
   return (
     <div className={cn('relative h-full w-full overflow-hidden bg-muted', compact ? 'min-h-0' : 'min-h-70')}>
       <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
@@ -157,6 +179,7 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
 
       {places.map((place) => {
         const selected = place.id === selectedPlaceId
+        const highlighted = highlightIds?.has(place.id)
         const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
         return (
           <button
@@ -165,9 +188,15 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
             onClick={() => onSelectPlace(place)}
             title={place.name}
             style={pinPosition(place, center, fitPlaces)}
-            className={cn('absolute -translate-x-1/2 -translate-y-1/2', pinClassName(selected, pinBg))}
+            className={cn('absolute -translate-x-1/2', highlighted ? '-translate-y-full' : '-translate-y-1/2')}
           >
-            <Icon className="h-3.75 w-3.75" />
+            {highlighted ? (
+              <SearchResultPin selected={selected} />
+            ) : (
+              <span className={pinClassName(selected, pinBg)}>
+                <Icon className="h-3.75 w-3.75" />
+              </span>
+            )}
           </button>
         )
       })}
@@ -203,7 +232,7 @@ function SearchAreaButton({ onClick }: { onClick: () => void }) {
 }
 
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact } = props
+  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact, highlightIds } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
@@ -234,6 +263,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   // directly in the render body, which React applies before committing
   // instead of running it as a separate, extra-render effect. Declared
   // before the loading/error early-return below so hook order stays stable.
+  const mapContainerRef = useRef<HTMLDivElement>(null)
   const [focusCenter, setFocusCenter] = useState<Coordinates | null>(null)
   const [map, setMap] = useState<kakao.maps.Map | null>(null)
   const [prevCenter, setPrevCenter] = useState(center)
@@ -263,24 +293,33 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     fitKakaoMapToPlaces(map, boundedPlaces)
   }, [boundedPlaces, boundsKey, focusCenter, map])
 
-  // 버그 수정 — 모바일 패널 "전체화면" 전환처럼 지도 컨테이너 크기가 CSS로
-  // 바뀔 때, 카카오 지도는 이걸 스스로 감지하지 못해서 마지막으로 그려졌던
-  // 크기 기준 타일만 남아있다가 줌 레벨에 따라 빈 공간이 남거나 잘려 보이는
+  // 버그 수정 — 지도 컨테이너 크기가 CSS로 바뀔 때(모바일 패널 "전체화면"
+  // 전환뿐 아니라, 데스크탑 사이드바 접기/펴기처럼 이 컴포넌트가 전혀 모르는
+  // 곳의 상태 변화로도 발생) 카카오 지도는 이걸 스스로 감지하지 못해서 마지막
+  // 으로 그려졌던 크기 기준 타일만 남아있다가 빈 공간이 남거나 잘려 보이는
   // 문제가 있었다(대부분의 지도 SDK 공통 특성 — 구글맵의
   // `google.maps.event.trigger(map,'resize')`와 동일한 역할을 카카오는
-  // `map.relayout()`이 함). setTimeout(0)으로 한 틱 미뤄서 컨테이너의 새
-  // 크기가 실제로 반영된 뒤에 호출되게 함(레이아웃 엔진이 막 바뀐 크기를
-  // 안정시킬 시간을 준다는 관용적인 방어 코드).
+  // `map.relayout()`이 함). 처음엔 `compact` prop 하나만 감지해서 고쳤는데,
+  // 사이드바 접기처럼 이 prop과 무관한 다른 원인으로 같은 증상이 재발함 —
+  // 특정 트리거를 일일이 쫓는 대신 컨테이너 자체를 ResizeObserver로 지켜봐서
+  // "원인이 뭐든 실제 크기가 바뀌면" 항상 relayout하도록 근본적으로 수정.
+  // targetRef는 렌더마다 최신 중심좌표를 담아둬서, 옵저버 콜백(맵 인스턴스가
+  // 바뀔 때만 재구독)이 항상 최신 값을 읽게 한다. 렌더 중 직접 대입하는 대신
+  // effect에서 커밋 후에 갱신(react-hooks/refs 위반 회피).
+  const targetRef = useRef(center)
   useEffect(() => {
-    if (!map) return
-    const timer = window.setTimeout(() => {
+    targetRef.current = focusCenter ?? center
+  })
+  useEffect(() => {
+    if (!map || !mapContainerRef.current) return
+    const observer = new ResizeObserver(() => {
       map.relayout()
-      const target = focusCenter ?? center
+      const target = targetRef.current
       map.setCenter(new kakao.maps.LatLng(target.lat, target.lng))
-    }, 0)
-    return () => window.clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compact, map])
+    })
+    observer.observe(mapContainerRef.current)
+    return () => observer.disconnect()
+  }, [map])
 
   // "현재 위치" 버튼 전용 — 팀 태스크보드 4번. react-kakao-maps-sdk의 <Map center>는
   // center 값이 실제로 바뀔 때만 카메라를 움직이는데(내부적으로 kakao map의
@@ -320,7 +359,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   const mapCenter = focusCenter ?? center
 
   return (
-    <div className={cn('relative h-full w-full overflow-hidden', compact ? 'min-h-0' : 'min-h-70')}>
+    <div ref={mapContainerRef} className={cn('relative h-full w-full overflow-hidden', compact ? 'min-h-0' : 'min-h-70')}>
       <KakaoMap
         center={mapCenter}
         level={4}
@@ -331,16 +370,24 @@ function KakaoMapCanvas(props: MapCanvasProps) {
       >
         {places.map((place) => {
           const selected = place.id === selectedPlaceId
+          const highlighted = highlightIds?.has(place.id)
           const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
           return (
-            <CustomOverlayMap key={place.id} position={{ lat: place.lat, lng: place.lng }} clickable zIndex={selected ? 2 : 1}>
-              <button
-                type="button"
-                onClick={() => onSelectPlace(place)}
-                title={place.name}
-                className={pinClassName(selected, pinBg)}
-              >
-                <Icon className="h-3.75 w-3.75" />
+            <CustomOverlayMap
+              key={place.id}
+              position={{ lat: place.lat, lng: place.lng }}
+              clickable
+              zIndex={selected ? 2 : 1}
+              yAnchor={highlighted ? 1 : 0.5}
+            >
+              <button type="button" onClick={() => onSelectPlace(place)} title={place.name}>
+                {highlighted ? (
+                  <SearchResultPin selected={selected} />
+                ) : (
+                  <span className={pinClassName(selected, pinBg)}>
+                    <Icon className="h-3.75 w-3.75" />
+                  </span>
+                )}
               </button>
             </CustomOverlayMap>
           )

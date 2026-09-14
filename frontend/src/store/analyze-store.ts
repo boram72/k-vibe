@@ -14,8 +14,8 @@ interface AnalyzeState {
   // 점근적으로 오르는 가짜 값(startAnalysis 참고). 완료 시 100으로 마무리.
   progress: number;
   errorKind: AnalyzeErrorKind | null;
-  // 성공/실패 이후 전역 완료 배너(analysis-completion-banner.tsx)를 아직 안
-  // 봤는지. true면 배너를 안 띄움 — 결과를 보러 가거나 닫기를 누르면 true로.
+  // 성공/실패 이후 전역 완료 토스트(analysis-completion-toast.tsx)를 아직 안
+  // 봤는지. true면 토스트를 안 띄움 — 결과를 보러 가거나 닫기를 누르면 true로.
   completionSeen: boolean;
   setUrl: (url: string) => void;
   clearResult: () => void;

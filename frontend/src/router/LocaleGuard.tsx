@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet, useParams } from 'react-router-dom'
 import i18n, { LOCALE_STORAGE_KEY, SUPPORTED_LOCALES, type Locale } from '@/i18n'
-import { AnalysisCompletionBanner } from '@/blocks/analyze/analysis-completion-banner'
+import { AnalysisCompletionToast } from '@/blocks/analyze/analysis-completion-toast'
 
 export function LocaleGuard() {
   const { locale } = useParams<{ locale: string }>()
@@ -29,11 +29,13 @@ export function LocaleGuard() {
   return (
     <>
       <Outlet />
-      {/* SNS 분석 완료·실패를 어느 탭에 있든 알려주는 전역 배너. 여기(모든
-          locale 라우트의 공통 부모)에 둬야 홈/지도/분석기/기타 탭 전부에서
-          useLocation()으로 "지금 분석기 화면인지"를 판단할 수 있다 —
-          자세한 이유는 analysis-completion-banner.tsx 참고. */}
-      <AnalysisCompletionBanner />
+      {/* SNS 분석 완료·실패를 어느 탭에 있든 알려주는 전역 토스트(화면에는
+          아무것도 그리지 않고 sonner 토스트만 띄움). 여기(모든 locale
+          라우트의 공통 부모)에 둬야 홈/지도/분석기/기타 탭 전부에서
+          useLocation()으로 "지금 분석기 화면인지"를 판단할 수 있고, navigate()도
+          이 라우트 기준 상대경로로 locale 세그먼트를 유지한다 — 자세한 이유는
+          analysis-completion-toast.tsx 참고. */}
+      <AnalysisCompletionToast />
     </>
   )
 }

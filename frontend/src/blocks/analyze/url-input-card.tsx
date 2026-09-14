@@ -1,4 +1,4 @@
-import { AlertCircle, Camera, Search, Video } from 'lucide-react'
+import { AlertCircle, Camera, Video } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { detectSnsPlatform, extractVideoId, getThumbnailUrl } from '@/lib/youtube'
@@ -78,7 +78,6 @@ export function UrlInputCard({ url, onUrlChange, onAnalyze, isAnalyzing }: UrlIn
       )}
 
       <Button className="w-full" disabled={!urlValid || isAnalyzing} onClick={onAnalyze}>
-        <Search className="h-4 w-4" />
         {isAnalyzing ? t('analyze.loading_button') : t('analyze.analyze_button')}
       </Button>
     </div>

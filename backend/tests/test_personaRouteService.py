@@ -81,6 +81,33 @@ def test_load_persona_route_from_db_applies_location_story_and_pic(
 
 @patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
 @patch("business_services.personaRouteService.personainfo.get_persona_route")
+def test_load_persona_route_from_db_uses_jsonb_location_story_directly(
+    mock_get_route, mock_get_locations
+):
+    """location_story가 jsonb(dict)로 오면 로케일별 값을 그대로 description으로 써야 한다."""
+    story = {
+        "ko": "아이유가 서촌 골목에서 든든한 한 끼를 즐기며 하루를 시작하는 곳",
+        "en": "The place where IU starts her day enjoying a hearty meal in a Seochon alley",
+        "ja": "IUが西村の路地でしっかりとした一食を楽しみながら一日を始める場所",
+        "zh": "IU在西村小巷裏享用一頓飽足的一餐，開始一天的地方",
+    }
+    mock_get_route.return_value = [{"locationname": "402994", "location_story": story}]
+    mock_get_locations.return_value = {
+        "402994": {
+            "name": "서촌 골목식당",
+            "latitude": 37.5796,
+            "longitude": 126.977,
+            "place_id": "402994",
+        }
+    }
+
+    locations = personaRouteService._load_persona_route_from_db("아이유")
+
+    assert locations[0]["description"] == story
+
+
+@patch("business_services.personaRouteService.locationinfo.get_locations_by_place_ids")
+@patch("business_services.personaRouteService.personainfo.get_persona_route")
 def test_load_persona_route_from_db_keeps_defaults_without_story_or_pic(
     mock_get_route, mock_get_locations
 ):

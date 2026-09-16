@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { Map, Share2, Trash2 } from 'lucide-react'
+import { Share2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { RouteMiniMap } from '@/blocks/route/route-mini-map'
@@ -126,14 +126,7 @@ export default function RoutePage() {
     const state: MapFocusState = {
       focusPlaces: [{ id: stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags }],
       openDetail: true,
-    }
-    navigate('../map', { state })
-  }
-
-  function viewAllOnMap() {
-    if (stops.length === 0) return
-    const state: MapFocusState = {
-      focusPlaces: stops.map((s) => ({ id: s.id, name: s.name, category: 'culture', address: s.address, lat: s.lat, lng: s.lng, tags: s.tags })),
+      returnToRoute: true,
     }
     navigate('../map', { state })
   }
@@ -231,27 +224,13 @@ export default function RoutePage() {
       </div>
 
       <div className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-border bg-background p-4">
-        <Button className="flex-1" onClick={viewAllOnMap}>
-          <Map className="h-3.5 w-3.5" />
-          {t("route.open_route_map")}
+        <Button variant="outline" className="flex-1" onClick={shareRoute}>
+          <Share2 className="h-3.5 w-3.5" />
+          {t("route.share")}
         </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={shareRoute}
-          aria-label={t("route.share")}
-          title={t("route.share")}
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setClearConfirmOpen(true)}
-          aria-label={t("route.clear_route")}
-          title={t("route.clear_route")}
-        >
-          <Trash2 className="h-4 w-4" />
+        <Button variant="outline" className="flex-1" onClick={() => setClearConfirmOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5" />
+          {t("route.clear_route")}
         </Button>
       </div>
 

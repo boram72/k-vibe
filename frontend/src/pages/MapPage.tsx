@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { MapCanvas } from '@/blocks/map/map-canvas'
@@ -26,6 +26,9 @@ export interface MapFocusState {
   focusPlaces?: Place[]
   openDetail?: boolean
   initialSearch?: string
+  // 내 루트의 개별 스팟에서 지도 아이콘을 눌러 들어온 경우에만 true — 그
+  // 스팟의 상세카드에 "루트로 돌아가기" 버튼을 보여줄지 판단하는 데 쓴다.
+  returnToRoute?: boolean
 }
 
 function hasValidCoordinates(place: Place): boolean {
@@ -49,8 +52,15 @@ export default function MapPage() {
   const { coords, locationLabel, requestLocation, isPrecise } = useCurrentLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const routerLocation = useLocation()
+  const navigate = useNavigate()
   const focusState = routerLocation.state as MapFocusState | null
   const focusPlaces = useMemo(() => focusState?.focusPlaces?.filter(hasValidCoordinates) ?? [], [focusState])
+  // 내 루트에서 넘어온 그 스팟(정확히 이 id)의 상세카드에서만 "루트로
+  // 돌아가기"를 보여주기 위한 origin id — lazy init(다른 focusState 값들과
+  // 동일 패턴), 이후 다른 스팟을 눌러도 이 값은 안 바뀜.
+  const [routeOriginPlaceId] = useState<string | null>(() =>
+    focusState?.returnToRoute && focusPlaces.length === 1 ? focusPlaces[0].id : null,
+  )
 
   // 2026-09 QA 7번 — 다중선택에서 단일선택(라디오 버튼 방식)으로 변경.
   const [categories, setCategories] = useState<PlaceCategory>('all')
@@ -79,6 +89,28 @@ export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(() =>
     focusPlaces.length === 1 && focusState?.openDetail ? focusPlaces[0] : null,
   )
+  // 버그 수정 — 지도 핀의 빨간 강조(선택 표시)가 상세시트의 열림/닫힘과 같은
+  // state(selectedPlace)를 공유하고 있어서, 상세시트를 닫으면(`onClose`가
+  // `setSelectedPlace(null)`) 핀 강조까지 같이 사라졌음. 검색 결과 핀이
+  // "닫아도 그 자리에 머무는" 것과 마찬가지로, 핀 강조도 상세시트를 닫아도
+  // 유지되고 "다른 장소를 새로 선택할 때만" 옮겨가야 해서 별도 state로 분리.
+  const [highlightedPlaceId, setHighlightedPlaceId] = useState<string | null>(() => selectedPlace?.id ?? null)
+
+  function handleSelectPlace(place: Place) {
+    setSelectedPlace(place)
+    setHighlightedPlaceId(place.id)
+    // 버그 수정 — 지역검색/관광지추천으로 얻은 kakaoSearchResults는 highlightIds로
+    // "선택 여부와 무관하게" 항상 빨간 핀 유지되는데(map-canvas.tsx 참고),
+    // 그 결과 하나를 본 다음 완전히 무관한 다른 장소(예: 주변 스팟 목록)를
+    // 선택해도 이 그룹은 안 지워져서 빨간 핀이 "옮겨가지 않고 그대로 남은 채
+    // 새 선택 핀까지 추가로 빨개져 중복되어 보이는" 버그가 있었음(실사용 확인).
+    // 지금 클릭한 장소가 그 검색결과 그룹 안에 없다면(=완전히 새로운 맥락으로
+    // 이동) 옛 그룹을 비워서, 강조가 항상 "지금 선택된 곳" 하나만 따라가게 함
+    // — 그 그룹 안의 장소를 다시 클릭한 경우(제자리 재선택)는 그대로 유지.
+    if (kakaoSearchResults.length && !kakaoSearchResults.some((p) => p.id === place.id)) {
+      setKakaoSearchResults([])
+    }
+  }
   // 2026-09: 하트 버튼이 "찜한 것만 필터"에서 "찜 목록 섹션 토글"로 역할이
   // 바뀜 — 더 이상 places를 필터링하지 않고, SpotListPanel이 이 값으로 위쪽에
   // 찜 목록 섹션을 보여줄지만 결정한다.
@@ -113,6 +145,7 @@ export default function MapPage() {
   function handleRequestLocation() {
     setSearchCenter(null)
     setKakaoSearchResults([])
+    setHighlightedPlaceId(null)
     requestLocation()
   }
 
@@ -265,6 +298,10 @@ export default function MapPage() {
     // 다시 텍스트로 거르지 않는다(위 areaSearchMutation.onSuccess 참고).
     const q = search === areaSearchedQuery ? '' : search.trim().toLowerCase()
     return candidates.filter((place) => {
+      // 버그 수정 — 검색/관광지 추천 클릭으로 강조된 장소(kakaoSearchResultIds)가
+      // 카테고리/페르소나 필터에 안 맞으면 목록에서 통째로 빠져서 핀도 안
+      // 보였음. 방금 콕 집어 찾은 장소는 지금 필터가 뭐든 항상 보이게 예외 처리.
+      if (kakaoSearchResultIds.has(place.id)) return true
       const matchCategory =
         filterMode !== 'category' || categories === 'all' || categories === place.category
       // 페르소나별 "전체"(starFilter 빈 배열)는 페르소나 태그가 붙은 장소 전체를
@@ -281,7 +318,7 @@ export default function MapPage() {
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
       return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery])
+  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds])
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -300,8 +337,8 @@ export default function MapPage() {
           center={effectiveCoords}
           places={filtered}
           fitPlaces={fitPlaces}
-          selectedPlaceId={selectedPlace?.id}
-          onSelectPlace={setSelectedPlace}
+          selectedPlaceId={highlightedPlaceId ?? undefined}
+          onSelectPlace={handleSelectPlace}
           onRequestLocation={handleRequestLocation}
           locationLabel={effectiveLocationLabel}
           onSearchArea={setSearchCenter}
@@ -336,7 +373,7 @@ export default function MapPage() {
         savedPlaces={savedPlaces}
         places={filtered}
         isLoading={isLoading}
-        onSelectPlace={setSelectedPlace}
+        onSelectPlace={handleSelectPlace}
         center={effectiveCoords}
       />
 
@@ -345,6 +382,8 @@ export default function MapPage() {
         saved={selectedPlace ? savedIds.has(selectedPlace.id) : false}
         onClose={() => setSelectedPlace(null)}
         onToggleSave={toggleSave}
+        showBackToRoute={Boolean(selectedPlace) && selectedPlace?.id === routeOriginPlaceId}
+        onBackToRoute={() => navigate('../route')}
       />
     </div>
   )

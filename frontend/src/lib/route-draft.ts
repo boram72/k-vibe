@@ -68,6 +68,21 @@ function isSamePlace(a: RouteStop, b: RouteStop): boolean {
   return (a.placeId ?? a.id) === (b.placeId ?? b.id)
 }
 
+// AnalyzePage에서 만드는 stop id 규칙을 여기 한 곳에 둔다 — AnalyzePage(추가할
+// 때)와 AnalysisResultList(이미 추가됐는지 표시할 때) 둘 다 같은 id를 만들어야
+// 같은 장소로 인식되는데, 템플릿 문자열을 두 군데 따로 적어두면 나중에 한쪽만
+// 바뀌었을 때 "추가됨" 표시가 조용히 깨질 수 있어서 함수로 공유한다.
+export function analysisStopId(videoId: string, placeName: string): string {
+  return `analysis-${videoId}-${placeName}`
+}
+
+// AnalysisResultList가 카드마다 "이미 루트에 추가됨"을 보여주는 데 쓴다 — 매번
+// readRouteDraft() 전체를 훑는 대신, 호출부(AnalyzePage)가 한 번 계산해서
+// Set으로 넘겨주는 걸 가정한 얕은 헬퍼.
+export function readRouteDraftStopIds(): Set<string> {
+  return new Set(readRouteDraft().map((s) => s.placeId ?? s.id))
+}
+
 export interface AddStopOutcome {
   stops: RouteStop[]
   // false면 같은 장소가 이미 루트에 있어서 새로 추가되지 않았음 — 호출부가

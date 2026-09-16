@@ -137,6 +137,7 @@
     "source_mock": "基础分析",
     "ai_disclaimer": "此路线由AI分析生成，可能不完全准确。",
     "select_action": "选择",
+    "added_label": "已添加",
     "view_on_map": "在地图中查看",
     "view_all_on_map": "在地图中查看全部",
     "add_to_route": "添加到路线",

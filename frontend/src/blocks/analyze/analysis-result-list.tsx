@@ -1,10 +1,22 @@
 import { useTranslation } from 'react-i18next'
-import { Sparkles } from 'lucide-react'
+import { Check, Sparkles } from 'lucide-react'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
+import { analysisStopId } from '@/lib/route-draft'
+import { cn } from '@/lib/utils'
 
 interface AnalysisResultListProps {
   result: AnalysisResult
   onSelectPlace: (place: AnalysisPlace) => void
+  // 이미 "내 루트"에 담긴 장소들의 stop id(analysisStopId 기준) — 카드 배경/
+  // 테두리 색과 배지 문구를 바꿔서 "추가됨"을 보여주는 데 쓴다(사용자 요청).
+  // 테두리 두께가 아니라 색으로만 구분하는 이유는 다크모드에서도 잘 보이고,
+  // 두께 변화로 인한 레이아웃 흔들림이 없어서.
+  //
+  // violet-500(Tailwind 기본 팔레트, 이 프로젝트의 디자인 토큰엔 없음)을 쓴
+  // 이유: 이 테마의 `primary`는 실제로는 흑백(그레이스케일)이라 "추가됨" 표시로
+  // 구분이 잘 안 됐고, `crowd-low`(초록)는 혼잡도 표시에 이미 쓰이는 의미가
+  // 있어서 헷갈릴 수 있었음 — 사용자가 파란색/보라색 중 보라색으로 확정.
+  addedPlaceIds: Set<string>
 }
 
 // AI(모델)가 실제로 추론해서 만든 결과인 소스들 — worker(규칙기반 매칭)/mock은
@@ -22,7 +34,7 @@ const SOURCE_LABEL_KEYS: Record<string, string> = {
 // sticky footer (so they stay reachable while this list scrolls), not in here.
 // Tapping an individual place card opens a choice popup (view this one on the map,
 // or add just this one to the route) — see AnalyzePage's `choicePlace` dialog.
-export function AnalysisResultList({ result, onSelectPlace }: AnalysisResultListProps) {
+export function AnalysisResultList({ result, onSelectPlace, addedPlaceIds }: AnalysisResultListProps) {
   const { t } = useTranslation()
   const sourceLabel = t(SOURCE_LABEL_KEYS[result.source] ?? 'analyze.source_worker')
   const showAiDisclaimer = AI_SOURCES.has(result.source)
@@ -66,29 +78,45 @@ export function AnalysisResultList({ result, onSelectPlace }: AnalysisResultList
           이름에 걸맞은 실제 값이 아니었음(사용자 피드백으로 확인). place.confidence
           자체는 API 응답에 남아있고 다른 곳(루트에 추가 시 혼잡도 추정)에서
           여전히 쓰이므로 타입/백엔드는 그대로, 이 화면의 표시만 없앤다. */}
-      {result.places.map((place, idx) => (
-        <button
-          key={`${place.name}-${idx}`}
-          type="button"
-          onClick={() => onSelectPlace(place)}
-          className="flex w-full items-center gap-3 rounded-xl border border-border bg-muted p-3 text-left transition-colors hover:border-primary/35"
-        >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {idx + 1}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground">{place.name}</p>
-            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
-          </div>
-          {/* 2026-09: "지도"라는 라벨이 실제 동작(눌렀을 때 "지도에서 보기"/
-              "루트에 추가" 중 고르는 선택 팝업이 뜸)과 안 맞는다는 피드백으로
-              "선택"으로 교체 — AnalyzePage의 choicePlace 다이얼로그 안내문
-              (choose_action_hint: "이 장소로 할 작업을 선택하세요")과 어휘를 맞췄다. */}
-          <span className="shrink-0 rounded-lg bg-border px-2 py-1 text-[10px] font-semibold text-foreground">
-            {t('analyze.select_action')}
-          </span>
-        </button>
-      ))}
+      {result.places.map((place, idx) => {
+        const isAdded = addedPlaceIds.has(analysisStopId(result.videoId, place.name))
+        return (
+          <button
+            key={`${place.name}-${idx}`}
+            type="button"
+            onClick={() => onSelectPlace(place)}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors',
+              isAdded ? 'border-violet-500 bg-violet-500/10' : 'border-border bg-muted hover:border-primary/35',
+            )}
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              {idx + 1}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">{place.name}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
+            </div>
+            {/* 2026-09: "지도"라는 라벨이 실제 동작(눌렀을 때 "지도에서 보기"/
+                "루트에 추가" 중 고르는 선택 팝업이 뜸)과 안 맞는다는 피드백으로
+                "선택"으로 교체 — AnalyzePage의 choicePlace 다이얼로그 안내문
+                (choose_action_hint: "이 장소로 할 작업을 선택하세요")과 어휘를 맞췄다.
+                2026-09: 이미 "내 루트"에 담긴 장소는 "추가됨" + 체크 아이콘으로
+                바꿔서 한눈에 구분되게 했다(사용자 요청) — 취소 버튼은 안 만들고
+                (삭제는 "내 루트" 탭에서), 눌러도 그대로 선택 팝업이 열려서
+                지도에서 보는 건 계속 가능하다. */}
+            <span
+              className={cn(
+                'flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold',
+                isAdded ? 'bg-violet-500 text-white' : 'bg-border text-foreground',
+              )}
+            >
+              {isAdded && <Check className="h-3 w-3" />}
+              {isAdded ? t('analyze.added_label') : t('analyze.select_action')}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

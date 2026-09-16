@@ -65,7 +65,13 @@ def _load_persona_route_from_db(persona_id: str) -> list[dict]:
         # persona 테이블 행이 이 정거장 전용 스토리/이미지를 갖고 있으면 location 테이블의
         # 일반 정보 대신 우선 사용한다 (예: "V"가 방문한 경복궁"이라는 페르소나 전용 서사/사진).
         story = route_row.get("location_story")
-        if story:
+        if isinstance(story, dict):
+            # jsonb 컬럼(2026-09-16 마이그레이션 이후) — {"ko","en","ja","zh"} 등 로케일별
+            # 값을 그대로 사용한다. routingService._pick()이 요청 locale에 맞는 값을 고른다.
+            location["description"] = story
+        elif story:
+            # 마이그레이션 이전 레거시 평문 값 — 예전처럼 ko/en에 동일 문자열을 채워
+            # 최소한 한국어 원문은 계속 보이도록 한다(하위호환).
             location["description"] = {"ko": story, "en": story}
 
         pic_path = route_row.get("location_pic")

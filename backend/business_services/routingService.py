@@ -28,7 +28,10 @@ def _ensure_coordinates(name: str) -> dict:
 
 
 def _pick(text: dict, locale: str) -> str:
-    return text["ko"] if locale == "ko" else text["en"]
+    # location_story가 jsonb {"ko","en","ja","zh"}로 확장되면서(2026-09-16) ko/en 이분법으로는
+    # ja/zh 요청이 전부 en으로 새어버린다. 요청 locale -> en -> ko 순 폴백 체인으로 바꿔
+    # ja/zh 값이 있으면 그대로 쓰고, 없으면 기존과 동일하게 en/ko로 대체한다.
+    return text.get(locale) or text.get("en") or text.get("ko") or ""
 
 
 def _parse_start_time(value: str) -> int:

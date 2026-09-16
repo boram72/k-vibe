@@ -36,3 +36,17 @@ def test_build_persona_route_omits_character_image_url_when_absent():
     result = routingService.build_persona_route("BTS뷔", _PERSONA, locations, "10:00", "ko")
 
     assert "characterImageUrl" not in result["stops"][0]
+
+
+def test_pick_returns_requested_locale_when_present():
+    text = {"ko": "한국어", "en": "English", "ja": "日本語", "zh": "中文"}
+
+    assert routingService._pick(text, "ja") == "日本語"
+    assert routingService._pick(text, "zh") == "中文"
+
+
+def test_pick_falls_back_to_en_then_ko_when_locale_missing():
+    """location_story가 아직 ko/en만 채워진 경우, ja/zh 요청은 en으로, en도 없으면 ko로 대체된다."""
+    assert routingService._pick({"ko": "한국어", "en": "English"}, "ja") == "English"
+    assert routingService._pick({"ko": "한국어"}, "ja") == "한국어"
+    assert routingService._pick({}, "ja") == ""

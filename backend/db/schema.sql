@@ -198,3 +198,25 @@ create table if not exists persona_catalog (
 -- SNS 분석기 결과 캐시는 DB 테이블이 아니라 Redis 호환 저장소(Render Key Value)에
 -- 둔다 — data_repositories/analyzeCacheInfo.py 참고(key: analyze:{video_id}:{locale},
 -- TTL 30일). 휘발성 캐시 데이터라 주 DB에 섞지 않는다.
+
+-- ============================================================
+-- 페르소나 정거장 스토리 다국어화 (2026-09-16)
+-- ============================================================
+
+-- PERSONA.location_story/location_pic 컬럼은 Supabase 콘솔에서 수동 추가되어 이 파일에
+-- 원래 기록이 없었다. location_story는 지금까지 한국어 평문(text)만 저장해서, 로케일이
+-- ja/zh(심지어 en)여도 한국어 문장이 그대로 노출되는 문제가 있었다 — routingService._pick()이
+-- ko/en 이분법이었던 것과 별개로, description 자체가 ko 한 언어뿐이었던 게 근본 원인.
+-- 아래처럼 jsonb로 바꿔 {"ko":..., "en":..., "ja":..., "zh":...} 형태로 다국어 값을 저장한다.
+-- 기존 값은 평문이라 ::jsonb로 바로 캐스팅하면 invalid json 에러가 나므로, 새 컬럼을 만들고
+-- 기존 값을 {"ko": 기존값}으로 백필한 뒤 컬럼을 교체하는 방식을 쓴다.
+alter table persona add column if not exists location_story_i18n jsonb;
+update persona
+  set location_story_i18n = jsonb_build_object('ko', location_story)
+  where location_story is not null and location_story_i18n is null;
+alter table persona drop column if exists location_story;
+alter table persona rename column location_story_i18n to location_story;
+
+-- personaRouteService._load_persona_route_from_db()는 location_story가 dict(신규 jsonb)면
+-- 그대로 description으로 쓰고, 문자열(레거시로 남아있을 수 있는 값)이면 예전처럼
+-- {"ko": story, "en": story}로 감싼다 — 하위호환.

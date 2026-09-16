@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 import { detectSnsPlatform, extractVideoId } from '@/lib/youtube'
-import { addStopToRouteDraft, addStopsToRouteDraft } from '@/lib/route-draft'
+import { addStopToRouteDraft, addStopsToRouteDraft, analysisStopId, readRouteDraftStopIds } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useAnalyzeStore } from '@/store/analyze-store'
 import type { Locale } from '@/i18n'
@@ -25,6 +25,11 @@ export default function AnalyzePage() {
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
+  // 카드에 "추가됨" 표시를 하기 위한 상태 — 마운트 시점에 한 번 localStorage를
+  // 읽어서 초기화한다. "내 루트" 탭에서 삭제하고 이 탭으로 돌아오면(라우트
+  // 전환으로 이 컴포넌트가 다시 마운트됨) 그때 다시 읽어서 최신 상태로
+  // 맞춰지므로, 실시간 구독 없이 이 정도로 충분하다(사용자 확인 완료).
+  const [addedPlaceIds, setAddedPlaceIds] = useState<Set<string>>(() => readRouteDraftStopIds())
 
   useEffect(() => {
     setHelp(t('analyze.help_title'), t('analyze.help_body'))
@@ -58,7 +63,7 @@ export default function AnalyzePage() {
 
   function toRouteStop(result: AnalysisResult, place: AnalysisPlace) {
     return {
-      id: `analysis-${result.videoId}-${place.name}`,
+      id: analysisStopId(result.videoId, place.name),
       name: place.name,
       category: 'SNS',
       address: t('analyze.detected_address'),
@@ -81,14 +86,18 @@ export default function AnalyzePage() {
 
   function addAllToRoute() {
     if (!displayResult || displayResult.places.length === 0) return
-    const { addedCount } = addStopsToRouteDraft(displayResult.places.map((place) => toRouteStop(displayResult, place)))
+    const stops = displayResult.places.map((place) => toRouteStop(displayResult, place))
+    const { addedCount } = addStopsToRouteDraft(stops)
+    setAddedPlaceIds((prev) => new Set([...prev, ...stops.map((s) => s.id)]))
     toast.success(addedCount > 0 ? t('analyze.route_saved') : t('common.already_in_route'))
     navigate('../route')
   }
 
   function addOneToRoute(place: AnalysisPlace) {
     if (!displayResult) return
-    const { added } = addStopToRouteDraft(toRouteStop(displayResult, place))
+    const stop = toRouteStop(displayResult, place)
+    const { added } = addStopToRouteDraft(stop)
+    setAddedPlaceIds((prev) => new Set(prev).add(stop.id))
     toast.success(added ? t('analyze.route_saved') : t('common.already_in_route'))
     setChoicePlace(null)
   }
@@ -138,7 +147,7 @@ export default function AnalyzePage() {
           )}
 
           {!isAnalyzing && !hasError && displayResult && (
-            <AnalysisResultList result={displayResult} onSelectPlace={setChoicePlace} />
+            <AnalysisResultList result={displayResult} onSelectPlace={setChoicePlace} addedPlaceIds={addedPlaceIds} />
           )}
 
           {!isAnalyzing && !hasError && !displayResult && (

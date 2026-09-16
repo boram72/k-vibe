@@ -137,6 +137,7 @@
     "source_mock": "基本分析",
     "ai_disclaimer": "AIが分析したルートのため、正確でない場合があります。",
     "select_action": "選択",
+    "added_label": "追加済み",
     "view_on_map": "地図で見る",
     "view_all_on_map": "すべて地図で見る",
     "add_to_route": "ルートに追加",

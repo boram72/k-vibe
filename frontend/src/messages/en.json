@@ -137,6 +137,7 @@
     "source_mock": "Basic analysis",
     "ai_disclaimer": "This route was analyzed by AI, so it may not be fully accurate.",
     "select_action": "Select",
+    "added_label": "Added",
     "view_on_map": "View on Map",
     "view_all_on_map": "View All on Map",
     "add_to_route": "Add to Route",

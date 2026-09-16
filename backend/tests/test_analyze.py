@@ -15,7 +15,11 @@ def _kakao_coords(query: str):
 @patch("ai_services.gemini_client.analyze_video", return_value="")
 @patch("externelAPI_services.youtube.fetch_youtube_title")
 @patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_falls_back_to_worker_when_no_places_extracted(_, mock_title, mock_analyze_video, ___):
+def test_analyze_fails_when_no_places_extracted(_, mock_title, mock_analyze_video, ___):
+    # 2026-09: 예전엔 여기서 규칙기반 워커로 폴백해 200 + 서울 고정 후보를
+    # 돌려줬다(예: 제주 여행 영상인데 서울 장소가 나오는 등 실제 영상 내용과
+    # 무관한 가짜 성공). 이제는 모든 AI 경로가 실패하면 502로 진짜 실패를
+    # 알린다 — 프론트가 "분석 실패, 다시 시도해주세요"를 보여주게 하기 위함.
     mock_title.return_value = "성수 카페 브이로그"
 
     response = client.post(
@@ -23,48 +27,8 @@ def test_analyze_falls_back_to_worker_when_no_places_extracted(_, mock_title, mo
         json={"youtube_url": "https://www.youtube.com/watch?v=BKorP55Aqvg", "locale": "ko"},
     )
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["videoId"] == "BKorP55Aqvg"
-    assert body["source"] == "worker"
-    assert body["places"][0]["name"] == "성수 카페거리"
+    assert response.status_code == 502
     mock_analyze_video.assert_called_once()
-
-
-@patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="")
-@patch("ai_services.gemini_client.analyze_video", return_value="")
-@patch("externelAPI_services.youtube.fetch_youtube_title")
-@patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_uses_video_id_specific_fallbacks(_, mock_title, __, ___):
-    mock_title.return_value = ""
-
-    first = client.post(
-        "/analyze",
-        json={"youtube_url": "https://www.youtube.com/watch?v=BKorP55Aqvg", "locale": "ko"},
-    ).json()
-    second = client.post(
-        "/analyze",
-        json={"youtube_url": "https://youtu.be/dQw4w9WgXcQ", "locale": "ko"},
-    ).json()
-
-    assert [place["name"] for place in first["places"]] != [place["name"] for place in second["places"]]
-
-
-@patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="")
-@patch("ai_services.gemini_client.analyze_video", return_value="")
-@patch("externelAPI_services.youtube.fetch_youtube_title")
-@patch("ai_services.groq_client.complete", return_value="")
-def test_analyze_matches_title_keywords_before_fallback(_, mock_title, __, ___):
-    mock_title.return_value = "잠실 롯데타워 서울 여행 브이로그"
-
-    response = client.post(
-        "/analyze",
-        json={"youtube_url": "https://www.youtube.com/watch?v=Kzn-32djk2U", "locale": "ko"},
-    )
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["places"][0]["name"] == "서울스카이"
 
 
 def test_analyze_uses_groq_when_transcript_places_are_parseable():
@@ -147,7 +111,7 @@ def test_analyze_falls_back_to_video_analysis_when_transcript_has_no_places():
     assert body["places"][0]["name"] == "성수연방"
 
 
-def test_analyze_falls_back_to_worker_when_geocoding_fails():
+def test_analyze_fails_when_geocoding_fails():
     with (
         patch("externelAPI_services.youtube.fetch_youtube_title", return_value="성수 카페 브이로그"),
         patch("externelAPI_services.youtube.fetch_youtube_transcript", return_value="오늘은 어딘가에 다녀왔어요"),
@@ -161,10 +125,7 @@ def test_analyze_falls_back_to_worker_when_geocoding_fails():
             json={"youtube_url": "https://www.youtube.com/watch?v=BKorP55Aqvg", "locale": "ko"},
         )
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["source"] == "worker"
-    assert body["places"][0]["name"] == "성수 카페거리"
+    assert response.status_code == 502
 
 
 def test_analyze_rejects_non_youtube_url():

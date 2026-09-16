@@ -2,13 +2,13 @@ import json
 import re
 
 from ai_services import gemini_client, groq_client, openai_client, prompttemplate
-from data_repositories import analysisCandidateInfo, analyzeCacheInfo
+from data_repositories import analyzeCacheInfo
 from externelAPI_services import kakaomap, youtube
 
 # Groq -> Gemini -> OpenAI 순으로 시도하고, 셋 다 결과가 없으면(키 미설정 포함)
-# 규칙기반 워커(analysisCandidateInfo)로 최종 폴백한다. 각 client.complete()는
-# 키가 없거나 호출이 실패하면 빈 문자열을 반환하도록 이미 구현되어 있어
-# 여기서는 그 결과가 비어있는지만 확인하면 됨.
+# 최종적으로 AnalysisFailedError를 던진다. 각 client.complete()는 키가 없거나
+# 호출이 실패하면 빈 문자열을 반환하도록 이미 구현되어 있어 여기서는 그 결과가
+# 비어있는지만 확인하면 됨.
 _AI_PROVIDERS = (
     ("groq", groq_client),
     ("gemini", gemini_client),
@@ -17,6 +17,20 @@ _AI_PROVIDERS = (
 
 _DEFAULT_CONFIDENCE = 0.75
 _MAX_PLACES = 6
+
+
+# 2026-09: 예전엔 여기서 규칙기반 워커(data_repositories/analysisCandidateInfo,
+# 서울 14곳 고정 목록 + video_id 해시로 3곳을 결정론적으로 고르는 폴백)로
+# "그럴듯한" 후보를 지어내 200 OK를 돌려줬다. 문제는 이게 실제 영상 내용과
+# 전혀 무관해서(예: 제주 여행 영상인데 서울 장소가 나옴) 사용자에게 "분석이
+# 잘 됐다"는 착각을 주는 가짜 성공이었다(사용자 피드백: "mock 값은 띄우지
+# 않기로 하지 않았어? 분석이 제대로 안 되면 '다시 시도해주세요'를 보여주기로
+# 하지 않았어?"). 이제는 이 예외를 던져서 presentation_api/analyze.py가 진짜
+# 에러 응답으로 매핑하고, 프론트가 이미 갖고 있는 "분석 실패/다시 시도" 화면이
+# 뜨게 한다. analysisCandidateInfo.py 자체는 지웠다 — 이 예외 하나로 완전히
+# 대체되는, 재사용 여지 없는 안티패턴이라 남겨둘 이유가 없었음.
+class AnalysisFailedError(RuntimeError):
+    """자막/영상 분석 등 모든 AI 경로가 실패해 장소를 하나도 못 찾았을 때."""
 
 
 def _locale(value: str) -> str:
@@ -117,7 +131,6 @@ def analyze_sns_url(youtube_url: str, locale: str) -> dict:
 
     title = youtube.fetch_youtube_title(youtube_url)
     fallback_title = "백엔드 K-콘텐츠 스팟 분석" if safe_locale == "ko" else "Backend K-content spot analysis"
-    analysis_title = title or video_id
 
     # 자막 우선 -> 자막이 없거나 장소를 못 찾으면 Gemini 네이티브 영상 분석으로 폴백
     transcript = youtube.fetch_youtube_transcript(video_id)
@@ -136,17 +149,10 @@ def analyze_sns_url(youtube_url: str, locale: str) -> dict:
                 "cached": False,
                 "source": source,
             }
-            # worker 폴백 결과는 캐싱하지 않는다(품질 낮은 고정 후보). 실제 AI가
-            # 장소를 뽑아낸 결과만 저장해서, 일시적으로 실패한 영상은 다음 요청에
-            # 다시 시도되게 한다.
+            # 실제 AI가 영상에서 뽑아낸 결과만 캐싱한다 — AnalysisFailedError로
+            # 끝난 요청은 캐싱하지 않으므로, 일시적으로 실패한 영상은 다음 요청에
+            # 다시 시도된다.
             _save_cached_result(video_id, safe_locale, result)
             return result
 
-    return {
-        "videoId": video_id,
-        "video_id": video_id,
-        "title": title or fallback_title,
-        "places": analysisCandidateInfo.match_places(analysis_title, video_id, safe_locale),
-        "cached": False,
-        "source": "worker",
-    }
+    raise AnalysisFailedError(video_id)

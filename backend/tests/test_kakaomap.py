@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from externelAPI_services import kakaomap
@@ -95,3 +96,51 @@ def test_search_category_nearby_caps_radius_at_20km(mock_get):
 def test_search_category_nearby_raises_when_api_key_missing():
     with pytest.raises(RuntimeError, match="KAKAO_REST_API_KEY"):
         kakaomap.search_category_nearby(37.5, 127.0, 1000, "CS2")
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+@patch("externelAPI_services.kakaomap.httpx.get")
+def test_get_phone_number_returns_phone_on_success(mock_get):
+    mock_get.return_value = _mock_response(
+        {"documents": [{"place_name": "이북만두", "phone": "02-1234-5678"}]}
+    )
+
+    result = kakaomap.get_phone_number("이북만두", "서울특별시 중구 무교로 17-13")
+
+    assert result == "02-1234-5678"
+    called_params = mock_get.call_args.kwargs["params"]
+    assert called_params["query"] == "이북만두 서울특별시 중구 무교로 17-13"
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+@patch("externelAPI_services.kakaomap.httpx.get")
+def test_get_phone_number_returns_none_when_no_documents(mock_get):
+    mock_get.return_value = _mock_response({"documents": []})
+
+    assert kakaomap.get_phone_number("존재하지않는장소") is None
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+@patch("externelAPI_services.kakaomap.httpx.get")
+def test_get_phone_number_returns_none_when_phone_field_missing(mock_get):
+    mock_get.return_value = _mock_response({"documents": [{"place_name": "이북만두"}]})
+
+    assert kakaomap.get_phone_number("이북만두") is None
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", None)
+def test_get_phone_number_returns_none_when_api_key_missing():
+    assert kakaomap.get_phone_number("이북만두") is None
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+def test_get_phone_number_returns_none_without_name():
+    assert kakaomap.get_phone_number("") is None
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+@patch("externelAPI_services.kakaomap.httpx.get")
+def test_get_phone_number_returns_none_on_request_exception(mock_get):
+    mock_get.side_effect = httpx.ConnectError("network down")
+
+    assert kakaomap.get_phone_number("이북만두") is None

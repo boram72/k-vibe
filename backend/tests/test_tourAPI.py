@@ -316,6 +316,73 @@ def test_get_place_detail_raises_when_api_key_missing():
         tourAPI.get_place_detail("126508")
 
 
+@patch("externelAPI_services.tourAPI.kakaomap.get_phone_number")
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_falls_back_to_kakao_when_tel_missing(mock_get, mock_get_phone):
+    common_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {
+                            "tel": "",
+                            "title": "이북만두",
+                            "addr1": "서울특별시 중구 무교로 17-13",
+                            "overview": "",
+                            "contenttypeid": "39",
+                            "cat1": "",
+                            "cat2": "",
+                            "cat3": "",
+                        }
+                    }
+                }
+            }
+        }
+    )
+    intro_response = _mock_response({"response": {"body": {"items": ""}}})
+    mock_get.side_effect = [common_response, intro_response]
+    mock_get_phone.return_value = "02-1234-5678"
+
+    result = tourAPI.get_place_detail("126508")
+
+    assert result["phone"] == "02-1234-5678"
+    mock_get_phone.assert_called_once_with(name="이북만두", address="서울특별시 중구 무교로 17-13")
+
+
+@patch("externelAPI_services.tourAPI.kakaomap.get_phone_number")
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_skips_kakao_fallback_when_tel_present(mock_get, mock_get_phone):
+    common_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {
+                            "tel": "02-3700-3900",
+                            "title": "경복궁",
+                            "addr1": "서울 종로구 사직로 161",
+                            "overview": "",
+                            "contenttypeid": "12",
+                            "cat1": "",
+                            "cat2": "",
+                            "cat3": "",
+                        }
+                    }
+                }
+            }
+        }
+    )
+    intro_response = _mock_response({"response": {"body": {"items": ""}}})
+    mock_get.side_effect = [common_response, intro_response]
+
+    result = tourAPI.get_place_detail("126508")
+
+    assert result["phone"] == "02-3700-3900"
+    mock_get_phone.assert_not_called()
+
+
 @patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
 @patch("externelAPI_services.tourAPI.httpx.get")
 def test_get_place_detail_converts_br_tags_to_newlines(mock_get):

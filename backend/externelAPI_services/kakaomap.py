@@ -2,6 +2,7 @@
 # - Kakao Local API(키워드 검색)로 장소명 -> 좌표(위도/경도) 변환.
 # - Kakao Local API(좌표->행정구역)로 좌표 -> 시도/시군구명 변환(연관관광지 추천용 지역코드 매핑에 사용).
 # - Kakao Local API(카테고리 검색)로 좌표+반경 내 편의점/약국/은행 등 편의시설 조회(편의시설 레이더용).
+# - Kakao Local API(키워드 검색)로 장소명+주소 -> 전화번호 조회(TourAPI tel 필드 폴백용).
 #   REST API 키 필요(카카오 개발자 콘솔에서 발급, .env의 KAKAO_REST_API_KEY).
 import httpx
 
@@ -30,6 +31,33 @@ def search_coordinates(query: str) -> dict | None:
         return None
     place = documents[0]
     return {"latitude": float(place["y"]), "longitude": float(place["x"])}
+
+
+def get_phone_number(name: str, address: str | None = None) -> str | None:
+    """TourAPI가 전화번호(tel)를 제공하지 않을 때의 폴백 조회.
+
+    카카오 로컬 키워드 검색으로 장소명(+주소)을 조회해 phone 필드를 반환한다.
+    검색 결과 없음/키 미설정/요청 실패는 모두 None으로 통일해 호출부가 별도
+    분기 없이 "전화번호 정보없음" 폴백으로 이어지게 한다(searchGoogle.get_opening_hours와 동일 패턴).
+    """
+    if not KAKAO_REST_API_KEY or not name:
+        return None
+
+    query = f"{name} {address}" if address else name
+    try:
+        response = httpx.get(
+            KEYWORD_SEARCH_URL,
+            params={"query": query},
+            headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"},
+            timeout=5.0,
+        )
+        response.raise_for_status()
+        documents = response.json().get("documents", [])
+        if not documents:
+            return None
+        return documents[0].get("phone") or None
+    except httpx.HTTPError:
+        return None
 
 
 def reverse_geocode(latitude: float, longitude: float) -> dict | None:

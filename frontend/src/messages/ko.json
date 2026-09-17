@@ -157,7 +157,7 @@
     "tutorial_step4": "모든 장소를 한 번에 보거나 저장하고 싶다면, 하단의 '지도에서 모두 보기' 또는 '루트에 모두 추가' 버튼을 눌러보세요!",
     "detected_address": "YouTube 분석에서 감지됨",
     "route_saved": "루트를 저장했어요",
-    "completion_toast_title": "분석이 완료되었어요! 결과를 확인해 보세요.",
+    "completion_toast_title": "분석이 완료되었어요!\n결과를 확인해 보세요.",
     "completion_toast_view": "결과 보기",
     "dismiss_notification": "알림 닫기",
     "spotlight_captions": [

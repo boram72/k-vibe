@@ -157,7 +157,7 @@
     "tutorial_step4": "すべてまとめて見たい・保存したいときは、下部の「すべて地図で見る」または「すべてルートに追加」ボタンを押してください！",
     "detected_address": "YouTube分析から検出",
     "route_saved": "ルートを保存しました",
-    "completion_toast_title": "分析が完了しました！結果を確認してみましょう。",
+    "completion_toast_title": "分析が完了しました！\n結果を確認してみましょう。",
     "completion_toast_view": "結果を見る",
     "dismiss_notification": "通知を閉じる",
     "spotlight_captions": [

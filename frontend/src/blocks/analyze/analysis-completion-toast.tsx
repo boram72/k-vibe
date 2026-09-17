@@ -48,9 +48,9 @@ export function AnalysisCompletionToast() {
     const rawMessage = isSuccess
       ? t('analyze.completion_toast_title')
       : t(errorKind === 'timeout' ? 'analyze.error_timeout' : 'analyze.error_generic')
-    // 실패 문구는 두 문장(원인 안내 + 재시도 안내)이라 title/description을
-    // 나눠서 줄바꿈으로 구분하면 더 읽기 편하다(사용자 피드백) — 번역
-    // 문자열에 '\n'으로 문장 경계를 표시해두고 여기서 나눈다.
+    // 성공/실패 문구 모두 두 문장이라 액션 버튼 옆에 한 줄로 붙으면 읽기
+    // 답답하다(사용자 피드백) — title/description으로 나눠서 줄바꿈으로
+    // 구분한다. 번역 문자열에 '\n'으로 문장 경계를 표시해두고 여기서 나눈다.
     const [title, description] = rawMessage.split('\n')
     // '다시 시도'라고 하면 시스템이 알아서 재시도하는 것처럼 보이는데, 실제로는
     // 그냥 SNS 분석기 화면으로 이동만 시킨다(실패 원인이 URL 자체인 경우가 많아서

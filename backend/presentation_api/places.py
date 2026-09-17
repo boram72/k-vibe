@@ -34,17 +34,10 @@ def find_nearby_places(
 def get_place_detail(content_id: str):
     """장소 상세시트 온디맨드 조회(전화번호/영업시간/카테고리 태그). 클릭 시에만 호출됨.
 
-    TourAPI+카카오 라이브 조회는 왕복이 누적돼 느리므로(실측 2.7초, tourAPI.get_place_detail
-    참고), 한 번 조회에 성공한 결과는 location 테이블에 캐싱해 재조회 시 즉시 응답한다
-    (locationinfo.DETAIL_CACHE_TTL 이내). TourAPI detailCommon2가 실패하거나 영업시간을
+    TourAPI detailCommon2가 실패하거나(현재 서비스키 미승인으로 항상 실패) 영업시간을
     못 주는 경우, location 테이블에 캐싱된 name/address로 구글 Places를 폴백 조회한다.
     """
-    cached = locationinfo.get_cached_place_detail(content_id)
-    if cached is not None:
-        return cached
-
     detail = tourAPI.get_place_detail(content_id)
-    should_cache = detail is not None  # TourAPI 완전 실패(contentId 못 찾음)는 캐싱하지 않는다.
 
     location = None
     if detail is None or not detail.get("businessHours"):
@@ -59,12 +52,5 @@ def get_place_detail(content_id: str):
         detail["businessHours"] = searchGoogle.get_opening_hours(
             name=location.get("name"), address=location.get("address")
         )
-
-    if should_cache:
-        try:
-            locationinfo.cache_place_detail(content_id, detail)
-        except Exception:
-            # 캐싱 실패가 상세시트 응답 자체를 막으면 안 된다.
-            logger.exception("장소 상세정보 캐싱 실패")
 
     return detail

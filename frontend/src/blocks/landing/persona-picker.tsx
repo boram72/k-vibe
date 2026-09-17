@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
-import { Sparkles } from 'lucide-react'
+import { ChevronRight, Sparkles } from 'lucide-react'
 import { fetchKContentPersonas, fetchPersonaPlaces, type KContentPersona } from '@/api/personas'
 import type { Locale } from '@/i18n'
 
@@ -255,6 +256,7 @@ interface PersonaPickerProps {
 
 export function PersonaPicker({ onSelect }: PersonaPickerProps) {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const locale = i18n.language as Locale
 
   const personasQuery = useQuery({
@@ -290,7 +292,17 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
           <Sparkles className="h-4.5 w-4.5 text-primary" />
           {t('persona.k_content_title')}
         </h2>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('persona.k_content_subtitle')}</p>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <p className="text-xs leading-5 text-muted-foreground">{t('persona.k_content_subtitle')}</p>
+          <button
+            type="button"
+            onClick={() => navigate('persona')}
+            className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-primary hover:underline"
+          >
+            {t('persona.view_more')}
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 scrollbar-hide scroll-fade-x md:mx-0 md:mask-none md:grid md:grid-cols-4 md:overflow-visible md:px-0">

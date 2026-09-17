@@ -291,6 +291,25 @@
     "helper": "拖动站点可以调整顺序。点击时间可以直接设置。",
     "empty_title": "还没有路线",
     "empty_desc": "从地图、SNS分析或角色生成器添加地点，开始你的路线。",
+    "empty_guide_title": "试试这样添加地点",
+    "empty_guide_map_label": "从地图添加",
+    "empty_guide_map_steps": [
+      "点击左侧菜单中的“K-Vibe地图”。",
+      "点击想添加到路线中的地点。",
+      "点击“添加到路线”按钮，地点就会保存到我的路线！"
+    ],
+    "empty_guide_analyze_label": "从SNS分析添加",
+    "empty_guide_analyze_steps": [
+      "点击左侧菜单中的“SNS分析”。",
+      "粘贴YouTube链接后点击“分析地点”按钮。",
+      "分析完成后，点击“全部添加到路线”一次性保存所有地点！"
+    ],
+    "empty_guide_persona_label": "从角色添加",
+    "empty_guide_persona_steps": [
+      "点击左侧菜单中的“角色”。",
+      "选择喜欢的艺人或主题，生成一日路线。",
+      "满意的话，点击“添加到路线”按钮保存吧！"
+    ],
     "stops": "站点",
     "done": "完成",
     "walking": "步行",

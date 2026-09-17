@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { RouteMiniMap } from '@/blocks/route/route-mini-map'
 import { RouteLocationCheck } from '@/blocks/route/route-location-check'
 import { RouteStopList } from '@/blocks/route/route-stop-list'
+import { EmptyRouteGuide } from '@/blocks/route/empty-route-guide'
 import { DocentPlayer } from '@/blocks/persona/docent-player'
 import { readRouteDraft, saveRouteDraft, readPersonaRoutePlan, clearPersonaRoutePlan, type RouteStop } from '@/lib/route-draft'
 import { encodeRouteForShare, decodeRouteFromShare } from '@/lib/route-share'
@@ -161,9 +162,10 @@ export default function RoutePage() {
 
   if (stops.length === 0) {
     return (
-      <div className="mx-auto flex w-full flex-col items-center justify-center gap-2 px-4 py-16 text-center md:max-w-2xl">
+      <div className="mx-auto flex w-full flex-col items-center gap-2 px-4 py-16 text-center md:max-w-2xl">
         <p className="text-sm font-semibold text-foreground">{t('route.empty_title')}</p>
         <p className="text-xs text-muted-foreground">{t('route.empty_desc')}</p>
+        <EmptyRouteGuide />
       </div>
     )
   }

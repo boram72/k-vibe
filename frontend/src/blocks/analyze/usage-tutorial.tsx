@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { PlayCircle } from 'lucide-react'
 import tutorialGifMobile from '@/assets/analyze-tutorial/how-to-use.gif'
 import tutorialGifDesktop from '@/assets/analyze-tutorial/how-to-use-desktop.gif'
+import { renderStepText } from '@/lib/step-text'
 
 // 2026-09: 아직 아무 분석도 안 해본 사용자를 위해 idle 상태(안내 카드 아래,
 // 그 전엔 비어있던 공간)에 넣는 간단한 사용법 GIF(사용자 요청). URL 붙여넣기
@@ -25,30 +26,10 @@ import tutorialGifDesktop from '@/assets/analyze-tutorial/how-to-use-desktop.gif
 // 저작권 걸릴 수 있으니 저작권 없는 영상으로 해줘"). GIF 자체는 로컬 mock
 // 응답으로 찍은 화면이라 실제 백엔드/AI 호출은 전혀 없었다.
 // 버튼 이름을 가리키는 부분을 실제 버튼처럼 보이는 작은 테두리 박스로 보여준다
-// (사용자 피드백: "버튼임을 확인할 수 있게 네모 박스 안이라던가"). 번역 문자열
-// 안에 버튼 이름을 감싼 표기(따옴표/대괄호/일본어 낫표)를 그대로 구분자로
-// 재사용한다 — 언어마다 관용적으로 쓰는 인용부호가 달라서(ko/en은 '...',
-// zh는 스마트 따옴표 "..."(U+201C/U+201D, 일반 " 아님), ja는 「...」) 그
-// 전부를 인식하고, [...]는 공통으로 쓴다. 실제 버튼 스크린샷을 언어별로
-// 유지하는 대신 이 방식을 쓴 이유: 문구가 바뀔 때마다 4개 언어 스크린샷을
-// 다시 찍어야 하는 유지보수 부담이 없고, 다크모드/테마에도 저절로 맞는다.
-const BUTTON_REF_SPLIT = /('[^']+'|“[^”]+”|「[^」]+」|\[[^\]]+\])/g
-const BUTTON_REF_TEST = /^('[^']+'|“[^”]+”|「[^」]+」|\[[^\]]+\])$/
-
-function ButtonChip({ children }: { children: string }) {
-  return (
-    <span className="mx-0.5 inline-flex items-center rounded-md border border-border bg-background px-1.5 py-0.5 align-middle text-[11px] font-semibold text-foreground shadow-sm">
-      {children}
-    </span>
-  )
-}
-
-function renderStepText(text: string) {
-  return text
-    .split(BUTTON_REF_SPLIT)
-    .map((part, idx) => (BUTTON_REF_TEST.test(part) ? <ButtonChip key={idx}>{part.slice(1, -1)}</ButtonChip> : <span key={idx}>{part}</span>))
-}
-
+// (사용자 피드백: "버튼임을 확인할 수 있게 네모 박스 안이라던가"). 렌더링
+// 로직(renderStepText/ButtonChip)은 blocks/route의 "내 루트 비어있을 때"
+// 안내에서도 똑같이 써서 @/lib/step-text.tsx로 공용화했다 — 자세한 이유는
+// 그 파일 주석 참고.
 export function UsageTutorial() {
   const { t } = useTranslation()
 

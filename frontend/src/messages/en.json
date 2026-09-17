@@ -291,6 +291,25 @@
     "helper": "Drag stops to reorder. Tap a stop's time to set it manually.",
     "empty_title": "No route yet",
     "empty_desc": "Add spots from the map, SNS analysis, or persona builder to start your route.",
+    "empty_guide_title": "Here's how to add places",
+    "empty_guide_map_label": "Add from the Map",
+    "empty_guide_map_steps": [
+      "Click 'K-Vibe Map' in the left menu.",
+      "Click any place you'd like to add to your route.",
+      "Tap 'Add to Route' to save it to your route!"
+    ],
+    "empty_guide_analyze_label": "Add from SNS Analyzer",
+    "empty_guide_analyze_steps": [
+      "Click 'SNS Analyzer' in the left menu.",
+      "Paste a YouTube link and tap 'Analyze Spots'.",
+      "Once it's done, tap [Add All to Route] to save every spot at once!"
+    ],
+    "empty_guide_persona_label": "Add from Persona",
+    "empty_guide_persona_steps": [
+      "Click 'Persona' in the left menu.",
+      "Pick your favorite artist or theme to generate a one-day route.",
+      "Like what you see? Tap 'Add to Route' to save it!"
+    ],
     "stops": "Stops",
     "done": "Done",
     "walking": "Walking",

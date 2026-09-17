@@ -135,7 +135,9 @@ export function SpotListPanel({
             <p className="truncate text-sm font-semibold text-foreground">{place.name}</p>
             <RatingBadge placeId={place.id} />
           </div>
-          <p className="truncate text-xs text-muted-foreground">{place.address}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {place.address === '-' ? t('placeDetail.info_unavailable') : place.address}
+          </p>
           {/* 팀 태스크보드 12번 — 스타별 탭에서는 기존 카테고리 태그(음식/숙소 등)
               대신 소속 persona.label을 뱃지로 보여준다(어느 스타 루트의 장소인지
               한눈에 구분). 카테고리 탭에서는 기존 그대로 카테고리 라벨 표시. */}

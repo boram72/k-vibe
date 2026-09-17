@@ -114,6 +114,28 @@ def test_get_phone_number_returns_phone_on_success(mock_get):
 
 @patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
 @patch("externelAPI_services.kakaomap.httpx.get")
+def test_get_phone_number_retries_with_name_only_when_name_and_address_query_empty(mock_get):
+    """장소명 + TourAPI 전체 도로명주소를 합친 질의는 카카오 키워드 검색에서 종종
+    0건을 반환한다(실측 확인, 예: "이북만두 서울특별시 중구 무교로 17-13") -> 이 경우
+    장소명만으로 재시도해야 한다."""
+    empty_response = _mock_response({"documents": []})
+    name_only_response = _mock_response(
+        {"documents": [{"place_name": "이북만두", "phone": "02-776-7361"}]}
+    )
+    mock_get.side_effect = [empty_response, name_only_response]
+
+    result = kakaomap.get_phone_number("이북만두", "서울특별시 중구 무교로 17-13")
+
+    assert result == "02-776-7361"
+    assert mock_get.call_count == 2
+    first_query = mock_get.call_args_list[0].kwargs["params"]["query"]
+    second_query = mock_get.call_args_list[1].kwargs["params"]["query"]
+    assert first_query == "이북만두 서울특별시 중구 무교로 17-13"
+    assert second_query == "이북만두"
+
+
+@patch("externelAPI_services.kakaomap.KAKAO_REST_API_KEY", "test-key")
+@patch("externelAPI_services.kakaomap.httpx.get")
 def test_get_phone_number_returns_none_when_no_documents(mock_get):
     mock_get.return_value = _mock_response({"documents": []})
 

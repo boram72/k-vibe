@@ -9,6 +9,7 @@
 #   조회한다 -> externelAPI_services/amenities.py 참고.
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -357,24 +358,35 @@ def get_place_detail(content_id: str) -> dict | None:
         return None
 
     content_type_id = common.get("contenttypeid")
-    intro = _fetch_detail_intro(content_id, content_type_id) if content_type_id else {}
-
     cat1, cat2, cat3 = common.get("cat1"), common.get("cat2"), common.get("cat3")
-    tags = []
-    if cat1 and cat2 and cat3:
-        category_name = _fetch_category_name(cat1, cat2, cat3)
-        if category_name:
-            tags = [category_name]
+    tel = common.get("tel") or None
 
-    phone = common.get("tel") or None
-    if not phone:
+    # detailIntro2/categoryCode2/카카오 전화번호 폴백은 셋 다 detailCommon2 응답에만
+    # 의존하고 서로는 독립적이다. 순차 호출 시 상세시트 하나 여는데 최대 4번의
+    # 왕복(각 timeout=5.0)이 누적돼 실측 2.7초가 걸렸다 - 스레드로 동시에 쏴서
+    # 총 소요시간을 "합"이 아니라 "가장 느린 호출 1건" 수준으로 줄인다.
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        intro_future = (
+            executor.submit(_fetch_detail_intro, content_id, content_type_id) if content_type_id else None
+        )
+        category_future = (
+            executor.submit(_fetch_category_name, cat1, cat2, cat3) if cat1 and cat2 and cat3 else None
+        )
         # TourAPI가 tel을 안 주는 경우가 많다(소규모 식당/매장 등). 카카오 로컬
         # 키워드 검색으로 보완한다 - 실패해도 None이라 기존 폴백 UI 그대로 유지.
-        phone = kakaomap.get_phone_number(name=common.get("title"), address=common.get("addr1"))
+        phone_future = (
+            None
+            if tel
+            else executor.submit(kakaomap.get_phone_number, name=common.get("title"), address=common.get("addr1"))
+        )
+
+        intro = intro_future.result() if intro_future else {}
+        category_name = category_future.result() if category_future else None
+        phone = tel or (phone_future.result() if phone_future else None)
 
     return {
         "phone": phone,
         "businessHours": _normalize_business_hours(content_type_id, intro),
         "overview": _clean_text(common.get("overview")),
-        "tags": tags,
+        "tags": [category_name] if category_name else [],
     }

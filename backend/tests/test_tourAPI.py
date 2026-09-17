@@ -12,6 +12,16 @@ def _mock_response(payload: dict) -> MagicMock:
     return response
 
 
+def _mock_get_by_url(responses_by_url: dict):
+    """get_place_detail이 detailIntro2/categoryCode2/카카오 폴백을 병렬로 호출하므로
+    호출 순서를 가정하는 side_effect 리스트 대신 URL로 응답을 매칭한다."""
+
+    def _side_effect(url, *args, **kwargs):
+        return responses_by_url[url]
+
+    return _side_effect
+
+
 def test_find_area_signgu_code_matches_known_region():
     result = tourAPI.find_area_signgu_code("서울특별시", "용산구")
     assert result == {"areaCd": "11", "signguCd": "11170"}
@@ -251,7 +261,13 @@ def test_get_place_detail_returns_phone_hours_and_tag(mock_get):
     category_response = _mock_response(
         {"response": {"body": {"items": {"item": {"name": "고궁"}}}}}
     )
-    mock_get.side_effect = [common_response, intro_response, category_response]
+    mock_get.side_effect = _mock_get_by_url(
+        {
+            tourAPI.DETAIL_COMMON_URL: common_response,
+            tourAPI.DETAIL_INTRO_URL: intro_response,
+            tourAPI.CATEGORY_CODE_URL: category_response,
+        }
+    )
     tourAPI._fetch_category_name.cache_clear()
 
     result = tourAPI.get_place_detail("126508")
@@ -294,7 +310,9 @@ def test_get_place_detail_normalizes_checkin_checkout_for_stay(mock_get):
             }
         }
     )
-    mock_get.side_effect = [common_response, intro_response]
+    mock_get.side_effect = _mock_get_by_url(
+        {tourAPI.DETAIL_COMMON_URL: common_response, tourAPI.DETAIL_INTRO_URL: intro_response}
+    )
 
     result = tourAPI.get_place_detail("888888")
 
@@ -341,7 +359,9 @@ def test_get_place_detail_falls_back_to_kakao_when_tel_missing(mock_get, mock_ge
         }
     )
     intro_response = _mock_response({"response": {"body": {"items": ""}}})
-    mock_get.side_effect = [common_response, intro_response]
+    mock_get.side_effect = _mock_get_by_url(
+        {tourAPI.DETAIL_COMMON_URL: common_response, tourAPI.DETAIL_INTRO_URL: intro_response}
+    )
     mock_get_phone.return_value = "02-1234-5678"
 
     result = tourAPI.get_place_detail("126508")
@@ -375,7 +395,9 @@ def test_get_place_detail_skips_kakao_fallback_when_tel_present(mock_get, mock_g
         }
     )
     intro_response = _mock_response({"response": {"body": {"items": ""}}})
-    mock_get.side_effect = [common_response, intro_response]
+    mock_get.side_effect = _mock_get_by_url(
+        {tourAPI.DETAIL_COMMON_URL: common_response, tourAPI.DETAIL_INTRO_URL: intro_response}
+    )
 
     result = tourAPI.get_place_detail("126508")
 
@@ -414,7 +436,9 @@ def test_get_place_detail_converts_br_tags_to_newlines(mock_get):
             }
         }
     )
-    mock_get.side_effect = [common_response, intro_response]
+    mock_get.side_effect = _mock_get_by_url(
+        {tourAPI.DETAIL_COMMON_URL: common_response, tourAPI.DETAIL_INTRO_URL: intro_response}
+    )
 
     result = tourAPI.get_place_detail("126508")
 

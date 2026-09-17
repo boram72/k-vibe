@@ -33,6 +33,17 @@ def search_coordinates(query: str) -> dict | None:
     return {"latitude": float(place["y"]), "longitude": float(place["x"])}
 
 
+def _keyword_search(query: str) -> list[dict]:
+    response = httpx.get(
+        KEYWORD_SEARCH_URL,
+        params={"query": query},
+        headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"},
+        timeout=5.0,
+    )
+    response.raise_for_status()
+    return response.json().get("documents", [])
+
+
 def get_phone_number(name: str, address: str | None = None) -> str | None:
     """TourAPI가 전화번호(tel)를 제공하지 않을 때의 폴백 조회.
 
@@ -43,16 +54,13 @@ def get_phone_number(name: str, address: str | None = None) -> str | None:
     if not KAKAO_REST_API_KEY or not name:
         return None
 
-    query = f"{name} {address}" if address else name
     try:
-        response = httpx.get(
-            KEYWORD_SEARCH_URL,
-            params={"query": query},
-            headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"},
-            timeout=5.0,
-        )
-        response.raise_for_status()
-        documents = response.json().get("documents", [])
+        documents = _keyword_search(f"{name} {address}") if address else []
+        if not documents:
+            # 장소명 + TourAPI 도로명주소 전체("서울특별시 중구 무교로 17-13")를
+            # 한 질의로 합치면 카카오 키워드 검색이 과도하게 구체적인 질의로 보고
+            # 0건을 반환하는 경우가 실측으로 확인됨 -> 장소명만으로 재시도한다.
+            documents = _keyword_search(name)
         if not documents:
             return None
         return documents[0].get("phone") or None

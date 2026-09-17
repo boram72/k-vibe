@@ -77,6 +77,7 @@
     "refresh_location": "Refresh location",
     "search_this_area": "Search this area",
     "search_area_not_found": "Couldn't find that area",
+    "search_area_loading": "Loading the map…",
     "analysis_result": "Analysis Result",
     "show_saved": "Show saved list",
     "show_attractions": "Show attraction recommendations",

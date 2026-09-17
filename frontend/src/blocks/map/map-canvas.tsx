@@ -39,6 +39,16 @@ interface MapCanvasProps {
   // 차지하며 패널 상단(스와이프 핸들 등)을 덮어버리는 버그가 있었다
   // (elementFromPoint()로 실제 확인). true면 그 최소 높이 자체를 없앤다.
   compact?: boolean
+  // 2026-09 QA 5번 — 검색 가능 여부를 "카카오 키가 설정돼 있는가"(MapPage의
+  // canSearchArea)만으로 판단하고 있었는데, 그건 실제로 useKakaoLoader()가
+  // window.kakao.maps.services를 다 불러왔는지와는 무관한 별개 신호였다.
+  // 페이지 진입 직후 SDK 스크립트가 아직 로딩 중인 짧은 창에 검색하면
+  // kakao-area-search.ts의 가드가 조용히 null을 반환해 "검색 결과 없음"으로만
+  // 보이고, 잠시 후 재시도하면 되던 것 — 로딩 상태를 부모로 끌어올려서 그
+  // 창에서는 검색 UI를 "로딩중"으로 보여주기 위함. 'unavailable'은 SDK 로드가
+  // 완전히 실패한 경우(useKakaoLoader의 error)로, 영원히 로딩중처럼 보이지
+  // 않도록 키 자체가 없는 경우와 동일하게 취급(버튼 숨김).
+  onKakaoStatusChange?: (status: 'loading' | 'ready' | 'unavailable') => void
 }
 
 // Icon-badge pins colored per category (types/place.ts PLACE_CATEGORIES.pinBg) —
@@ -243,7 +253,7 @@ function SearchAreaButton({ onClick }: { onClick: () => void }) {
 }
 
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact, highlightIds } = props
+  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact, highlightIds, onKakaoStatusChange } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
@@ -261,6 +271,10 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   useEffect(() => {
     if (error) console.warn('[map] Kakao Maps SDK failed to load, falling back to percent-coordinate preview:', error)
   }, [error])
+
+  useEffect(() => {
+    onKakaoStatusChange?.(error ? 'unavailable' : loading ? 'loading' : 'ready')
+  }, [loading, error, onKakaoStatusChange])
 
   // Selecting a place (map pin or list item — same onSelectPlace handler)
   // pans the camera to it and the camera stays there even after the detail

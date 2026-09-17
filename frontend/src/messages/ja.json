@@ -77,6 +77,7 @@
     "refresh_location": "位置情報を更新",
     "search_this_area": "このエリアを検索",
     "search_area_not_found": "この地域が見つかりませんでした",
+    "search_area_loading": "地図を読み込んでいます",
     "analysis_result": "分析結果",
     "show_saved": "お気に入りリストを見る",
     "show_attractions": "おすすめ観光地を見る",

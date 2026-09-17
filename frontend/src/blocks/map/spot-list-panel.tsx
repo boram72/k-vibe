@@ -55,6 +55,11 @@ interface SpotListPanelProps {
   onSubmitAreaSearch: () => void
   isSearchingArea: boolean
   canSearchArea: boolean
+  // 2026-09 QA 5번 — 카카오 키는 있지만 아직 useKakaoLoader()가 SDK를 다
+  // 로드하지 못한 짧은 창. 이 동안엔 canSearchArea가 false라 버튼을 그냥
+  // 숨기면 "왜 버튼이 없지"로 보이고, 활성화해두면 눌러도 조용히 실패하니
+  // 로딩 스피너로 명시적으로 보여준다.
+  isMapLoading: boolean
   showSavedList: boolean
   onShowSavedListChange: Dispatch<SetStateAction<boolean>>
   // 2026-09 QA 6번 — 지도 진입 시 항상(스크롤해야만 보일 만큼 아래에) 떠 있던
@@ -91,6 +96,7 @@ export function SpotListPanel({
   onSubmitAreaSearch,
   isSearchingArea,
   canSearchArea,
+  isMapLoading,
   showSavedList,
   onShowSavedListChange,
   showAttractions,
@@ -220,18 +226,21 @@ export function SpotListPanel({
 
   // 팀 태스크보드 6번 — 모바일은 키보드에 Enter가 없는 경우가 많아 명시적 버튼이
   // 필요하다는 요청으로 하트 토글 바로 옆에 배치, 모바일/데스크탑 동일 노출.
-  // 퍼센트 좌표 폴백(canSearchArea=false)에서는 카카오 지역검색 자체가 불가능해
-  // 버튼을 숨긴다.
-  const areaSearchButton = canSearchArea && (
+  // 퍼센트 좌표 폴백(canSearchArea=false && !isMapLoading, 키 자체가 없음)에서는
+  // 카카오 지역검색 자체가 불가능해 버튼을 숨긴다. 키는 있지만 SDK가 아직
+  // 로딩 중(isMapLoading)이면 버튼을 숨기는 대신 로딩 스피너로 비활성 표시
+  // (QA 5번 — 이 창에 눌러도 조용히 실패하던 버그의 UX 보완).
+  const areaSearchButton = (canSearchArea || isMapLoading) && (
     <Button
       size="icon"
       variant="outline"
       onClick={onSubmitAreaSearch}
-      disabled={isSearchingArea || !search.trim()}
-      aria-label={t('map.search_this_area')}
+      disabled={isMapLoading || isSearchingArea || !search.trim()}
+      aria-label={isMapLoading ? t('map.search_area_loading') : t('map.search_this_area')}
+      title={isMapLoading ? t('map.search_area_loading') : undefined}
       className="shrink-0"
     >
-      {isSearchingArea ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+      {isMapLoading || isSearchingArea ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
     </Button>
   )
 

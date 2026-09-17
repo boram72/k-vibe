@@ -196,7 +196,7 @@ export default function MapPage() {
   })
 
   function handleSearchArea() {
-    if (!search.trim() || areaSearchMutation.isPending) return
+    if (!canSearchArea || !search.trim() || areaSearchMutation.isPending) return
     areaSearchMutation.mutate({ query: search, near: effectiveCoords })
   }
 
@@ -228,13 +228,21 @@ export default function MapPage() {
   })
 
   function handleSelectAttraction(name: string) {
-    if (attractionSearchMutation.isPending) return
+    if (!canSearchArea || attractionSearchMutation.isPending) return
     attractionSearchMutation.mutate(name)
   }
 
   // 실제 카카오 지도(services 라이브러리)가 있을 때만 의미 있는 기능 — 퍼센트
   // 좌표 폴백 모드에서는 kakao.maps.services 자체가 없어 항상 null만 돌아온다.
-  const canSearchArea = Boolean(import.meta.env.VITE_KAKAO_MAP_KEY)
+  const hasKakaoKey = Boolean(import.meta.env.VITE_KAKAO_MAP_KEY)
+  // 2026-09 QA 5번 — 이전엔 hasKakaoKey만 보고 검색 UI를 켰는데, 이건 카카오
+  // SDK 스크립트가 실제로 다 로드됐는지와는 무관해서, 페이지 진입 직후 SDK가
+  // 아직 로딩 중인 순간에 검색하면 "결과 없음"으로만 보이고 잠시 후 재시도하면
+  // 되던 문제(원인 진단 완료, plan.md 5번 참고). MapCanvas의 useKakaoLoader
+  // 상태(onKakaoStatusChange)를 받아와 실제 준비 여부까지 함께 확인.
+  const [kakaoStatus, setKakaoStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading')
+  const canSearchArea = hasKakaoKey && kakaoStatus === 'ready'
+  const isMapLoading = hasKakaoKey && kakaoStatus === 'loading'
 
   const { data: places = [], isLoading } = useQuery({
     queryKey: ['map-places', effectiveCoords.lat, effectiveCoords.lng, i18n.language],
@@ -390,6 +398,7 @@ export default function MapPage() {
           myLocation={isPrecise ? coords : null}
           highlightIds={kakaoSearchResultIds}
           compact={!isDesktop && mobilePanelState === 'full'}
+          onKakaoStatusChange={setKakaoStatus}
         />
       </div>
 
@@ -410,6 +419,7 @@ export default function MapPage() {
         onSubmitAreaSearch={handleSearchArea}
         isSearchingArea={areaSearchMutation.isPending}
         canSearchArea={canSearchArea}
+        isMapLoading={isMapLoading}
         showSavedList={showSavedList}
         onShowSavedListChange={setShowSavedList}
         showAttractions={showAttractions}

@@ -87,7 +87,10 @@
     "collapse_panel": "收起面板",
     "expand_panel": "展开面板",
     "related_attractions_title": "该地区的关联景点推荐",
-    "related_attractions_empty": "该地区暂无关联景点数据"
+    "related_attractions_empty": "该地区暂无关联景点数据",
+    "area_search_results_title": "搜索结果",
+    "area_search_relevance": "按相关度",
+    "area_search_distance": "按距离"
   },
   "placeDetail": {
     "add_to_route": "添加到路线",

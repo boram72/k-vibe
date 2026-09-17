@@ -87,7 +87,10 @@
     "collapse_panel": "パネルを閉じる",
     "expand_panel": "パネルを開く",
     "related_attractions_title": "この地域のおすすめ関連観光地",
-    "related_attractions_empty": "この地域の関連観光地データはまだありません"
+    "related_attractions_empty": "この地域の関連観光地データはまだありません",
+    "area_search_results_title": "検索結果",
+    "area_search_relevance": "関連度順",
+    "area_search_distance": "距離順"
   },
   "placeDetail": {
     "add_to_route": "ルートに追加",

@@ -134,7 +134,13 @@ export default function MapPage() {
   // 기존처럼 첫 결과 좌표로 searchCenter를 옮겨 /places(TourAPI)를 재조회하지만,
   // 상호명(예: "스타벅스 종로점")은 TourAPI에 그 가게 자체가 없어 재조회 결과에
   // 안 잡히므로, 카카오가 찾은 결과 자체를 그대로 후보에 더해 지도에 보여준다.
+  // (지금은 attractionSearchMutation — 관광지 추천 클릭 — 전용. 검색창 직접
+  // 입력은 아래 areaSearchLists로 분리됨.)
   const [kakaoSearchResults, setKakaoSearchResults] = useState<Place[]>([])
+  // 2026-09 대화 중 요청 — 검색창에 "경복궁"/"인천공항"처럼 행정구역이 아닌
+  // 랜드마크/상호명을 입력하면, 예전처럼 첫 결과로 자동 이동하지 않고 정확도순/
+  // 거리순 두 후보 목록을 그대로 보여준다(목록에서 직접 고른 것만 이동+강조).
+  const [areaSearchLists, setAreaSearchLists] = useState<{ relevance: Place[]; distance: Place[] } | null>(null)
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
@@ -145,6 +151,7 @@ export default function MapPage() {
   function handleRequestLocation() {
     setSearchCenter(null)
     setKakaoSearchResults([])
+    setAreaSearchLists(null)
     setHighlightedPlaceId(null)
     requestLocation()
   }
@@ -170,8 +177,17 @@ export default function MapPage() {
         toast.error(t('map.search_area_not_found'))
         return
       }
-      setSearchCenter(result.center)
-      setKakaoSearchResults(result.places)
+      if (result.type === 'address') {
+        // 행정구역 매칭 — 예전처럼 그 위치로 바로 이동, 후보 목록은 없음.
+        setSearchCenter(result.center)
+        setKakaoSearchResults([])
+        setAreaSearchLists(null)
+      } else {
+        // 랜드마크/상호명 매칭 — 자동 이동하지 않고 정확도순/거리순 목록만
+        // 노출. 지도 이동·강조는 사용자가 목록에서 직접 골랐을 때만.
+        setKakaoSearchResults([])
+        setAreaSearchLists({ relevance: result.relevance, distance: result.distance })
+      }
       // 검색어를 지우지 않고 남겨서 뭘 검색했는지 보이게 함(대화 중 요청) —
       // areaSearchedQuery를 같이 기록해서, 이 텍스트가 그대로인 동안은 방금
       // 받아온 결과를 다시 텍스트로 거르지 않게 한다(아래 filtered 참고).
@@ -195,8 +211,19 @@ export default function MapPage() {
         toast.error(t('map.search_area_not_found'))
         return
       }
-      setSearchCenter(result.center)
-      setKakaoSearchResults(result.places)
+      // 목록 클릭(사용자가 이미 특정 장소를 골랐음)이라 검색창 입력과 달리
+      // 후보 목록을 또 보여줄 필요 없이 예전처럼 바로 이동 — 다만 예전
+      // 코드가 그대로 쓰던 sort=distance 결과는 랜드마크명 검색에서 엉뚱한
+      // 결과를 1등으로 올릴 수 있어(4번 진단) 정확도순(relevance) 결과를
+      // 사용. 여러 매치가 나오면 기존처럼 전부 빨간 핀으로 강조 유지(이
+      // 흐름의 다중 매치 강조 방식 자체는 이번 요청 범위 밖).
+      if (result.type === 'address') {
+        setSearchCenter(result.center)
+        setKakaoSearchResults([])
+      } else if (result.relevance.length > 0) {
+        setSearchCenter({ lat: result.relevance[0].lat, lng: result.relevance[0].lng })
+        setKakaoSearchResults(result.relevance)
+      }
     },
   })
 
@@ -265,6 +292,15 @@ export default function MapPage() {
   // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
   // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
   // 그 의미가 깨진다(대화로 확정, plan.md 12번 참고).
+  // 2026-09 대화 중 요청 — 검색창 직접 입력(랜드마크/상호명)으로 얻은 정확도순
+  // +거리순 후보 목록. kakaoSearchResults(관광지 추천 클릭 전용, 항상 빨간
+  // 강조)와 달리 이쪽은 목록에만 노출되고, 지도 핀/강조는 사용자가 목록에서
+  // 직접 선택했을 때만 붙는다(아래 kakaoSearchResultIds에는 안 넣음).
+  const areaSearchListPlaces = useMemo(
+    () => (areaSearchLists ? [...areaSearchLists.relevance, ...areaSearchLists.distance] : []),
+    [areaSearchLists],
+  )
+
   const candidates = useMemo(() => {
     const base = focusPlaces.length
       ? [...focusPlaces, ...places.filter((p) => !focusPlaces.some((f) => f.id === p.id))]
@@ -273,13 +309,20 @@ export default function MapPage() {
     const withKakaoResults = kakaoSearchResults.length
       ? [...base, ...kakaoSearchResults.filter((k) => !baseIds.has(k.id))]
       : base
-    if (filterMode !== 'star') return withKakaoResults
     const withKakaoIds = new Set(withKakaoResults.map((p) => p.id))
-    return [...withKakaoResults, ...personaPlaces.filter((p) => !withKakaoIds.has(p.id))]
-  }, [places, focusPlaces, filterMode, personaPlaces, kakaoSearchResults])
+    const withAreaSearchList = areaSearchListPlaces.length
+      ? [...withKakaoResults, ...areaSearchListPlaces.filter((p) => !withKakaoIds.has(p.id))]
+      : withKakaoResults
+    if (filterMode !== 'star') return withAreaSearchList
+    const withAreaSearchIds = new Set(withAreaSearchList.map((p) => p.id))
+    return [...withAreaSearchList, ...personaPlaces.filter((p) => !withAreaSearchIds.has(p.id))]
+  }, [places, focusPlaces, filterMode, personaPlaces, kakaoSearchResults, areaSearchListPlaces])
 
   // 2026-09 QA 8번 — 상호명 검색 결과 핀을 빨간색으로 강조하기 위한 id 집합.
   const kakaoSearchResultIds = useMemo(() => new Set(kakaoSearchResults.map((p) => p.id)), [kakaoSearchResults])
+  // 검색 후보 목록도 카테고리 필터와 무관하게 항상 목록/핀에 남아있어야 하지만
+  // (아래 filtered 참고), 강조 색(highlightIds)에는 안 들어가므로 별도 집합.
+  const areaSearchListIds = useMemo(() => new Set(areaSearchListPlaces.map((p) => p.id)), [areaSearchListPlaces])
 
   // 페르소나별 탭에서 특정 페르소나(또는 "전체")를 고르면, 그 장소들이 지금
   // 화면(현재 위치 주변 반경) 밖에 있어도 안 보인다고 헷갈리지 않도록 지도가
@@ -301,7 +344,9 @@ export default function MapPage() {
       // 버그 수정 — 검색/관광지 추천 클릭으로 강조된 장소(kakaoSearchResultIds)가
       // 카테고리/페르소나 필터에 안 맞으면 목록에서 통째로 빠져서 핀도 안
       // 보였음. 방금 콕 집어 찾은 장소는 지금 필터가 뭐든 항상 보이게 예외 처리.
-      if (kakaoSearchResultIds.has(place.id)) return true
+      // areaSearchListIds(검색창 직접 입력 후보 목록)도 마찬가지 — 목록에
+      // 노출된 이상 카테고리 필터와 무관하게 항상 선택 가능해야 한다.
+      if (kakaoSearchResultIds.has(place.id) || areaSearchListIds.has(place.id)) return true
       const matchCategory =
         filterMode !== 'category' || categories === 'all' || categories === place.category
       // 페르소나별 "전체"(starFilter 빈 배열)는 페르소나 태그가 붙은 장소 전체를
@@ -318,7 +363,7 @@ export default function MapPage() {
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
       return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds])
+  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -370,6 +415,7 @@ export default function MapPage() {
         showAttractions={showAttractions}
         onShowAttractionsChange={setShowAttractions}
         onSelectAttraction={handleSelectAttraction}
+        areaSearchLists={areaSearchLists}
         savedPlaces={savedPlaces}
         places={filtered}
         isLoading={isLoading}

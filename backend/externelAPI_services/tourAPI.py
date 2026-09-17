@@ -352,8 +352,14 @@ def get_place_detail(content_id: str) -> dict | None:
         if category_name:
             tags = [category_name]
 
+    phone = common.get("tel") or None
+    if not phone:
+        # TourAPI가 tel을 안 주는 경우가 많다(소규모 식당/매장 등). 카카오 로컬
+        # 키워드 검색으로 보완한다 - 실패해도 None이라 기존 폴백 UI 그대로 유지.
+        phone = kakaomap.get_phone_number(name=common.get("title"), address=common.get("addr1"))
+
     return {
-        "phone": common.get("tel") or None,
+        "phone": phone,
         "businessHours": _normalize_business_hours(content_type_id, intro),
         "overview": common.get("overview") or None,
         "tags": tags,

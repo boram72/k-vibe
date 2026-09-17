@@ -1,6 +1,7 @@
 import type { CrowdLevel } from '@/types/place'
 import type { RoutePlan } from '@/lib/route-timing'
 import { createDebouncedSync, pullFromServer } from '@/lib/db-sync'
+import { haversineKm } from '@/lib/haversine'
 
 // Same storage key as the hslee reference (`lib/routes.ts`) so Step 10's
 // RoutePage can read this draft directly once it's built.
@@ -59,13 +60,32 @@ export function readRouteDraft(): RouteStop[] {
   }
 }
 
+// 지도/페르소나/SNS분석/찜한장소 4개 진입점이 서로 다른 id 체계를 쓴다(지도:
+// TourAPI contentId 또는 `kakao-{id}` / 페르소나: `{personaId}-{장소명}` /
+// SNS분석: `analysisStopId()` / 찜한장소: 지도와 동일 `place.id` 재사용) —
+// 같은 실제 장소라도 진입점이 다르면 placeId/id만으로는 원천적으로 같은
+// 장소인지 못 잡는다. 이름(정규화 후 비교)과 좌표(하버사인 거리)가 둘 다
+// 가까우면 같은 장소로 간주하는 보조 판정을 추가.
+const SAME_PLACE_DISTANCE_KM = 0.05 // 50m — 같은 건물/부지 오차 범위
+
+function normalizePlaceName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, '')
+}
+
 // 2026-09 QA 10번 — 같은 장소를 중복 추가할 수 있던 버그. `id`는 스팟
 // *인스턴스* 식별자라 PersonaPage가 매번 `${s.id}-${ts}`로 새 id를 만들어서
 // (같은 페르소나 루트를 두 번 "추가"하면) 기존 `id` 기준 upsert로는 못
 // 잡았음 — 실제 장소 정체성인 `placeId`(없으면 `id`) 기준으로 같은 장소인지
-// 판단한다.
+// 판단한다. 2026-09 태스크보드 8번 — 그것만으로는 서로 다른 진입점끼리는
+// 여전히 못 잡아서(위 주석 참고), id/placeId가 다르더라도 이름+좌표가
+// 가까우면 같은 장소로 판정하는 보조 조건을 추가.
 function isSamePlace(a: RouteStop, b: RouteStop): boolean {
-  return (a.placeId ?? a.id) === (b.placeId ?? b.id)
+  if ((a.placeId ?? a.id) === (b.placeId ?? b.id)) return true
+  if (!Number.isFinite(a.lat) || !Number.isFinite(a.lng) || !Number.isFinite(b.lat) || !Number.isFinite(b.lng)) {
+    return false
+  }
+  if (normalizePlaceName(a.name) !== normalizePlaceName(b.name)) return false
+  return haversineKm(a.lat, a.lng, b.lat, b.lng) <= SAME_PLACE_DISTANCE_KM
 }
 
 // AnalyzePage에서 만드는 stop id 규칙을 여기 한 곳에 둔다 — AnalyzePage(추가할

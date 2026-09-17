@@ -188,6 +188,36 @@ def test_find_nearby_places_raises_when_api_key_missing():
 
 @patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
 @patch("externelAPI_services.tourAPI.httpx.get")
+def test_find_nearby_places_maps_foreign_content_type_id_when_locale_is_not_ko(mock_get):
+    """EngService2 등 외국어 서비스는 contentTypeId 체계가 달라 별도 매핑을 써야 한다."""
+    mock_get.return_value = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": [
+                            {
+                                "contentid": "126508",
+                                "contenttypeid": "78",  # EngService2 문화시설(KorService2 14 상당)
+                                "title": "Gyeongbokgung Palace",
+                                "addr1": "161, Sajik-ro, Jongno-gu, Seoul",
+                                "mapx": "126.9770",
+                                "mapy": "37.5796",
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    )
+
+    result = tourAPI.find_nearby_places(latitude=37.5796, longitude=126.977, locale="en")
+
+    assert result[0]["category"] == "culture"
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
 def test_get_place_detail_returns_phone_hours_and_tag(mock_get):
     common_response = _mock_response(
         {
@@ -284,3 +314,17 @@ def test_get_place_detail_returns_none_when_content_id_not_found(mock_get):
 def test_get_place_detail_raises_when_api_key_missing():
     with pytest.raises(RuntimeError, match="TOUR_API_KEY"):
         tourAPI.get_place_detail("126508")
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
+def test_fetch_detail_common_does_not_send_defaultyn_overviewyn(mock_get):
+    """defaultYN/overviewYN을 보내면 TourAPI가 INVALID_REQUEST_PARAMETER_ERROR로 항상 실패한다
+    (BACKEND_REQUESTS.md 4번). 요청 파라미터에 더 이상 포함되지 않아야 한다."""
+    mock_get.return_value = _mock_response({"response": {"body": {"items": ""}}})
+
+    tourAPI._fetch_detail_common("126508")
+
+    called_params = mock_get.call_args.kwargs["params"]
+    assert "defaultYN" not in called_params
+    assert "overviewYN" not in called_params

@@ -68,6 +68,20 @@ CONTENT_TYPE_TO_CATEGORY = {
     "39": "food",  # 음식점
 }
 
+# 외국어 서비스(EngService2/JpnService2/ChsService2)는 KorService2와 완전히 다른
+# contentTypeId 번호 체계를 쓴다(BACKEND_REQUESTS.md 3번, 실측 확인된 대응표).
+# 이 매핑이 없으면 find_nearby_places()가 locale != ko일 때 전부 매칭 실패해
+# CONTENT_TYPE_TO_CATEGORY.get(...)의 기본값("culture") 하나로 뭉개진다.
+FOREIGN_CONTENT_TYPE_TO_CATEGORY = {
+    "75": "attraction",  # 레포츠 (KorService2 28)
+    "76": "attraction",  # 관광지 (KorService2 12)
+    "78": "culture",  # 문화시설 (KorService2 14)
+    "79": "shopping",  # 쇼핑 (KorService2 38)
+    "80": "stay",  # 숙박 (KorService2 32)
+    "82": "food",  # 음식점 (KorService2 39)
+    "85": "festival",  # 축제공연행사 (KorService2 15)
+}
+
 
 def _load_area_codes() -> list[dict]:
     with open(AREA_CODES_PATH, encoding="utf-8") as f:
@@ -218,6 +232,10 @@ def find_nearby_places(
 
     raw_items = _fetch_nearby_places_page(latitude, longitude, radius, num_of_rows, locale)
 
+    # locale != ko(en/ja/zh)는 KorService2와 다른 contentTypeId 체계를 쓰므로
+    # 카테고리 매핑 테이블도 그에 맞춰 골라야 한다(BACKEND_REQUESTS.md 3번).
+    category_map = CONTENT_TYPE_TO_CATEGORY if locale in (None, "ko") else FOREIGN_CONTENT_TYPE_TO_CATEGORY
+
     places = []
     for item in raw_items:
         content_type_id = item.get("contenttypeid")
@@ -230,7 +248,7 @@ def find_nearby_places(
             {
                 "id": item.get("contentid"),
                 "name": item.get("title"),
-                "category": CONTENT_TYPE_TO_CATEGORY.get(content_type_id, "culture"),
+                "category": category_map.get(content_type_id, "culture"),
                 "address": item.get("addr1") or "",
                 "lat": float(mapy),
                 "lng": float(mapx),
@@ -260,7 +278,11 @@ def _first_item(body: dict) -> dict | None:
 
 
 def _fetch_detail_common(content_id: str) -> dict | None:
-    params = {**_tour_api_common_params(), "contentId": content_id, "defaultYN": "Y", "overviewYN": "Y"}
+    # defaultYN/overviewYN은 TourAPI 공식 예제 문서에 있는 optional 파라미터라 최초 구현 때
+    # 따라 넣었으나, 현재 서비스키/버전에서는 이 값을 보내면 INVALID_REQUEST_PARAMETER_ERROR로
+    # 요청 자체가 항상 실패한다(BACKEND_REQUESTS.md 4번, 실측 확인됨). 빼도 overview 필드는
+    # 기본으로 포함되어 오므로 제거한다.
+    params = {**_tour_api_common_params(), "contentId": content_id}
     response = httpx.get(DETAIL_COMMON_URL, params=params, timeout=5.0)
     response.raise_for_status()
     return _first_item(response.json().get("response", {}).get("body", {}))

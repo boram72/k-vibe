@@ -7,7 +7,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from data_repositories import locationinfo
-from externelAPI_services import tourAPI
+from externelAPI_services import searchGoogle, tourAPI
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +32,25 @@ def find_nearby_places(
 
 @router.get("/{content_id}")
 def get_place_detail(content_id: str):
-    """장소 상세시트 온디맨드 조회(전화번호/영업시간/카테고리 태그). 클릭 시에만 호출됨."""
+    """장소 상세시트 온디맨드 조회(전화번호/영업시간/카테고리 태그). 클릭 시에만 호출됨.
+
+    TourAPI detailCommon2가 실패하거나(현재 서비스키 미승인으로 항상 실패) 영업시간을
+    못 주는 경우, location 테이블에 캐싱된 name/address로 구글 Places를 폴백 조회한다.
+    """
     detail = tourAPI.get_place_detail(content_id)
+
+    location = None
+    if detail is None or not detail.get("businessHours"):
+        location = locationinfo.get_location_by_place_id(content_id)
+
     if detail is None:
-        raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다.")
+        if location is None:
+            raise HTTPException(status_code=404, detail="장소를 찾을 수 없습니다.")
+        detail = {"phone": None, "businessHours": None, "overview": None, "tags": location.get("tags") or []}
+
+    if not detail.get("businessHours") and location:
+        detail["businessHours"] = searchGoogle.get_opening_hours(
+            name=location.get("name"), address=location.get("address")
+        )
+
     return detail

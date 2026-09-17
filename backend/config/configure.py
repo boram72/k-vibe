@@ -9,6 +9,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY")
 TOUR_API_KEY = os.getenv("TOUR_API_KEY")
+# 장소 영업시간 폴백(TourAPI detailCommon2가 영업시간을 못 주는 케이스)용 Google Places API.
+# 키가 없으면 searchGoogle.get_opening_hours()가 항상 None을 반환해 기존 "정보없음" UI로 자연 폴백.
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # 2026-09: SNS 분석기 AI 폴백 체인(Groq -> Gemini -> OpenAI -> 규칙기반 워커) 중
 # Gemini/OpenAI 단계에 사용. 키가 없으면 각 client.complete()가 빈 문자열을 반환해

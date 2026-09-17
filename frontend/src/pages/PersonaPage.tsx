@@ -136,27 +136,11 @@ export default function PersonaPage() {
     navigate('../route')
   }
 
-  async function handleShare() {
-    const plan = routeQuery.data
-    if (!plan) return
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: plan.title, text: plan.shareText, url: window.location.href })
-        toast.success(t('persona.shared'))
-        return
-      }
-      await navigator.clipboard.writeText(plan.shareText)
-      toast.success(t('persona.copied'))
-    } catch {
-      toast.error(t('persona.share_unavailable'))
-    }
-  }
-
   if (activePersonaId) {
     if (routeQuery.data) {
       return (
         <div className="mx-auto w-full space-y-4 px-4 py-4 md:max-w-2xl">
-          <RouteResult plan={routeQuery.data} onReset={reset} onAddToRoute={handleAddToRoute} onShare={handleShare} />
+          <RouteResult plan={routeQuery.data} onReset={reset} onAddToRoute={handleAddToRoute} />
         </div>
       )
     }
@@ -238,7 +222,7 @@ export default function PersonaPage() {
                       {persona.routeCnt}
                       {t("persona.stops_suffix")}
                     </span>
-                    <p className="line-clamp-2 text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5">
+                    <p className="line-clamp-2 min-h-8 text-[10px] leading-4 text-muted-foreground md:min-h-10 md:text-xs md:leading-5">
                       {persona.description}
                     </p>
                   </div>

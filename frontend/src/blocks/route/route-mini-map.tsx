@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CustomOverlayMap, Map as KakaoMap, Polyline, useKakaoLoader } from 'react-kakao-maps-sdk'
-import { MapPinned, Navigation } from 'lucide-react'
+import { MapPinned } from 'lucide-react'
 import type { RouteStop } from '@/lib/route-draft'
-import { buildGoogleMapsDirectionsUrl, buildGoogleMapsPlaceUrl } from '@/lib/route-share'
+import { buildGoogleMapsPlaceUrl } from '@/lib/route-share'
 import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
 import { cn } from '@/lib/utils'
 
@@ -80,34 +80,42 @@ function MapHeader() {
     <div className="mb-3 flex items-center gap-1">
       <MapPinned className="h-4.5 w-4.5 shrink-0 text-primary" />
       <h3 className="text-sm font-bold text-foreground">{t('route.mini_map_title')}</h3>
-      <p className="ml-1 text-xs text-muted-foreground">{t('route.mini_map_subtitle')}</p>
     </div>
   )
 }
 
-function DirectionsButton({ stops }: { stops: RouteStop[] }) {
-  const { t } = useTranslation()
-  const directionsUrl = buildGoogleMapsDirectionsUrl(stops)
-
-  if (!directionsUrl) return null
-
-  return (
-    <a
-      href={directionsUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5 rounded-lg bg-background/90 px-2.5 py-1.5 text-xs font-semibold text-primary shadow backdrop-blur hover:bg-background"
-    >
-      <Navigation className="h-3.5 w-3.5" />
-      {t('route.open_directions')}
-    </a>
-  )
-}
+const PERCENT_ZOOM_MIN = 1
+const PERCENT_ZOOM_MAX = 3
+const PERCENT_ZOOM_STEP = 0.25
 
 function PercentRouteMiniMap({ stops, completedIds, bounds, currentLocation }: RouteMiniMapProps) {
   const { t } = useTranslation()
   const [pan, setPan] = useState({ x: 0, y: 0 })
+  // 2026-09 대화 중 요청 — 카카오맵 경로(scrollwheel 줌)와 동등하게, 폴백
+  // 프리뷰도 마우스휠/트랙패드로 줌인/아웃 가능하게 지원.
+  const [zoom, setZoom] = useState(1)
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null)
+  const panLayerRef = useRef<HTMLDivElement | null>(null)
+
+  // 버그 수정 — React의 onWheel prop은 브라우저 스크롤 성능을 위해 리스너를
+  // passive: true로 등록해서, 안에서 e.preventDefault()를 불러도 무시되고
+  // "Unable to preventDefault inside passive event listener invocation."
+  // 콘솔 에러만 남았음(줌 자체는 우연히 동작하지만 페이지 스크롤 차단은 안 됨).
+  // ref로 DOM에 직접 { passive: false } 네이티브 리스너를 붙여서 해결 —
+  // JSX onWheel prop으로는 passive 옵션을 지정할 방법이 없음.
+  useEffect(() => {
+    const el = panLayerRef.current
+    if (!el) return
+    function handleWheel(e: WheelEvent) {
+      e.preventDefault()
+      setZoom((z) => {
+        const next = z - Math.sign(e.deltaY) * PERCENT_ZOOM_STEP
+        return Math.min(PERCENT_ZOOM_MAX, Math.max(PERCENT_ZOOM_MIN, next))
+      })
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
 
   const minSpan = 0.015
   const latSpan = Math.max(bounds.maxLat - bounds.minLat, minSpan)
@@ -158,8 +166,9 @@ function PercentRouteMiniMap({ stops, completedIds, bounds, currentLocation }: R
   return (
     <div className="relative aspect-video overflow-hidden rounded-xl bg-background">
       <div
+        ref={panLayerRef}
         className="absolute inset-0 cursor-grab select-none active:cursor-grabbing"
-        style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
+        style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -210,8 +219,6 @@ function PercentRouteMiniMap({ stops, completedIds, bounds, currentLocation }: R
           </div>
         )}
       </div>
-
-      <DirectionsButton stops={stops} />
     </div>
   )
 }
@@ -250,7 +257,6 @@ function KakaoRouteMiniMap({ stops, completedIds, bounds, currentLocation }: Rou
         level={getInitialMapLevel(bounds)}
         className="h-full w-full"
         onCreate={setMap}
-        scrollwheel={false}
       >
         {routePath.length > 1 && (
           <Polyline
@@ -287,8 +293,6 @@ function KakaoRouteMiniMap({ stops, completedIds, bounds, currentLocation }: Rou
           </CustomOverlayMap>
         )}
       </KakaoMap>
-
-      <DirectionsButton stops={validStops} />
     </div>
   )
 }

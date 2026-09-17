@@ -969,3 +969,35 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
 - [x] **9. 페르소나 상세리스트(route-result.tsx) 운영시간/별점 관련 2건** — 6/7번 작업 검증 중 대화로 추가 발견.
   - **① 운영시간/별점 하드코딩 여부 확인 요청** — 조사 결과 **두 군데 모두 하드코딩이었음, 성격은 다름**. (a) 백엔드가 실제로 붙이는 리뷰 평균 평점(`location.rating`, `routingService.py`의 `f"{town} · ⭐{rating} · {openingHour}"`)은 진짜 데이터지만 `town`/`openingHour`는 DB에 없어 항상 빈 문자열로 나감(별도 백엔드 이슈, 이번엔 손 안 댐). (b) **프론트 자체 목업**(`api/personas.ts`의 `PERSONA_FALLBACKS`, 백엔드 실패 시에만 사용)은 19개 장소 전부 `address`에 "구 · 평점 · 영업시간"이 완전히 지어낸 문자열로 박혀 있었음 — 사용자 요청대로 **지도 상세시트가 이미 쓰던 것과 동일한 패턴을 공유**하도록 수정: `address`를 `'-'` 센티널로 교체하고, 렌더링하는 3곳(`route-result.tsx`/`spot-list-panel.tsx`의 스타필터 리스트/`place-detail-sheet.tsx`의 데스크탑·모바일 주소 표시 2곳)에서 `address === '-'`이면 기존 `placeDetail.info_unavailable`("서비스 준비중", 4개 언어 기존 존재) 텍스트로 대체(새 i18n 키 추가 없이 재사용).
   - **② X 버튼 옆 시간 표기 삭제** — 스팟 카드 이름/뱃지 줄 우측에 `ml-auto`로 붙어있던 `stop.startTime`(도착 예정시각) 삭제. `RouteResult`는 걸러진 스팟만 넘겨서 루트에 추가하는 미리보기 화면이라 이 시각 자체가 실제 방문시각 확정이 아니라 혼란을 준다는 이유로 제거 요청.
+- [x] **11. 내 루트 미니맵 도보 길찾기 버튼 삭제** — `route-mini-map.tsx`의 `DirectionsButton`(미니맵 우하단 "도보 길찾기 열기" → Google Maps Directions 링크) 컴포넌트와 두 렌더 지점(`PercentRouteMiniMap`/`KakaoRouteMiniMap`) 모두 제거. 더 이상 안 쓰는 `Navigation` 아이콘 import, `route.open_directions` i18n 키(4개 언어) 제거. `buildGoogleMapsDirectionsUrl()`(`route-share.ts`)는 재사용 가능성을 감안해 함수 자체는 남겨둠(사용처만 없어짐).
+- [x] **12. 내 루트 미니맵 subtitle 삭제** — `MapHeader`에서 "Kakao 지도에서 루트를 보고, 번호를 누르면 Google Maps가 열려요." 텍스트(`route.mini_map_subtitle`) 제거, 제목만 유지. i18n 키(4개 언어)도 같이 제거.
+- [x] **13. 위치확인 버튼을 토글로 변경** — 현재는 클릭 1회성 조회 버튼(`RouteLocationCheck`)이었는데, 토글 형태로 변경. 켜면 기존과 동일(GPS 조회+미니맵에 내 위치 핀), 다시 눌러서 끄면 내 위치 핀 제거하고 지도 중심을 루트 기준으로 되돌림.
+  - **UI(1단계)**: 처음엔 별도 Switch 컴포넌트+라벨 분리로 구현했으나, 안내문구(현재 거리 결과) 등장 시 버튼/라벨이 따로 놀아 레이아웃이 불안정해 보인다는 피드백 → 기존처럼 버튼 하나로 원복하고, on/off 상태를 배경색(`bg-background`↔`bg-primary`)+`aria-pressed`로 표시. 안내문구는 원래대로 조건부 렌더링 유지(높이 고정 예약 시도했다가 "눌렀을 때 카드가 자연스럽게 늘어나야 한다"는 피드백으로 되돌림).
+  - **동작(2단계)**: `RouteLocationCheck`의 `onLocationChecked` prop 타입을 `(coords) => void` → `(coords | null) => void`로 확장, 토글을 끌 때 `onLocationChecked?.(null)` 호출. `RoutePage.tsx`의 `setCurrentLocation`(이미 `|null` 허용)이 그대로 받아 `currentLocation`을 null로 되돌림 — `RouteMiniMap`의 `currentLocation` 의존 `useEffect`(`fitKakaoMapToRoute`)가 자동으로 재실행되어 지도가 루트 스팟만 기준으로 다시 fit됨(추가 지도 코드 수정 불필요). Playwright로 `CurrentLocationPin`의 고유 클래스(`animate-ping.bg-red-500/50`) 개수로 확인: 켜짐 시 1개, 꺼짐 시 0개.
+- [x] **14. 내 루트 미니맵 줌인/아웃 기능 제공** — 현재 `KakaoMap`은 `scrollwheel={false}`로 줌 자체가 막혀있고 별도 줌 컨트롤도 없음. **대화로 확정한 방식**: 별도 +/- 버튼이 아니라 마우스휠/트랙패드 스크롤로 줌인/아웃(카카오맵 기본 동작과 동일한 느낌). `KakaoMap`의 `scrollwheel={false}`를 제거해 라이브러리 기본 스크롤휠 줌을 활성화, 카카오 SDK 미로드 시 쓰는 퍼센트 좌표 폴백(`PercentRouteMiniMap`)에도 동등하게 마우스휠로 CSS `scale()` 줌 지원 추가(범위 1~3배, 0.25 단위).
+  - 검증: Kakao 실제 API(`map.getLevel()`)를 직접 후킹해서 스크롤 시 레벨이 6→5→6으로 실제로 바뀌는 것 확인(단순 시각 효과가 아니라 진짜 줌). 지도 위에서 스크롤하면 페이지 자체는 안 스크롤되고(맵이 정상적으로 캡처) 맵 밖에서는 정상 스크롤됨 — 구글맵 임베드와 동일한 표준 동작으로 확인, 회귀 아님.
+  - **버그 발견·수정**: 퍼센트 폴백의 `onWheel` JSX prop 안에서 `e.preventDefault()`를 호출했는데, React가 `wheel` 이벤트를 성능상 기본적으로 `passive: true`로 등록해서 `preventDefault()`가 항상 무시되고 매번 콘솔에 `"Unable to preventDefault inside passive event listener invocation."` 에러가 찍히던 것을 PR 올리기 전 회귀 테스트 중 발견(줌 자체는 우연히 동작했지만 페이지 스크롤 차단 의도는 전혀 작동 안 하고 있었음). `ref`로 DOM을 직접 잡아 `addEventListener('wheel', handler, { passive: false })`로 네이티브 등록하는 방식으로 수정(JSX `onWheel` prop은 passive 옵션을 지정할 방법이 없음). 카카오 키를 잠깐 비활성화해 폴백 경로를 직접 띄워 재검증 — 줄 동작 유지되면서 콘솔 에러 완전히 사라짐 확인.
+
+## ⬜ 2026-09 지도 수정 2차 + 기타 수정 (대화 중 요청, 담당자: 보람)
+
+### K-Vibe 지도
+- [x] **1. "이 지역에서 검색" 버튼 색상 변경** — `map-canvas.tsx`의 `SearchAreaButton`이 `bg-popover/90`(테마 기반 반투명, 지도와 밝기가 비슷해 잘 안 보임)였던 것을 `bg-neutral-900/90 text-white`(검정 계열)로 변경, 테두리(`border-border`)도 검정 배경에 불필요해 제거. 카카오맵 API 키가 등록된 포트(5173)에서만 로드되는 제약으로 색상 자체는 코드 리뷰+`tsc`/`eslint`로 검증(라이브 스크린샷은 5173에서 사용자 확인).
+- [x] **2. 상세 팝업 내 공유 버튼 삭제** — `place-detail-sheet.tsx`의 공유 버튼과 `handleShare` 함수, 안 쓰는 `Share2` import, `placeDetail.share`/`share_copied` i18n 키(4개 언어) 제거. Playwright로 공유 버튼 미노출 + "루트에 추가" 버튼 정상 동작 확인.
+- [ ] **3. 빨간 강조 핀(SearchResultPin) z-index 최상위로 올리기** — TourAPI 스팟이 몰려있는 지역에서는 다른 카테고리 핀에 가려서 빨간 핀(선택/검색 강조)이 안 보임.
+- [ ] **4. 지도 검색 방식 변경**
+  - **4-1.** 현재는 "행정구역 검색 → 음식점 검색" 순서라, "경복궁"을 검색하면 경복궁 주변 음식점이 먼저 뜸(엉뚱한 결과가 우선). API를 동시 호출하고, 검색 결과 목록을 주변 스팟 목록 최상단(찜/관광지 추천보다도 위, 1순위)에 노출. 클릭 시 해당 스팟으로 이동.
+  - **4-2.** 역(지하철역) 검색 지원 — "강남역"/"삼성역" 등 역명을 검색하면 이동이 안 됨. 역 검색이 가능한 API가 있는지 확인 필요, 없으면 대안 검색 방법 조사 필요.
+- [ ] **5. 지도 검색이 될 때/안 될 때가 왔다갔다함** — 원인 파악 필요(재현 조건 확인부터).
+- [ ] **6. 위치 관련 기능 전면 숨김(모듈 단위 on/off 가능하게)** — 아래 4개를 하나의 모듈로 묶어서 켜고 끌 수 있게 구현.
+  - **6-1.** [현재위치] 버튼 전부(좌측 상단/우측 하단) 숨김
+  - **6-2.** 현재 위치 표기 아이콘(지도 위 내 위치 핀) 숨김
+  - **6-3.** 지도 랜딩 시 "현재위치"가 아닌 서울역으로 기본 랜딩
+  - **6-4.** 지도 랜딩 시 현재 위치 미사용(브라우저 위치 권한 동의 자체를 안 받음) — 위치 권한 동의를 받는 화면은 "내 루트 > 위치확인" 토글 클릭 시 한 곳만 남음
+  - **⚠️ 실행 전 필수 선행 작업**: 이 기능을 모듈 단위로 켰다 껐다 할 수 있게 만드는 게 가능한지 먼저 검토하고, 어떤 방식으로 구현할지(예: feature flag/설정값 하나로 6-1~6-4를 한번에 제어하는 구조가 가능한지, 기존 `use-current-location.ts`/`location-cache.ts`/MapPage 구조에 미치는 영향 등)를 먼저 조사해서 보고 — 조사 결과 확인 후에만 실제 구현 시작.
+
+### 지도 외 기타 수정
+- [x] **7. 웹에서 페르소나 카드 중 제니만 프로필 이미지가 다른 카드와 정렬이 안 맞음(아래로 처짐)** — **진단 과정에서 시행착오 있었음, 최종 원인은 사용자가 직접 찾음**. 처음엔 제니 프로필 사진 원본(namu.wiki, 1000×1000 정사각형)만 다른 페르소나 사진(세로로 긴 원본)과 달리 `object-cover`가 크롭할 여백이 없어서 원본 구도 그대로 나온다고 진단하고 카드별 수동 확대(`scale`+`object-position`)로 시도했으나(1.1배→1.25배→1.6배까지 단계적 조정), 사용자가 "그 정도로 확대하지 말고 원복"을 반복 요청 — **실제 원인은 카드 설명(description) 텍스트 길이에 따라 카드 전체 레이아웃(높이)이 달라지는 것**이었음(설명이 짧으면 `line-clamp-2`가 있어도 실제 줄바꿈이 안 일어나 해당 카드만 낮은 높이를 갖고, 그리드 정렬 과정에서 이미지 표시 영역까지 흔들림). **수정**: 확대/위치 보정은 전부 원복하고, 설명 문단에 `min-h`를 고정 부여해 텍스트 줄 수와 무관하게 항상 2줄 높이를 차지하도록 변경 — `persona-picker.tsx`(홈 화면, `min-h-10`)와 `PersonaPage.tsx`(페르소나 메뉴 전체 목록, 반응형 폰트에 맞춰 `min-h-8 md:min-h-10`) 둘 다 적용. Playwright로 카드 높이가 설명 길이와 무관하게 전부 동일(352px/369px)한 것 확인.
+- [x] **8. 페르소나 상세(step2)에서 공유 버튼 제외** — `route-result.tsx`의 공유 버튼(및 `onShare` prop, `PersonaPage.tsx`의 `handleShare`, 이제 안 쓰는 `persona.share`/`shared`/`copied`/`share_unavailable` i18n 키 4개 언어) 전부 제거. 남은 "루트에 추가" 버튼은 `flex-1` → `w-full`로 확장.
+- [x] **(추가 발견·수정) 페르소나 카드 이미지 확대 팝업 바깥 클릭 시 실수로 페르소나가 선택되어 step2로 넘어가는 버그** — 7번 진단 중 사용자가 발견. **원인**: `zoomable-image.tsx`가 확대 팝업(`DialogContent`)에만 `stopPropagation()`을 걸어뒀는데, "바깥 클릭으로 닫기"를 처리하는 `DialogOverlay`(배경)는 별도 요소라 안 걸려있었음 — base-ui Dialog의 Overlay/Popup은 DOM상 `document.body`에 포탈되지만 **React 합성 이벤트는 실제 DOM이 아니라 JSX 트리를 따라 버블링**해서 배경 클릭이 그대로 부모 카드의 `onClick`(선택)까지 전파됐음(포탈의 흔한 함정). **수정**: `Dialog` 전체(Overlay+Popup 둘 다 포함)를 감싸는 wrapper 하나에 `stopPropagation()`을 걸어 어디를 클릭하든 부모로 전파되지 않게 처리. `ZoomableImage`를 공유하는 다른 화면(홈 롱프레스 팝업 등)에도 동일하게 적용됨. Playwright로 이미지 클릭→팝업 열림→바깥 클릭→팝업만 닫히고 URL은 `/persona`에 그대로 남는 것(step2로 안 넘어감) 확인.
+
+**작업 순서(대화로 확정)**: plan.md 업데이트(본 섹션) → 기타 수정(7, 8번) 진행 후 PR → 지도 **1, 2번** 수정 → **3번 진행 전 반드시 사용자 확인** 받은 뒤에만 진행(절대 먼저 진행 금지).

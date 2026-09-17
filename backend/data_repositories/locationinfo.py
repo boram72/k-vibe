@@ -124,21 +124,24 @@ def get_cached_place_detail(place_id: str) -> dict | None:
 def cache_place_detail(place_id: str, detail: dict) -> None:
     """get_place_detail() 조회 결과(전화번호/영업시간/개요/태그)를 location에 캐싱한다.
 
-    place_id가 location에 아직 없는 장소여도(예: /places 목록 조회 없이 바로 상세
-    조회된 경우) upsert라 새 행이 만들어지며 문제없이 캐싱된다.
+    upsert가 아니라 update만 한다 - Postgres는 INSERT ... ON CONFLICT DO UPDATE라도
+    실제로 conflict가 나서 UPDATE로 처리될 행이라 해도, INSERT 시도 자체를 구성하는
+    단계에서 NOT NULL 제약(location.name 등)을 검사한다. 즉 payload에 name을 안 넣으면
+    "이미 존재하는" place_id를 갱신하려는 경우에도 NOT NULL 위반으로 실패한다(실측:
+    place_id=750982 "이북만두"는 location에 이미 있었는데도 에러 발생). 상세 캐싱은
+    항상 이미 알려진 장소(location.place_id가 이미 존재)를 대상으로 하므로 update만으로
+    충분하고, 혹시 없는 place_id라면 0건 갱신되고 조용히 끝난다(에러 없음).
     """
     client = get_supabase_client()
-    client.table(TABLE).upsert(
+    client.table(TABLE).update(
         {
-            "place_id": place_id,
             "phone": detail.get("phone"),
             "business_hours": detail.get("businessHours"),
             "overview": detail.get("overview"),
             "tags": detail.get("tags") or [],
             "detail_cached_at": datetime.now(timezone.utc).isoformat(),
-        },
-        on_conflict="place_id",
-    ).execute()
+        }
+    ).eq("place_id", place_id).execute()
 
 
 def upsert_places_batch(places: list[dict]) -> None:

@@ -1,7 +1,13 @@
 # insert, select, update (구글링 결과 장소 영업시간, 별점 등 변경사항이 있다면 update해야함)
+from datetime import datetime, timedelta, timezone
+
 from config.dependency import get_supabase_client
 
 TABLE = "location"
+
+# 장소 상세시트(전화번호/영업시간/개요) 캐시 유효기간. 이 값들은 자주 안 바뀌는
+# 데이터라 하루 정도는 재조회 없이 캐시를 신뢰해도 무방하다고 판단(presentation_api/places.py 참고).
+DETAIL_CACHE_TTL = timedelta(hours=24)
 
 
 def get_location(name: str) -> dict | None:
@@ -87,6 +93,52 @@ def upsert_place(
             data[key] = value
     result = client.table(TABLE).upsert(data, on_conflict="place_id").execute()
     return result.data[0] if result.data else None
+
+
+def get_cached_place_detail(place_id: str) -> dict | None:
+    """장소 상세시트(전화번호/영업시간/개요/태그) 캐시를 조회한다.
+
+    TourAPI detailCommon2/detailIntro2/categoryCode2 + 카카오 전화번호 폴백을
+    매번 라이브로 호출하면 왕복이 누적돼 느려서(실측 2.7초, tourAPI.get_place_detail
+    참고), 한 번 조회된 결과를 location 테이블에 캐싱해두고 DETAIL_CACHE_TTL 이내면
+    그대로 반환한다. 캐싱된 적 없거나(detail_cached_at is None) TTL이 지났으면
+    캐시 미스(None)로 처리해 호출부가 라이브로 다시 조회하게 한다.
+    """
+    location = get_location_by_place_id(place_id)
+    cached_at_raw = location.get("detail_cached_at") if location else None
+    if not cached_at_raw:
+        return None
+
+    cached_at = datetime.fromisoformat(cached_at_raw.replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) - cached_at > DETAIL_CACHE_TTL:
+        return None
+
+    return {
+        "phone": location.get("phone"),
+        "businessHours": location.get("business_hours"),
+        "overview": location.get("overview"),
+        "tags": location.get("tags") or [],
+    }
+
+
+def cache_place_detail(place_id: str, detail: dict) -> None:
+    """get_place_detail() 조회 결과(전화번호/영업시간/개요/태그)를 location에 캐싱한다.
+
+    place_id가 location에 아직 없는 장소여도(예: /places 목록 조회 없이 바로 상세
+    조회된 경우) upsert라 새 행이 만들어지며 문제없이 캐싱된다.
+    """
+    client = get_supabase_client()
+    client.table(TABLE).upsert(
+        {
+            "place_id": place_id,
+            "phone": detail.get("phone"),
+            "business_hours": detail.get("businessHours"),
+            "overview": detail.get("overview"),
+            "tags": detail.get("tags") or [],
+            "detail_cached_at": datetime.now(timezone.utc).isoformat(),
+        },
+        on_conflict="place_id",
+    ).execute()
 
 
 def upsert_places_batch(places: list[dict]) -> None:

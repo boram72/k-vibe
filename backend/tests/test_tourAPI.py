@@ -318,6 +318,45 @@ def test_get_place_detail_raises_when_api_key_missing():
 
 @patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
 @patch("externelAPI_services.tourAPI.httpx.get")
+def test_get_place_detail_converts_br_tags_to_newlines(mock_get):
+    """TourAPI가 usetime/overview에 <br> 태그를 그대로 섞어 내려주는 케이스를 정리해야 한다."""
+    common_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {
+                        "item": {
+                            "tel": "",
+                            "overview": "설명<br>둘째줄",
+                            "contenttypeid": "12",
+                            "cat1": "",
+                            "cat2": "",
+                            "cat3": "",
+                        }
+                    }
+                }
+            }
+        }
+    )
+    intro_response = _mock_response(
+        {
+            "response": {
+                "body": {
+                    "items": {"item": {"usetime": "[평일]<br>- 11:00~21:00<br>[주말]<br>- 10:30~20:00"}}
+                }
+            }
+        }
+    )
+    mock_get.side_effect = [common_response, intro_response]
+
+    result = tourAPI.get_place_detail("126508")
+
+    assert result["overview"] == "설명\n둘째줄"
+    assert result["businessHours"] == "[평일]\n- 11:00~21:00\n[주말]\n- 10:30~20:00"
+
+
+@patch("externelAPI_services.tourAPI.TOUR_API_KEY", "test-key")
+@patch("externelAPI_services.tourAPI.httpx.get")
 def test_fetch_detail_common_does_not_send_defaultyn_overviewyn(mock_get):
     """defaultYN/overviewYN을 보내면 TourAPI가 INVALID_REQUEST_PARAMETER_ERROR로 항상 실패한다
     (BACKEND_REQUESTS.md 4번). 요청 파라미터에 더 이상 포함되지 않아야 한다."""

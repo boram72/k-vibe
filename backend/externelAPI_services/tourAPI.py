@@ -8,6 +8,7 @@
 # - 편의점/약국/은행(ATM) 등 편의시설은 TourAPI에 해당 카테고리가 없어 카카오 로컬 API로
 #   조회한다 -> externelAPI_services/amenities.py 참고.
 import json
+import re
 from datetime import date, timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -305,15 +306,28 @@ def _fetch_category_name(cat1: str, cat2: str, cat3: str) -> str | None:
     return item.get("name") if item else None
 
 
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _clean_text(text: str | None) -> str | None:
+    """TourAPI 텍스트 필드(usetime/overview 등)에 <br> 같은 HTML 태그가 그대로 섞여
+    내려오는 케이스를 정리한다. <br>은 줄바꿈으로, 그 외 태그는 제거한다."""
+    if not text:
+        return text
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.IGNORECASE)
+    text = _HTML_TAG_RE.sub("", text)
+    return text.strip() or None
+
+
 def _normalize_business_hours(content_type_id: str | None, intro: dict) -> str | None:
     if content_type_id == "32":  # 숙박: 체크인/체크아웃
         checkin, checkout = intro.get("checkintime"), intro.get("checkouttime")
         if checkin and checkout:
-            return f"체크인 {checkin} · 체크아웃 {checkout}"
-        return checkin or checkout or None
+            return _clean_text(f"체크인 {checkin} · 체크아웃 {checkout}")
+        return _clean_text(checkin or checkout or None)
 
     if content_type_id == "15":  # 축제공연행사: 공연시간
-        return intro.get("playtime") or intro.get("usetimefestival") or None
+        return _clean_text(intro.get("playtime") or intro.get("usetimefestival") or None)
 
     fields = BUSINESS_HOURS_FIELD_MAP.get(content_type_id)
     if not fields:
@@ -323,7 +337,7 @@ def _normalize_business_hours(content_type_id: str | None, intro: dict) -> str |
     if not hours:
         return None
     closed = intro.get(closed_field)
-    return f"{hours} ({closed} 휴무)" if closed else hours
+    return _clean_text(f"{hours} ({closed} 휴무)" if closed else hours)
 
 
 def get_place_detail(content_id: str) -> dict | None:
@@ -355,6 +369,6 @@ def get_place_detail(content_id: str) -> dict | None:
     return {
         "phone": common.get("tel") or None,
         "businessHours": _normalize_business_hours(content_type_id, intro),
-        "overview": common.get("overview") or None,
+        "overview": _clean_text(common.get("overview")),
         "tags": tags,
     }

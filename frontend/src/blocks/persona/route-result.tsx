@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageOff, MapPin, Plus, RotateCcw, Share2, X } from 'lucide-react'
+import { ImageOff, Plus, RotateCcw, Share2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -118,13 +118,12 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
 
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: t('persona.stops'), value: String(includedStops.length), icon: MapPin },
-          { label: t('persona.total_distance'), value: formatDistance(includedDistanceM), icon: MapPin },
-        ].map(({ label, value, icon: Icon }) => (
+          { label: t('persona.stops'), value: String(includedStops.length) },
+          { label: t('persona.total_distance'), value: formatDistance(includedDistanceM) },
+        ].map(({ label, value }) => (
           <div key={label} className="rounded-xl bg-muted p-3 text-center">
-            <Icon className="mx-auto mb-1 h-3.5 w-3.5 text-primary" />
-            <p className="text-sm font-bold text-foreground">{value}</p>
             <p className="text-[10px] text-muted-foreground">{label}</p>
+            <p className="text-sm font-bold text-foreground">{value}</p>
           </div>
         ))}
       </div>

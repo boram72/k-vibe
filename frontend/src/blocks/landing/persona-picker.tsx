@@ -217,7 +217,7 @@ function PersonaCard({ persona, images, onSelect }: PersonaCardProps) {
           <p className="truncate text-[10px] font-medium text-primary">
             {persona.moods.map((mood) => `#${mood}`).join(' ')}
           </p>
-          <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{persona.description}</p>
+          <p className="line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">{persona.description}</p>
         </div>
       </button>
 

@@ -179,7 +179,12 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
 
       {places.map((place) => {
         const selected = place.id === selectedPlaceId
-        const highlighted = highlightIds?.has(place.id)
+        // 다중 검색결과(highlightIds)는 그대로 다 빨간 핀 유지 + 그 중 하나를
+        // 클릭해서 selected가 되면 스타일만 커짐(SearchResultPin의 selected prop).
+        // 여기에 더해, 검색과 무관하게 그냥 선택된 장소(주변 스팟 리스트 클릭,
+        // 지도 핀 직접 클릭 등)도 동일한 빨간 핀으로 보여줘서 "지금 선택된 곳이
+        // 어디인지"가 하나의 핀으로 항상 따라다니게 한다(대화로 확정).
+        const showSearchPin = highlightIds?.has(place.id) || selected
         const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
         return (
           <button
@@ -188,9 +193,9 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
             onClick={() => onSelectPlace(place)}
             title={place.name}
             style={pinPosition(place, center, fitPlaces)}
-            className={cn('absolute -translate-x-1/2', highlighted ? '-translate-y-full' : '-translate-y-1/2')}
+            className={cn('absolute -translate-x-1/2', showSearchPin ? '-translate-y-full' : '-translate-y-1/2')}
           >
-            {highlighted ? (
+            {showSearchPin ? (
               <SearchResultPin selected={selected} />
             ) : (
               <span className={pinClassName(selected, pinBg)}>
@@ -370,7 +375,11 @@ function KakaoMapCanvas(props: MapCanvasProps) {
       >
         {places.map((place) => {
           const selected = place.id === selectedPlaceId
-          const highlighted = highlightIds?.has(place.id)
+          // 다중 검색결과(highlightIds)는 그대로 다 빨간 핀 유지. 여기에 더해
+          // 검색과 무관하게 그냥 선택된 장소(주변 스팟 리스트 클릭, 지도 핀
+          // 직접 클릭 등)도 동일한 빨간 핀으로 보여줘서 "지금 선택된 곳"이 늘
+          // 하나의 핀으로 따라다니게 한다(대화로 확정).
+          const showSearchPin = highlightIds?.has(place.id) || selected
           const { icon: Icon, pinBg } = getPlaceCategoryMeta(place.category)
           return (
             <CustomOverlayMap
@@ -378,10 +387,10 @@ function KakaoMapCanvas(props: MapCanvasProps) {
               position={{ lat: place.lat, lng: place.lng }}
               clickable
               zIndex={selected ? 2 : 1}
-              yAnchor={highlighted ? 1 : 0.5}
+              yAnchor={showSearchPin ? 1 : 0.5}
             >
               <button type="button" onClick={() => onSelectPlace(place)} title={place.name}>
-                {highlighted ? (
+                {showSearchPin ? (
                   <SearchResultPin selected={selected} />
                 ) : (
                   <span className={pinClassName(selected, pinBg)}>

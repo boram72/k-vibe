@@ -1,4 +1,4 @@
-import { Clock, Heart, MapPin, Phone, Plus, Share2 } from 'lucide-react'
+import { ArrowLeft, Clock, Heart, MapPin, Phone, Plus, Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -26,9 +26,20 @@ interface PlaceDetailSheetProps {
   saved: boolean
   onClose: () => void
   onToggleSave: (id: string) => void
+  // 내 루트의 개별 스팟에서 지도 아이콘을 눌러 들어온 그 카드에서만 true —
+  // 다른 스팟을 눌러 상세카드가 바뀌면 다시 false가 된다(MapPage.tsx 참고).
+  showBackToRoute?: boolean
+  onBackToRoute?: () => void
 }
 
-export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceDetailSheetProps) {
+export function PlaceDetailSheet({
+  place,
+  saved,
+  onClose,
+  onToggleSave,
+  showBackToRoute,
+  onBackToRoute,
+}: PlaceDetailSheetProps) {
   const { t } = useTranslation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
@@ -151,10 +162,17 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         <Heart className={saved ? 'fill-current' : ''} />
         {saved ? t('common.unsave') : t('common.save')}
       </Button>
-      <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>
-        <Plus />
-        {t('placeDetail.add_to_route')}
-      </Button>
+      {showBackToRoute && onBackToRoute ? (
+        <Button variant="outline" className="flex-1" onClick={onBackToRoute}>
+          <ArrowLeft />
+          {t('placeDetail.back_to_route')}
+        </Button>
+      ) : (
+        <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>
+          <Plus />
+          {t('placeDetail.add_to_route')}
+        </Button>
+      )}
       <Button variant="outline" size="icon" onClick={handleShare} aria-label={t('placeDetail.share')}>
         <Share2 />
       </Button>
@@ -184,7 +202,12 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="bottom" className="mx-auto max-w-md rounded-t-2xl">
+      {/* 리뷰 탭까지 열리면(헤더+사진+탭+리뷰+푸터 합) 화면 높이를 넘어서 시트가
+          위로 계속 자라고, 그러면 시트 자기 자신 기준 top-3에 고정된 닫기(X)
+          버튼이 화면 밖으로 밀려나 사라졌음 — 시트 전체를 85vh로 캡하고
+          내부(사진+탭)만 스크롤되게 해서 헤더/푸터/닫기버튼은 항상 화면 안에
+          고정되도록 수정. */}
+      <SheetContent side="bottom" className="mx-auto flex max-h-[85vh] max-w-md flex-col overflow-hidden rounded-t-2xl">
         <SheetHeader>
           <SheetTitle>{place.name}</SheetTitle>
           <SheetDescription className="flex flex-wrap items-center gap-2">
@@ -192,8 +215,10 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
             <RatingBadge placeId={place.id} />
           </SheetDescription>
         </SheetHeader>
-        {media}
-        {tabsSection}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+          {media}
+          {tabsSection}
+        </div>
         <SheetFooter className="flex-row gap-2">{footer}</SheetFooter>
       </SheetContent>
     </Sheet>

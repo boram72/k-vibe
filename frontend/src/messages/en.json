@@ -207,8 +207,7 @@
     "preview_eyebrow": "Local route preview",
     "create_another": "Create another route",
     "stops": "Stops",
-    "walking": "Walking",
-    "total": "Total",
+    "total_distance": "Total Distance",
     "exclude_stop": "Exclude",
     "include_stop": "Include",
     "stop_excluded": "Excluded",
@@ -314,6 +313,7 @@
       "Like what you see? Tap 'Add to Route' to save it!"
     ],
     "stops": "Stops",
+    "total_distance": "Total Distance",
     "done": "Done",
     "walking": "Walking",
     "total": "Total",

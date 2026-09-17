@@ -14,6 +14,7 @@ import { EmptyRouteGuide } from '@/blocks/route/empty-route-guide'
 import { DocentPlayer } from '@/blocks/persona/docent-player'
 import { readRouteDraft, saveRouteDraft, readPersonaRoutePlan, clearPersonaRoutePlan, type RouteStop } from '@/lib/route-draft'
 import { encodeRouteForShare, decodeRouteFromShare } from '@/lib/route-share'
+import { haversineKm } from '@/lib/haversine'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useRouteProgressStore } from '@/store/route-progress-store'
 import type { MapFocusState } from './MapPage'
@@ -33,6 +34,18 @@ function buildMinimapBounds(stops: RouteStop[]): MinimapBounds | null {
     }),
     { minLat: validStops[0].lat, maxLat: validStops[0].lat, minLng: validStops[0].lng, maxLng: validStops[0].lng },
   )
+}
+
+function formatDistance(meters: number) {
+  return meters < 1000 ? `${Math.round(meters)}m` : `${(meters / 1000).toFixed(1)}km`
+}
+
+function totalRouteDistanceM(stops: RouteStop[]): number {
+  let total = 0
+  for (let i = 0; i < stops.length - 1; i++) {
+    total += haversineKm(stops[i].lat, stops[i].lng, stops[i + 1].lat, stops[i + 1].lng) * 1000
+  }
+  return total
 }
 
 function loadInitialRoute(searchParams: URLSearchParams) {
@@ -96,6 +109,7 @@ export default function RoutePage() {
   }, [stops])
 
   const stats = { done: completedIds.size }
+  const totalDistanceM = useMemo(() => totalRouteDistanceM(stops), [stops])
 
   const nextIncompleteStop = stops.find((s) => !completedIds.has(s.id)) ?? null
 
@@ -182,9 +196,10 @@ export default function RoutePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { label: t("route.stops"), value: String(stops.length) },
+            { label: t("route.total_distance"), value: formatDistance(totalDistanceM) },
             { label: t("route.done"), value: `${stats.done}/${stops.length}` },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-xl bg-muted p-3 text-center">

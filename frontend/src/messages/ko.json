@@ -207,8 +207,7 @@
     "preview_eyebrow": "로컬 루트 미리보기",
     "create_another": "다른 루트 만들기",
     "stops": "장소",
-    "walking": "도보",
-    "total": "전체",
+    "total_distance": "총 거리",
     "exclude_stop": "제외",
     "include_stop": "추가",
     "stop_excluded": "제외됨",
@@ -314,6 +313,7 @@
       "마음에 들면 '루트에 추가' 버튼을 클릭해서 저장하세요!"
     ],
     "stops": "장소",
+    "total_distance": "총 거리",
     "done": "완료",
     "walking": "도보",
     "total": "전체",

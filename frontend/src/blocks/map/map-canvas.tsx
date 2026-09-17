@@ -193,7 +193,13 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
             onClick={() => onSelectPlace(place)}
             title={place.name}
             style={pinPosition(place, center, fitPlaces)}
-            className={cn('absolute -translate-x-1/2', showSearchPin ? '-translate-y-full' : '-translate-y-1/2')}
+            className={cn(
+              'absolute -translate-x-1/2',
+              showSearchPin ? '-translate-y-full' : '-translate-y-1/2',
+              // KakaoMapCanvas와 동일한 이유 — 빨간 강조 핀이 몰린 카테고리
+              // 핀들에 가려지지 않도록 우선순위를 높임.
+              showSearchPin ? (selected ? 'z-20' : 'z-10') : 'z-0',
+            )}
           >
             {showSearchPin ? (
               <SearchResultPin selected={selected} />
@@ -386,7 +392,13 @@ function KakaoMapCanvas(props: MapCanvasProps) {
               key={place.id}
               position={{ lat: place.lat, lng: place.lng }}
               clickable
-              zIndex={selected ? 2 : 1}
+              // 2026-09 대화 중 요청 — TourAPI 스팟이 몰려있는 지역에서 빨간
+              // 강조 핀(showSearchPin)이 다른 카테고리 핀에 가려서 안 보이던
+              // 문제. 기존엔 selected 여부만 zIndex 2/1로 나눠서, 다중
+              // 검색결과 중 "선택 안 된" 빨간 핀들은 일반 핀과 동일한 우선순위였음
+              // — showSearchPin이면 무조건 일반 핀보다 위(10), 그중 선택된
+              // 것만 최상위(20)로 분리.
+              zIndex={showSearchPin ? (selected ? 20 : 10) : 1}
               yAnchor={showSearchPin ? 1 : 0.5}
             >
               <button type="button" onClick={() => onSelectPlace(place)} title={place.name}>

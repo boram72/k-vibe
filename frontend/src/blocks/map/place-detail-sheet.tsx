@@ -186,7 +186,7 @@ export function PlaceDetailSheet({
           <DialogHeader>
             <DialogTitle>{place.name}</DialogTitle>
             <DialogDescription className="flex flex-wrap items-center gap-2">
-              <span>{place.address}</span>
+              <span>{place.address === '-' ? t('placeDetail.info_unavailable') : place.address}</span>
               <RatingBadge placeId={place.id} />
             </DialogDescription>
           </DialogHeader>
@@ -211,7 +211,7 @@ export function PlaceDetailSheet({
         <SheetHeader>
           <SheetTitle>{place.name}</SheetTitle>
           <SheetDescription className="flex flex-wrap items-center gap-2">
-            <span>{place.address}</span>
+            <span>{place.address === '-' ? t('placeDetail.info_unavailable') : place.address}</span>
             <RatingBadge placeId={place.id} />
           </SheetDescription>
         </SheetHeader>

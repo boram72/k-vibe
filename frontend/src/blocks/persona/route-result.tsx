@@ -1,13 +1,25 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Clock, ImageOff, MapPin, Plus, RotateCcw, Share2, Sparkles, X } from 'lucide-react'
+import { ImageOff, MapPin, Plus, RotateCcw, Share2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
 import { ZoomableImage } from '@/blocks/common/zoomable-image'
-import { totalRouteMinutes } from '@/lib/haversine'
-import { formatDuration, type RoutePlan, type RouteStop } from '@/lib/route-timing'
+import { haversineKm } from '@/lib/haversine'
+import type { RoutePlan, RouteStop } from '@/lib/route-timing'
 import { cn } from '@/lib/utils'
+
+function formatDistance(meters: number) {
+  return meters < 1000 ? `${Math.round(meters)}m` : `${(meters / 1000).toFixed(1)}km`
+}
+
+function totalRouteDistanceM(stops: RouteStop[]): number {
+  let total = 0
+  for (let i = 0; i < stops.length - 1; i++) {
+    total += haversineKm(stops[i].lat, stops[i].lng, stops[i + 1].lat, stops[i + 1].lng) * 1000
+  }
+  return total
+}
 
 interface RouteResultProps {
   plan: RoutePlan
@@ -72,12 +84,10 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
   }
 
   const includedStops = plan.stops.filter((stop) => !excludedIds.has(stop.id))
-  // 선별 후 남은 스팟들만 기준으로 도보시간을 다시 계산(제외된 스팟 사이는
+  // 선별 후 남은 스팟들만 기준으로 총 거리를 다시 계산(제외된 스팟 사이는
   // 건너뛰고 남은 스팟끼리 바로 연결된다고 가정) — 원래 전체 루트 기준
-  // walkingMinutes를 그대로 보여주면 몇 곳을 뺐는데도 숫자가 안 바뀌어 혼란스러움.
-  const includedWalkingMinutes = totalRouteMinutes(includedStops)
-  const includedStayMinutes = includedStops.reduce((sum, stop) => sum + stop.stayMinutes, 0)
-  const includedTotalMinutes = includedWalkingMinutes + includedStayMinutes
+  // 거리를 그대로 보여주면 몇 곳을 뺐는데도 숫자가 안 바뀌어 혼란스러움.
+  const includedDistanceM = totalRouteDistanceM(includedStops)
 
   function handleAddToRoute() {
     if (includedStops.length === 0) {
@@ -106,11 +116,10 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {[
           { label: t('persona.stops'), value: String(includedStops.length), icon: MapPin },
-          { label: t('persona.walking'), value: formatDuration(includedWalkingMinutes), icon: Clock },
-          { label: t('persona.total'), value: formatDuration(includedTotalMinutes), icon: Sparkles },
+          { label: t('persona.total_distance'), value: formatDistance(includedDistanceM), icon: MapPin },
         ].map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-xl bg-muted p-3 text-center">
             <Icon className="mx-auto mb-1 h-3.5 w-3.5 text-primary" />
@@ -156,9 +165,10 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
                           {t('persona.stop_excluded')}
                         </span>
                       )}
-                      <span className="ml-auto text-xs font-semibold text-primary">{stop.startTime}</span>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{stop.address}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {stop.address === '-' ? t('placeDetail.info_unavailable') : stop.address}
+                    </p>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground/90">{stop.description}</p>
                   </div>
                 </div>

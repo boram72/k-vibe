@@ -204,8 +204,7 @@
     "preview_eyebrow": "本地路线预览",
     "create_another": "创建另一条路线",
     "stops": "站点",
-    "walking": "步行",
-    "total": "总计",
+    "total_distance": "总距离",
     "exclude_stop": "移除",
     "include_stop": "添加",
     "stop_excluded": "已移除",
@@ -311,6 +310,7 @@
       "满意的话，点击“添加到路线”按钮保存吧！"
     ],
     "stops": "站点",
+    "total_distance": "总距离",
     "done": "完成",
     "walking": "步行",
     "total": "总计",

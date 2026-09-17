@@ -63,6 +63,10 @@ interface SpotListPanelProps {
   showAttractions: boolean
   onShowAttractionsChange: Dispatch<SetStateAction<boolean>>
   onSelectAttraction: (name: string) => void
+  // 2026-09 대화 중 요청 — 검색창에 행정구역이 아닌 랜드마크/상호명을 입력하면
+  // 자동 이동 대신 정확도순/거리순 후보 목록을 보여준다. null이면(검색 안 함/
+  // 행정구역 매칭) 이 섹션 자체를 숨김. 찜/관광지 추천보다도 위, 최우선 노출.
+  areaSearchLists: { relevance: Place[]; distance: Place[] } | null
   savedPlaces: Place[]
   places: Place[]
   isLoading: boolean
@@ -92,6 +96,7 @@ export function SpotListPanel({
   showAttractions,
   onShowAttractionsChange,
   onSelectAttraction,
+  areaSearchLists,
   savedPlaces,
   places,
   isLoading,
@@ -296,6 +301,33 @@ export function SpotListPanel({
     </div>
   )
 
+  // 2026-09 대화 중 요청 — 검색창 직접 입력(랜드마크/상호명) 결과 목록.
+  // 우선순위 최상단(찜보다도 위) — 지금 막 검색한 결과가 가장 먼저 보여야
+  // 함. 정확도순 목록이 위, 거리순 목록(정확도순과 겹치는 장소는 이미 제거된
+  // 상태로 넘어옴)이 아래. 클릭하면 다른 스팟 클릭과 동일하게 onSelectPlace
+  // 하나만 호출 — 검색 직후엔 아무것도 강조되지 않다가, 이 목록에서 실제로
+  // 고른 장소에만 빨간 핀이 붙는다(기존 "여러 결과 전부 빨간 핀" 방식과 달리
+  // 이 흐름은 목록에서 하나를 고르는 게 핵심이라 의도적으로 다르게 처리).
+  const areaSearchResultsSection = areaSearchLists && (areaSearchLists.relevance.length > 0 || areaSearchLists.distance.length > 0) && (
+    <div className="max-h-72 overflow-y-auto border-b border-border">
+      <div className="px-4 pb-1 pt-2">
+        <p className="text-sm font-bold text-foreground">{t('map.area_search_results_title')}</p>
+      </div>
+      {areaSearchLists.relevance.length > 0 && (
+        <div>
+          <p className="px-4 pb-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_relevance')}</p>
+          {areaSearchLists.relevance.map(renderPlaceRow)}
+        </div>
+      )}
+      {areaSearchLists.distance.length > 0 && (
+        <div>
+          <p className="px-4 pb-1 pt-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_distance')}</p>
+          {areaSearchLists.distance.map(renderPlaceRow)}
+        </div>
+      )}
+    </div>
+  )
+
   // 찜 목록은 자체적으로 높이를 제한(overflow-y-auto)해서, 아무리 많이
   // 찜해뒀어도 아래 "주변 스팟"/연관 관광지 추천이 화면 밖으로 밀려나지 않게 함.
   const savedListSection = showSavedList && (
@@ -314,7 +346,7 @@ export function SpotListPanel({
     </div>
   )
 
-  // 우선순위: 찜 > 관광지 추천 > 주변 스팟 — savedListSection과 동일하게
+  // 우선순위: 검색결과 > 찜 > 관광지 추천 > 주변 스팟 — savedListSection과 동일하게
   // 자체 높이 제한(overflow-y-auto)을 둬서, 추천 개수가 많아도 아래 "주변
   // 스팟" 목록이 화면 밖으로 밀려나지 않게 한다.
   const attractionsSection = showAttractions && (
@@ -382,6 +414,7 @@ export function SpotListPanel({
             {mobilePanelState !== "minimized" && (
               <>
                 {filterTabs}
+                {areaSearchResultsSection}
                 {savedListSection}
                 {attractionsSection}
                 {titleRow}
@@ -393,6 +426,7 @@ export function SpotListPanel({
       ) : (
         <>
           {searchAndFilter}
+          {areaSearchResultsSection}
           {savedListSection}
           {attractionsSection}
           {titleRow}

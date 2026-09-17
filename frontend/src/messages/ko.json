@@ -87,7 +87,10 @@
     "collapse_panel": "패널 접기",
     "expand_panel": "패널 펴기",
     "related_attractions_title": "이 지역 연관 관광지 추천",
-    "related_attractions_empty": "이 지역의 연관 관광지 데이터가 아직 없어요"
+    "related_attractions_empty": "이 지역의 연관 관광지 데이터가 아직 없어요",
+    "area_search_results_title": "검색 결과",
+    "area_search_relevance": "정확도순",
+    "area_search_distance": "거리순"
   },
   "placeDetail": {
     "add_to_route": "루트에 추가",

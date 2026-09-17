@@ -13,12 +13,13 @@ interface Coordinates {
   lng: number
 }
 
-export interface KakaoAreaSearchResult {
-  center: Coordinates
-  // 지역/주소 매칭이면 빈 배열(그 위치로 이동만, 강조 핀 없음). 상호명
-  // 매칭(keywordSearch 폴백)이면 찾은 업체들 — 지도에 빨간 핀으로 강조 표시됨.
-  places: Place[]
-}
+// 2026-09 대화 중 요청 — 주소/행정구역 매칭(예: "강남")이면 예전처럼 그
+// 위치로 바로 이동. 그 외(랜드마크/상호명, 예: "경복궁"/"인천공항")는 더 이상
+// 자동으로 첫 결과로 이동하지 않고, 정확도순/거리순 두 후보 목록을 그대로
+// 넘긴다 — 호출부가 목록으로 보여주고 사용자가 직접 고르게 한다.
+export type KakaoAreaSearchResult =
+  | { type: 'address'; center: Coordinates }
+  | { type: 'keyword'; relevance: Place[]; distance: Place[] }
 
 // 2026-09 QA — "강남"/"한강"처럼 지역명을 검색하면 원래는 keywordSearch(상호명
 // 검색 API)만 썼는데, 그건 "강남"이라는 글자가 들어간 업체(강남역, 강남세브란스
@@ -75,16 +76,21 @@ function toPlace(item: kakao.maps.services.PlacesSearchResultItem): Place {
   }
 }
 
-// 버그 수정 — "스타벅스"처럼 지역명이 안 붙은 상호명은 위치 힌트 없이
-// keywordSearch를 부르면 카카오가 전국 아무 지점이나 정확도순 1위로 돌려줄
-// 수 있다(실사용 중 "스타벅스" 검색 시 북한산 인근 지점으로 튀는 것 확인).
-// `near`(현재 지도 중심)를 location으로 넘기고 거리순 정렬을 시켜서 사용자
-// 주변 지점이 우선 나오게 한다.
-function keywordSearch(query: string, near?: Coordinates): Promise<Place[]> {
+// 2026-09 대화 중 요청 — "경복궁"/"인천공항"처럼 현재 위치에서 멀리 떨어진
+// 유일한 랜드마크를 검색하면, sort=distance가 오히려 결과를 망가뜨리는 버그를
+// 발견(현재 위치 근처의 이름만 겹치는 무관한 업체가 진짜 타겟보다 거리상
+// 가깝다는 이유로 1등으로 올라옴 — 예: "인천공항" 검색 시 서울 시내 대리주차
+// 업체가 실제 공항보다 위로 옴). sortByDistance를 분리해서, 정확도순
+// (기본 정렬, near는 지역 힌트로만 쓰이고 진짜 랜드마크가 정상적으로 1위로
+// 나옴)과 거리순을 각각 호출할 수 있게 한다.
+function keywordSearch(query: string, near: Coordinates | undefined, sortByDistance: boolean): Promise<Place[]> {
   return new Promise((resolve) => {
     const places = new kakao.maps.services.Places()
     const options = near
-      ? { location: new kakao.maps.LatLng(near.lat, near.lng), sort: kakao.maps.services.SortBy.DISTANCE }
+      ? {
+          location: new kakao.maps.LatLng(near.lat, near.lng),
+          ...(sortByDistance ? { sort: kakao.maps.services.SortBy.DISTANCE } : {}),
+        }
       : undefined
     places.keywordSearch(
       query,
@@ -107,10 +113,16 @@ export async function searchKakaoArea(query: string, near?: Coordinates): Promis
 
   const addressMatch = await addressSearch(trimmed)
   if (addressMatch) {
-    return { center: addressMatch, places: [] }
+    return { type: 'address', center: addressMatch }
   }
 
-  const places = await keywordSearch(trimmed, near)
-  if (places.length === 0) return null
-  return { center: { lat: places[0].lat, lng: places[0].lng }, places }
+  const [relevance, distance] = await Promise.all([
+    keywordSearch(trimmed, near, false),
+    keywordSearch(trimmed, near, true),
+  ])
+  if (relevance.length === 0 && distance.length === 0) return null
+
+  // 거리순 목록에 정확도순과 같은 장소가 또 나오면 중복 제거(대화로 확정).
+  const relevanceIds = new Set(relevance.map((p) => p.id))
+  return { type: 'keyword', relevance, distance: distance.filter((p) => !relevanceIds.has(p.id)) }
 }

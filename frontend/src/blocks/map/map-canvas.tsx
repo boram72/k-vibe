@@ -133,7 +133,13 @@ function MapActionButtons({ onRequestLocation }: { onRequestLocation: () => void
   const { t } = useTranslation()
   return (
     <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
-      <Button size="icon" onClick={onRequestLocation} title={t('map.refresh_location')} aria-label={t('map.refresh_location')}>
+      <Button
+        size="icon"
+        data-tour="map-locate"
+        onClick={onRequestLocation}
+        title={t('map.refresh_location')}
+        aria-label={t('map.refresh_location')}
+      >
         <LocateFixed className="h-4 w-4" />
       </Button>
     </div>

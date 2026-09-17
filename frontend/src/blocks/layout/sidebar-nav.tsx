@@ -10,6 +10,7 @@ export function SidebarNav() {
 
   return (
     <aside
+      data-tour="home-nav"
       className={cn(
         'hidden shrink-0 flex-col gap-1 border-r border-border bg-background p-2 md:flex',
         isCollapsed ? 'w-16' : 'w-60',

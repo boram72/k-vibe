@@ -11,6 +11,8 @@ import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona 
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
+import { useTourStore, hasSeenTour } from '@/store/tour-store'
+import { PERSONA_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n'
 
@@ -56,6 +58,7 @@ export default function PersonaPage() {
   const location = useLocation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const startTour = useTourStore((s) => s.start)
 
   const locale = i18n.language as Locale
 
@@ -76,6 +79,13 @@ export default function PersonaPage() {
     setHelp(t('persona.help_title'), t('persona.help_body'))
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
+
+  // 카드 목록(step1)일 때만 투어를 띄운다 — 홈에서 카드를 눌러 결과 화면으로
+  // 바로 들어온 경우(activePersonaId 있음)는 하이라이트할 그리드 자체가
+  // 안 보이므로 대상이 아니다.
+  useEffect(() => {
+    if (!activePersonaId && !hasSeenTour(PERSONA_TOUR_KEY)) startTour(PERSONA_TOUR_KEY)
+  }, [activePersonaId, startTour])
 
   const personasQuery = useQuery({
     queryKey: ['k-content-personas', locale],
@@ -204,7 +214,7 @@ export default function PersonaPage() {
           <div className="mt-4 h-1 rounded-full bg-primary" />
         </div>
 
-        <div className="rounded-xl bg-primary/[0.06] p-3">
+        <div data-tour="persona-grid" className="rounded-xl bg-primary/[0.06] p-3">
           <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
             {personasQuery.isPending &&
               Array.from({ length: 4 }).map((_, index) => (

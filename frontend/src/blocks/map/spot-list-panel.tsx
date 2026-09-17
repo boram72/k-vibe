@@ -237,7 +237,7 @@ export function SpotListPanel({
   // 모바일 최소화면(minimized)에서는 검색창 줄만 남기고 필터 탭은 숨겨야 해서
   // 두 조각으로 분리 — 데스크탑/기본·전체화면 모바일은 여전히 같이 렌더링.
   const searchRow = (
-    <div className="flex items-center gap-2 px-4 pb-2">
+    <div data-tour="map-search" className="flex items-center gap-2 px-4 pb-2">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -260,7 +260,7 @@ export function SpotListPanel({
   )
 
   const filterTabs = (
-    <div className="px-4 pb-2">
+    <div data-tour="map-filter" className="px-4 pb-2">
       <Tabs value={filterMode} onValueChange={(v) => onFilterModeChange(v as 'category' | 'star')}>
         <TabsList className="w-full">
           <TabsTrigger value="category" className="flex-1">
@@ -323,7 +323,11 @@ export function SpotListPanel({
     </div>
   )
 
-  const listRegion = <div className="min-h-0 flex-1 overflow-y-auto pb-4">{renderList()}</div>
+  const listRegion = (
+    <div data-tour="map-list" className="min-h-0 flex-1 overflow-y-auto pb-4">
+      {renderList()}
+    </div>
+  )
 
   // 모바일 3단계(minimized/default/full)와 데스크탑 접기/펴기(isCollapsed)는
   // 서로 별개 상태라 분리해서 계산 — 데스크탑 쪽은 기존 로직 그대로.

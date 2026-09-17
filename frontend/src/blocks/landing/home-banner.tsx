@@ -96,6 +96,7 @@ export function HomeBanner() {
               배치(대화로 확정) — 아래 모바일 전용 버튼과 중복 렌더. */}
           <Button
             size="lg"
+            data-tour="home-cta"
             className="mt-1 hidden bg-white text-rose-600 hover:bg-white/90 md:inline-flex"
             nativeButton={false}
             render={<Link to="route" />}
@@ -135,6 +136,7 @@ export function HomeBanner() {
       <div className="mt-4 flex justify-end md:hidden">
         <Button
           size="lg"
+          data-tour="home-cta"
           className="bg-white text-rose-600 hover:bg-white/90"
           nativeButton={false}
           render={<Link to="route" />}

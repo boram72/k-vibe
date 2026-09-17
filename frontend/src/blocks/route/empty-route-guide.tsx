@@ -63,8 +63,8 @@ export function EmptyRouteGuide() {
   const active = tabs.find((tab) => tab.key === activeKey) ?? tabs[0]
 
   return (
-    <div className="mx-auto mt-6 w-full max-w-md text-left">
-      <p className="mb-2 text-center text-xs font-semibold text-foreground/80">{t('route.empty_guide_title')}</p>
+    <div className="mx-auto mt-6 w-full max-w-md text-left md:max-w-xl">
+      <p className="mb-2 text-center text-xs font-semibold text-foreground/80 md:text-sm">{t('route.empty_guide_title')}</p>
 
       <div className="flex gap-1.5">
         {tabs.map((tab) => (
@@ -73,7 +73,7 @@ export function EmptyRouteGuide() {
             type="button"
             onClick={() => setActiveKey(tab.key)}
             className={cn(
-              'flex-1 rounded-lg px-2 py-2 text-center text-[11px] font-semibold transition-colors',
+              'flex-1 rounded-lg px-2 py-2 text-center text-[11px] font-semibold transition-colors md:py-2.5 md:text-sm',
               tab.key === activeKey ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
             )}
           >
@@ -82,17 +82,17 @@ export function EmptyRouteGuide() {
         ))}
       </div>
 
-      <div className="mt-2 rounded-xl border border-border bg-muted p-3">
-        <p className="mb-2 text-xs font-semibold text-foreground">{active.panelLabel}</p>
+      <div className="mt-2 rounded-xl border border-border bg-muted p-3 md:p-4">
+        <p className="mb-2 text-xs font-semibold text-foreground md:text-sm">{active.panelLabel}</p>
         <ol className="space-y-3">
           {active.steps.map((step, idx) => (
-            <li key={idx} className="space-y-1.5 text-xs leading-5 text-muted-foreground">
+            <li key={idx} className="space-y-1.5 text-xs leading-5 text-muted-foreground md:text-sm">
               <div className="flex gap-1.5">
                 <span className="shrink-0 font-semibold text-primary">{idx + 1}.</span>
                 <span>{renderStepText(step)}</span>
               </div>
               {active.images?.[idx] && (
-                <img src={active.images[idx]} alt="" className="mx-auto mt-1 w-56 rounded-lg border border-border shadow-sm" />
+                <img src={active.images[idx]} alt="" className="mx-auto mt-1 w-56 rounded-lg border border-border shadow-sm md:w-72" />
               )}
             </li>
           ))}

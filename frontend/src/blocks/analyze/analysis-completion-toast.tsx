@@ -45,14 +45,23 @@ export function AnalysisCompletionToast() {
     }
 
     const isSuccess = status === 'success'
-    const title = isSuccess
+    const rawMessage = isSuccess
       ? t('analyze.completion_toast_title')
       : t(errorKind === 'timeout' ? 'analyze.error_timeout' : 'analyze.error_generic')
-    const actionLabel = isSuccess ? t('analyze.completion_toast_view') : t('analyze.retry')
+    // 실패 문구는 두 문장(원인 안내 + 재시도 안내)이라 title/description을
+    // 나눠서 줄바꿈으로 구분하면 더 읽기 편하다(사용자 피드백) — 번역
+    // 문자열에 '\n'으로 문장 경계를 표시해두고 여기서 나눈다.
+    const [title, description] = rawMessage.split('\n')
+    // '다시 시도'라고 하면 시스템이 알아서 재시도하는 것처럼 보이는데, 실제로는
+    // 그냥 SNS 분석기 화면으로 이동만 시킨다(실패 원인이 URL 자체인 경우가 많아서
+    // 같은 요청을 자동으로 재시도해봐야 소용없다) — 그래서 실패 케이스는 인라인
+    // 카드의 진짜 재시도 버튼(analyze.retry)과 다른 문구를 쓴다(사용자 피드백).
+    const actionLabel = isSuccess ? t('analyze.completion_toast_view') : t('analyze.error_toast_action')
     const showToast = isSuccess ? toast.success : toast.error
 
     showToast(title, {
       id: TOAST_ID,
+      description,
       duration: Infinity, // 닫기 전까진 유지 — acknowledgeCompletion으로만 사라짐
       action: {
         label: actionLabel,

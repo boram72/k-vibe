@@ -131,18 +131,29 @@ export default function AnalyzePage() {
           {isAnalyzing && <AnalysisProgress percent={progress} />}
 
           {hasError && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-              <p className="text-sm font-semibold text-destructive">{t('analyze.error_title')}</p>
-              <p className="mt-1 text-xs leading-5 text-destructive/80">
-                {t(errorKind === 'timeout' ? 'analyze.error_timeout' : 'analyze.error_generic')}
-              </p>
-              <button
-                type="button"
-                onClick={() => runAnalysis(url)}
-                className="mt-2 text-xs font-semibold text-destructive underline"
-              >
-                {t('analyze.retry')}
-              </button>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4">
+                <p className="flex-1 text-xs leading-5 text-destructive">
+                  {t(errorKind === 'timeout' ? 'analyze.error_timeout' : 'analyze.error_generic')}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => runAnalysis(url)}
+                  className="shrink-0 bg-destructive/70 text-white hover:bg-destructive/85"
+                >
+                  {t('analyze.retry')}
+                </Button>
+              </div>
+
+              {errorKind !== 'timeout' && (
+                <div className="rounded-xl border border-border bg-muted p-3">
+                  <p className="mb-1.5 text-xs font-semibold text-foreground/80">{t('analyze.error_check_hint')}</p>
+                  <ul className="space-y-1 text-xs leading-5 text-muted-foreground">
+                    <li>1) {t('analyze.error_reason_unrelated')}</li>
+                    <li>2) {t('analyze.error_reason_korea_only')}</li>
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 

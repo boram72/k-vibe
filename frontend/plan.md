@@ -981,6 +981,9 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
 ## ⬜ 2026-09 지도 수정 2차 + 기타 수정 (대화 중 요청, 담당자: 보람)
 
 ### K-Vibe 지도
+- [x] **1. "이 지역에서 검색" 버튼 색상 변경** — `map-canvas.tsx`의 `SearchAreaButton`이 `bg-popover/90`(테마 기반 반투명, 지도와 밝기가 비슷해 잘 안 보임)였던 것을 `bg-neutral-900/90 text-white`(검정 계열)로 변경, 테두리(`border-border`)도 검정 배경에 불필요해 제거. 카카오맵 API 키가 등록된 포트(5173)에서만 로드되는 제약으로 색상 자체는 코드 리뷰+`tsc`/`eslint`로 검증(라이브 스크린샷은 5173에서 사용자 확인).
+- [x] **2. 상세 팝업 내 공유 버튼 삭제** — `place-detail-sheet.tsx`의 공유 버튼과 `handleShare` 함수, 안 쓰는 `Share2` import, `placeDetail.share`/`share_copied` i18n 키(4개 언어) 제거. Playwright로 공유 버튼 미노출 + "루트에 추가" 버튼 정상 동작 확인.
+- [x] **3. 빨간 강조 핀(SearchResultPin) z-index 최상위로 올리기** — TourAPI 스팟이 몰려있는 지역에서는 다른 카테고리 핀에 가려서 빨간 핀(선택/검색 강조)이 안 보임. **원인**: 기존엔 `zIndex={selected ? 2 : 1}`로 "지금 선택된 핀"만 우선순위를 높였는데, 다중 검색결과(`highlightIds`) 중 선택되지 않은 나머지 빨간 핀들은 일반 카테고리 핀과 동일한 zIndex(1)라 렌더 순서에 따라 가려질 수 있었음. **수정**: `showSearchPin`(검색/선택 강조 대상)이면 무조건 일반 핀보다 위(10), 그중 실제 선택된 것은 최상위(20)로 분리 — `KakaoMapCanvas`(`zIndex` prop)와 `PercentMapCanvas`(CSS `z-10`/`z-20` 클래스) 둘 다 동일하게 적용. Playwright로 검색 시 강조 핀들이 새 z-index 클래스를 받는 것 확인.
 - [ ] **1. "이 지역에서 검색" 버튼 색상 변경** — 지도 위에 뜨는 이 버튼이 지도 밝기와 버튼 밝기가 비슷해서 잘 안 보임. 검정색 계열로 변경 필요.
 - [ ] **2. 상세 팝업 내 공유 버튼 삭제** — `place-detail-sheet.tsx`의 공유 버튼 제거.
 - [ ] **3. 빨간 강조 핀(SearchResultPin) z-index 최상위로 올리기** — TourAPI 스팟이 몰려있는 지역에서는 다른 카테고리 핀에 가려서 빨간 핀(선택/검색 강조)이 안 보임.

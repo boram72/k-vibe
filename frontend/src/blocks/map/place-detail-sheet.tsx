@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Heart, MapPin, Phone, Plus, Share2 } from 'lucide-react'
+import { ArrowLeft, Clock, Heart, MapPin, Phone, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -67,17 +67,6 @@ export function PlaceDetailSheet({
     })
     toast.success(added ? t('placeDetail.added_to_route') : t('common.already_in_route'))
     onClose()
-  }
-
-  async function handleShare() {
-    if (!place) return
-    const url = `${window.location.origin}${window.location.pathname}`
-    try {
-      await navigator.clipboard.writeText(url)
-      toast.success(t('placeDetail.share_copied'))
-    } catch {
-      toast.error(t('common.error_title'))
-    }
   }
 
   if (!place) return null
@@ -173,9 +162,6 @@ export function PlaceDetailSheet({
           {t('placeDetail.add_to_route')}
         </Button>
       )}
-      <Button variant="outline" size="icon" onClick={handleShare} aria-label={t('placeDetail.share')}>
-        <Share2 />
-      </Button>
     </>
   )
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageOff, Plus, RotateCcw, Share2, X } from 'lucide-react'
+import { ImageOff, Plus, RotateCcw, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -28,7 +28,6 @@ interface RouteResultProps {
   // 추가할 수 있도록, 이 화면에서 고른 스팟 목록을 인자로 넘긴다(DB/localStorage
   // 저장 없는 화면 로컬 state — 아래 excludedIds 참고).
   onAddToRoute: (stops: RouteStop[]) => void
-  onShare: () => void
 }
 
 // stop.characterImageUrl은 실제 스타 초상권 대신 "이 장소의 무드"를 전달하는
@@ -63,7 +62,7 @@ function StopCharacterImage({ stop }: { stop: RouteStop }) {
   )
 }
 
-export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResultProps) {
+export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
   const { t } = useTranslation()
   // 페르소나 step2 스팟 추가/제거 — DB/localStorage 저장 없이 이 화면에서만
   // 사는 단발성 선택 상태. plan(prop)이 바뀌면(다른 페르소나 선택/재생성) 이
@@ -193,16 +192,10 @@ export function RouteResult({ plan, onReset, onAddToRoute, onShare }: RouteResul
         })}
       </div>
 
-      <div className="flex gap-2">
-        <Button className="flex-1" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
-          <Plus className="h-3.5 w-3.5" />
-          {t('persona.add_to_route')}
-        </Button>
-        <Button variant="outline" onClick={onShare}>
-          <Share2 className="h-3.5 w-3.5" />
-          {t('persona.share')}
-        </Button>
-      </div>
+      <Button className="w-full" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
+        <Plus className="h-3.5 w-3.5" />
+        {t('persona.add_to_route')}
+      </Button>
     </div>
   )
 }

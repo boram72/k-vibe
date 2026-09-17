@@ -60,20 +60,27 @@ export function ZoomableImage({ src, alt, className, referrerPolicy, onError, fi
           className={cn(className, 'pointer-events-none')}
         />
       </span>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="max-w-[min(90vw,24rem)] border-none bg-transparent p-0 shadow-none sm:max-w-sm"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <DialogTitle className="sr-only">{alt}</DialogTitle>
-          <img
-            src={src}
-            alt={alt}
-            referrerPolicy={referrerPolicy}
-            className="h-auto w-full rounded-2xl object-cover"
-          />
-        </DialogContent>
-      </Dialog>
+      {/* 버그 수정 — DialogContent에만 stopPropagation을 걸어뒀더니, 확대
+          이미지 "바깥"(DialogOverlay/배경)을 눌러 닫을 때는 안 걸려서 그
+          클릭이 React 트리를 타고 부모 카드의 onClick(선택)까지 그대로
+          전파됐음(base-ui Dialog의 Overlay/Popup은 DOM상으로는
+          document.body에 포탈되지만, React 합성 이벤트는 실제 DOM이 아니라
+          JSX 트리를 따라 버블링하기 때문 — 포탈의 흔한 함정). Dialog 전체를
+          감싸는 wrapper에 stopPropagation을 걸어서 Overlay/Popup 클릭 전부를
+          여기서 막는다. */}
+      <div onClick={(event) => event.stopPropagation()}>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-[min(90vw,24rem)] border-none bg-transparent p-0 shadow-none sm:max-w-sm">
+            <DialogTitle className="sr-only">{alt}</DialogTitle>
+            <img
+              src={src}
+              alt={alt}
+              referrerPolicy={referrerPolicy}
+              className="h-auto w-full rounded-2xl object-cover"
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
     </>
   )
 }

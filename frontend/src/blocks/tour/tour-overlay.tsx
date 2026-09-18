@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowDown, X } from 'lucide-react'
@@ -80,6 +80,19 @@ export function TourOverlay() {
   const steps = activeTourKey ? TOUR_REGISTRY[activeTourKey] : null
   const step = steps?.[stepIndex] ?? null
 
+  // sonner 토스트가 자체 CSS로 z-index를 최상단 고정해둬서(index.css의
+  // body[data-tour-active] 규칙 참고), 투어와 무관한 알림이 어둡게 깔린
+  // 배경 위에 그대로 떠 튜토리얼 내용처럼 도드라져 보였다(사용자 피드백).
+  // 투어가 떠 있는 동안만 body에 표시를 남겨서 토스트도 같이 어두워지게
+  // 하고, 투어가 끝나면 바로 원래대로 되돌린다.
+  useEffect(() => {
+    if (!step) return
+    document.body.setAttribute('data-tour-active', '')
+    return () => {
+      document.body.removeAttribute('data-tour-active')
+    }
+  }, [step])
+
   useLayoutEffect(() => {
     if (!step) return
 
@@ -89,6 +102,10 @@ export function TourOverlay() {
     // 클릭까지 진행으로 치지 않도록 실제 버튼/링크 안에서 난 클릭만 인정한다.
     let attachedTarget: HTMLElement | null = null
     let hasScrolledIntoView = false
+    // 이 스텝에서 마지막으로 "정상"으로 받아들인 측정값 — 스텝이 바뀌면
+    // 이펙트 전체가 다시 실행되면서 자동으로 초기화되므로, 다른 스텝의
+    // 타겟과 잘못 비교될 일은 없다.
+    let lastGoodRect: DOMRect | null = null
     function handleRealClick(event: MouseEvent) {
       if (event.target instanceof Element && event.target.closest('button, a')) next(steps!.length)
     }
@@ -103,7 +120,21 @@ export function TourOverlay() {
         target.scrollIntoView({ block: 'center' })
         hasScrolledIntoView = true
       }
-      setRect(target?.getBoundingClientRect() ?? null)
+      const nextRect = target?.getBoundingClientRect() ?? null
+      // 드물게 레이아웃이 아직 자리잡지 않은 프레임(예: 리렌더 직후 폰트/
+      // 자식 요소가 아직 확정되기 전)에서 실제 요소보다 훨씬 좁은 rect가
+      // 잠깐 잡히는 경우가 있었다(사용자 피드백: 하이라이트가 실제 요소
+      // 테두리보다 좁게 잘려서 안 맞아 보임 — 안의 텍스트가 그 좁은 구멍
+      // 사이로 한 글자씩만 보이는 정도로 심하게 어긋난 사례도 있었음). 같은
+      // 스텝 안에서 직전 정상 측정치보다 폭이 60% 넘게 줄어들면 이번 측정은
+      // 버리고 다음 200ms 폴링에서 다시 잡는다 — 최악의 경우도 한 프레임
+      // 정도만 갱신이 늦어질 뿐이라 체감상 티가 안 난다.
+      if (lastGoodRect && nextRect && nextRect.width < lastGoodRect.width * 0.4) {
+        // skip — keep showing the last good rect until the next poll
+      } else {
+        lastGoodRect = nextRect
+        setRect(nextRect)
+      }
       // 말풍선 실제 높이를 측정해서 below/above 판단에 쓴다 — 고정 추정치
       // (TOOLTIP_HEIGHT_ESTIMATE)만 쓰면 내용이 짧은 단계에서도 여백이 부족한
       // 것처럼 계산돼 불필요하게 "위쪽"으로 밀려나는 경우가 있었다(사용자

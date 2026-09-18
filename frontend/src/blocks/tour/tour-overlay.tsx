@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowDown, X } from 'lucide-react'
@@ -79,6 +79,19 @@ export function TourOverlay() {
 
   const steps = activeTourKey ? TOUR_REGISTRY[activeTourKey] : null
   const step = steps?.[stepIndex] ?? null
+
+  // sonner 토스트가 자체 CSS로 z-index를 최상단 고정해둬서(index.css의
+  // body[data-tour-active] 규칙 참고), 투어와 무관한 알림이 어둡게 깔린
+  // 배경 위에 그대로 떠 튜토리얼 내용처럼 도드라져 보였다(사용자 피드백).
+  // 투어가 떠 있는 동안만 body에 표시를 남겨서 토스트도 같이 어두워지게
+  // 하고, 투어가 끝나면 바로 원래대로 되돌린다.
+  useEffect(() => {
+    if (!step) return
+    document.body.setAttribute('data-tour-active', '')
+    return () => {
+      document.body.removeAttribute('data-tour-active')
+    }
+  }, [step])
 
   useLayoutEffect(() => {
     if (!step) return

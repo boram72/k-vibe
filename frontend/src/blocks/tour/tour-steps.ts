@@ -5,6 +5,11 @@ export interface TourStep {
   target: string
   titleKey: string
   bodyKey: string
+  // true면 하이라이트가 클릭을 가로채지 않고 실제 요소로 그대로 전달한다 —
+  // 그 안의 버튼/링크를 실제로 누르면 그 자리에서 바로 다음 단계로 넘어간다
+  // (기본은 false: "다음" 버튼으로만 진행하는 안전한 방식). 사용자가 실제로
+  // 뭔가를 고르는 게 자연스러운 단계(예: 페르소나 카드 선택)에서만 켠다.
+  clickThrough?: boolean
 }
 
 export const HOME_TOUR_KEY = 'home'
@@ -28,7 +33,8 @@ export const MAP_TOUR_STEPS: TourStep[] = [
 ]
 
 export const PERSONA_TOUR_STEPS: TourStep[] = [
-  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body' },
+  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true },
+  { target: 'persona-add-to-route', titleKey: 'tour.persona_add_title', bodyKey: 'tour.persona_add_body', clickThrough: true },
 ]
 
 export const TOUR_REGISTRY: Record<string, TourStep[]> = {

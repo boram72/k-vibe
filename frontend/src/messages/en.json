@@ -467,7 +467,9 @@
     "map_list_title": "Tap a place for details",
     "map_list_body": "Tap a place to see details and add it to your route.",
     "persona_grid_title": "Pick a favorite artist or theme",
-    "persona_grid_body": "Tap a card and a one-day route is generated right away."
+    "persona_grid_body": "Tap a card and a one-day route is generated right away.",
+    "persona_add_title": "Save this route",
+    "persona_add_body": "Tap this button to save the route you just previewed to My Route."
   },
   "welcome": {
     "title": "Welcome to K-Vibe!",

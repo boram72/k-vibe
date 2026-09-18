@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { useTourStore } from '@/store/tour-store'
 import { TOUR_REGISTRY } from './tour-steps'
 
@@ -62,8 +63,9 @@ function computeTooltipPosition(box: Box | null, tooltipW: number, tooltipH: num
 
 // 코치마크 오버레이 — 실제 화면 요소를 어둡게 가려진 배경 위에서 하이라이트하고
 // 옆에 말풍선으로 설명한다(정적 텍스트 팝업이던 기존 도움말과 다른 점).
-// 지금은 "다음" 버튼으로만 진행하는 안전한 버전 — 하이라이트된 실제 버튼을
-// 눌러도 다음 단계로 넘어가는 인터랙션은 이 프로토타입을 확인한 뒤 추가한다.
+// 기본은 "다음" 버튼으로만 진행하는 안전한 방식이고, clickThrough가 켜진
+// 단계(예: 페르소나 카드 선택)에서는 하이라이트된 실제 버튼을 눌러도 그
+// 자리에서 바로 다음 단계로 넘어간다(사용자 요청).
 export function TourOverlay() {
   const { t } = useTranslation()
   const activeTourKey = useTourStore((s) => s.activeTourKey)
@@ -77,21 +79,54 @@ export function TourOverlay() {
 
   useLayoutEffect(() => {
     if (!step) return
-    function measure() {
-      setRect(findVisibleTarget(step!.target)?.getBoundingClientRect() ?? null)
+
+    // clickThrough 단계는 하이라이트된 실제 요소 안의 버튼/링크를 누르면 그
+    // 클릭이 페이지에도 그대로 전달되면서(아래 하이라이트 박스의
+    // pointer-events-none) 동시에 투어도 다음 단계로 넘어간다 — 빈 여백
+    // 클릭까지 진행으로 치지 않도록 실제 버튼/링크 안에서 난 클릭만 인정한다.
+    let attachedTarget: HTMLElement | null = null
+    let hasScrolledIntoView = false
+    function handleRealClick(event: MouseEvent) {
+      if (event.target instanceof Element && event.target.closest('button, a')) next(steps!.length)
     }
+
+    function measure() {
+      const target = findVisibleTarget(step!.target)
+      // 타겟이 화면 밖(스크롤 아래)에 있으면 좌표 계산이 전부 어긋나므로
+      // (예: 결과 화면 맨 아래 "루트에 추가" 버튼), 새로 찾은 첫 순간에 한
+      // 번만 화면 안으로 스크롤한다 — 매 측정마다 하면 사용자가 직접
+      // 스크롤 중일 때 자꾸 되돌아가서 방해된다.
+      if (target && !hasScrolledIntoView) {
+        target.scrollIntoView({ block: 'center' })
+        hasScrolledIntoView = true
+      }
+      setRect(target?.getBoundingClientRect() ?? null)
+      if (step!.clickThrough && target && target !== attachedTarget) {
+        attachedTarget?.removeEventListener('click', handleRealClick)
+        target.addEventListener('click', handleRealClick)
+        attachedTarget = target
+      }
+    }
+
     measure()
     // 다음 프레임에 한 번 더 재측정 — 페이지 전환 직후 레이아웃이 아직 확정되지
     // 않은 상태에서 첫 측정이 어긋나는 경우를 보정한다.
     const raf = requestAnimationFrame(measure)
     window.addEventListener('resize', measure)
     window.addEventListener('scroll', measure, true)
+    // 타겟이 비동기로 나중에 나타나는 경우(예: 페르소나 카드 선택 후 결과
+    // 화면이 로딩되고 나서야 실제 버튼이 생기는 경우)를 대비한 짧은 폴링 —
+    // resize/scroll 이벤트만으로는 새로 나타난 요소를 감지할 수 없다.
+    const poll = window.setInterval(measure, 200)
+
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
+      window.clearInterval(poll)
+      attachedTarget?.removeEventListener('click', handleRealClick)
     }
-  }, [step, stepIndex])
+  }, [step, stepIndex, steps, next])
 
   if (!step || !steps) return null
 
@@ -109,8 +144,12 @@ export function TourOverlay() {
   const tooltipWidth = Math.min(TOOLTIP_MAX_WIDTH, viewportW - VIEWPORT_MARGIN * 2)
   const { top: tooltipTop, left: tooltipLeft } = computeTooltipPosition(box, tooltipWidth, TOOLTIP_HEIGHT_ESTIMATE, viewportW, viewportH)
 
+  // clickThrough 단계는 바깥 전체를 pointer-events-none으로 풀어서 하이라이트
+  // 박스/어둡게 처리된 배경이 클릭을 가로채지 않게 한다 — 말풍선만은
+  // 명시적으로 다시 pointer-events-auto를 줘서 그 안 버튼은 그대로 눌린다
+  // (pointer-events는 상속되는 속성이라 부모에서 꺼지면 자식도 같이 꺼짐).
   return createPortal(
-    <div className="fixed inset-0 z-200">
+    <div className={cn('fixed inset-0 z-200', step.clickThrough && 'pointer-events-none')}>
       {box ? (
         <div
           className="absolute rounded-2xl border-2 border-primary transition-all duration-300"
@@ -121,7 +160,7 @@ export function TourOverlay() {
       )}
 
       <div
-        className="absolute rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300"
+        className="pointer-events-auto absolute rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300"
         style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
       >
         <div className="mb-2 flex items-center justify-between">

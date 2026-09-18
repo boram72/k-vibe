@@ -192,7 +192,7 @@ export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
         })}
       </div>
 
-      <Button className="w-full" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
+      <Button data-tour="persona-add-to-route" className="w-full" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
         <Plus className="h-3.5 w-3.5" />
         {t('persona.add_to_route')}
       </Button>

@@ -467,7 +467,9 @@
     "map_list_title": "장소를 눌러 자세히 보세요",
     "map_list_body": "장소를 누르면 상세 정보를 보고 내 루트에 추가할 수 있어요.",
     "persona_grid_title": "좋아하는 아티스트나 테마를 골라보세요",
-    "persona_grid_body": "카드를 누르면 그 자리에서 바로 하루 여행 루트가 만들어져요."
+    "persona_grid_body": "카드를 누르면 그 자리에서 바로 하루 여행 루트가 만들어져요.",
+    "persona_add_title": "루트에 저장해보세요",
+    "persona_add_body": "이 버튼을 누르면 지금 본 루트가 내 루트에 저장돼요."
   },
   "welcome": {
     "title": "K-Vibe에 오신 것을 환영해요!",

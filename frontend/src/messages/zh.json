@@ -467,7 +467,9 @@
     "map_list_title": "点击地点查看详情",
     "map_list_body": "点击地点可以查看详细信息，并添加到我的路线。",
     "persona_grid_title": "挑选喜欢的艺人或主题",
-    "persona_grid_body": "点击卡片，即可立即生成一日路线。"
+    "persona_grid_body": "点击卡片，即可立即生成一日路线。",
+    "persona_add_title": "保存这条路线",
+    "persona_add_body": "点击这个按钮，即可把刚看到的路线保存到我的路线。"
   },
   "welcome": {
     "title": "欢迎来到K-Vibe!",

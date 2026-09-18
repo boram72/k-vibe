@@ -467,7 +467,9 @@
     "map_list_title": "場所をタップして詳細を見ましょう",
     "map_list_body": "場所をタップすると詳細情報を見たり、マイルートに追加できます。",
     "persona_grid_title": "好きなアーティストやテーマを選んでみましょう",
-    "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。"
+    "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。",
+    "persona_add_title": "ルートを保存してみましょう",
+    "persona_add_body": "このボタンを押すと、今見たルートがマイルートに保存されます。"
   },
   "welcome": {
     "title": "K-Vibeへようこそ!",

@@ -7,6 +7,10 @@ export interface RouteStop {
   category: string
   address: string
   crowdLevel: CrowdLevel
+  // 0~5점 평점. 백엔드는 항상 내려주지만(personaRouteService), 프론트 mock
+  // fallback(PERSONA_FALLBACKS)은 일부만 채워져 있을 수 있어 선택 필드로 둔다
+  // — RouteResult가 값이 있을 때만 등급색 별점을 표시.
+  rating?: number
   lat: number
   lng: number
   stayMinutes: number

@@ -80,3 +80,24 @@ def delete_review(place_id: str, review_id: str, username: str) -> bool:
     if deleted:
         _recompute_location_rating(place_id)
     return deleted
+
+
+def update_review(place_id: str, review_id: str, username: str, rating: int, content: str) -> dict | None:
+    """본인 리뷰만 수정 가능 — delete_review와 동일하게 username까지 조건에 건다.
+
+    수정할 리뷰가 없으면(다른 사람 리뷰이거나 존재하지 않음) None을 반환한다.
+    """
+    client = get_supabase_client()
+    result = (
+        client.table(TABLE)
+        .update({"rating": rating, "content": content})
+        .eq("id", review_id)
+        .eq("username", username)
+        .execute()
+    )
+    if not result.data:
+        return None
+    updated = result.data[0]
+    _recompute_location_rating(place_id)
+    updated["display_name"] = userinfo.get_display_names([username]).get(username)
+    return updated

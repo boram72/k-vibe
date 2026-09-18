@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageOff, Plus, RotateCcw, X } from 'lucide-react'
+import { ImageOff, Plus, RotateCcw, Star, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -11,6 +11,22 @@ import { cn } from '@/lib/utils'
 
 function formatDistance(meters: number) {
   return meters < 1000 ? `${Math.round(meters)}m` : `${(meters / 1000).toFixed(1)}km`
+}
+
+// 0점대(빨강)~5점대(초록) 단계별 그라데이션. 인덱스 = Math.floor(rating),
+// 5.0은 배열 끝(초록)까지 그대로 써서 별도 분기 없이 클램프만 하면 됨.
+const RATING_COLOR_STEPS = [
+  'text-red-600',
+  'text-red-500',
+  'text-orange-500',
+  'text-amber-500',
+  'text-lime-500',
+  'text-emerald-500',
+]
+
+function ratingTextClass(rating: number): string {
+  const step = Math.min(RATING_COLOR_STEPS.length - 1, Math.max(0, Math.floor(rating)))
+  return RATING_COLOR_STEPS[step]
 }
 
 function totalRouteDistanceM(stops: RouteStop[]): number {
@@ -158,6 +174,17 @@ export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
                         {stop.name}
                       </p>
                       <CrowdBadge level={stop.crowdLevel} />
+                      {typeof stop.rating === 'number' && (
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-0.5 text-xs font-semibold',
+                            ratingTextClass(stop.rating),
+                          )}
+                        >
+                          <Star className="h-3 w-3 fill-current" />
+                          {stop.rating.toFixed(1)}
+                        </span>
+                      )}
                       {isExcluded && (
                         <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                           {t('persona.stop_excluded')}

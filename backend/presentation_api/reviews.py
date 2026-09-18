@@ -37,3 +37,14 @@ def delete_review(place_id: str, review_id: str, username: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다.")
     return {"deleted": True}
+
+
+@router.patch("/{place_id}/{review_id}")
+def update_review(place_id: str, review_id: str, body: ReviewCreateRequest):
+    content = body.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="리뷰 내용을 입력해주세요.")
+    updated = reviewinfo.update_review(place_id, review_id, body.username, body.rating, content)
+    if not updated:
+        raise HTTPException(status_code=404, detail="리뷰를 찾을 수 없습니다.")
+    return updated

@@ -467,7 +467,17 @@
     "map_list_title": "Tap a place for details",
     "map_list_body": "Tap a place to see details and add it to your route.",
     "persona_grid_title": "Pick a favorite artist or theme",
-    "persona_grid_body": "Tap a card and a one-day route is generated right away."
+    "persona_grid_body": "Tap a card and a one-day route is generated right away.",
+    "persona_exclude_title": "Remove spots you don't want",
+    "persona_exclude_body": "Tap the X to exclude this spot from the route. Make it your own!",
+    "route_drag_title": "Drag the handle to reorder",
+    "route_drag_body": "Press and drag this handle up or down to change the visit order.",
+    "route_complete_title": "Check off places you've visited",
+    "route_complete_body": "Tap this button to mark a stop as complete.",
+    "route_location_title": "Check the distance to your next stop",
+    "route_location_body": "Tap here to see how far you are from the next place.",
+    "route_actions_title": "Share or reset your route",
+    "route_actions_body": "Share your finished route with friends, or start over from scratch."
   },
   "welcome": {
     "title": "Welcome to K-Vibe!",

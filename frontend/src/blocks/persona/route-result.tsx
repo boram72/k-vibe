@@ -174,6 +174,7 @@ export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
                   type="button"
                   size="icon"
                   variant="ghost"
+                  data-tour="persona-exclude"
                   className={cn(
                     'h-5 w-5 shrink-0 self-start rounded-full',
                     isExcluded

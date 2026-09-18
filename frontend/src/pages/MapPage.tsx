@@ -175,6 +175,19 @@ export default function MapPage() {
   const [queryCenter, setQueryCenter] = useState(effectiveCoords)
   const queryCoords = focusPlaces[0] ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng } : queryCenter
 
+  // 4번(plan.md) — "지금 지도가 실제로 보여주는 위치"를 MapCanvas가 그대로
+  // 올려준다(드래그 중/장소 선택 팬/확정된 center 변경 전부 포함). 상호명
+  // 검색(검색창)/관광지 추천 클릭이 카카오 keywordSearch에 넘기는 위치
+  // 힌트(near)가 지금은 이걸 몰라서 effectiveCoords(마지막으로 "확정"된 검색
+  // 중심)만 써서, 드래그나 장소 선택으로 카메라가 이미 다른 곳으로 옮겨간
+  // 뒤에도 검색 힌트만 옛 위치인 채로 어긋나던 문제 — 예: 서울에서 "불국사"를
+  // 검색해 클릭하면 경주로 카메라는 이동하지만(handleSelectPlace는
+  // searchCenter를 안 건드림), 그 직후 검색 힌트는 여전히 서울 근처였음.
+  // searchCenter/queryCenter(=/places 재조회, 실제 검색 확정 상태)는 이 값과
+  // 완전히 무관 — 이 state는 검색 힌트 계산에만 쓰이고, 지도 데이터 재조회나
+  // center prop 자체를 절대 건드리지 않는다.
+  const [realCameraCenter, setRealCameraCenter] = useState(effectiveCoords)
+
   function handleRequestLocation() {
     setSearchCenter(null)
     setKakaoSearchResults([])
@@ -234,7 +247,7 @@ export default function MapPage() {
 
   function handleSearchArea() {
     if (!search.trim() || areaSearchMutation.isPending) return
-    areaSearchMutation.mutate({ query: search, near: effectiveCoords })
+    areaSearchMutation.mutate({ query: search, near: realCameraCenter })
   }
 
   // 6번 — "관광지 추천" 리스트 항목 클릭. TourAPI 연관관광지 응답엔 좌표가
@@ -242,7 +255,7 @@ export default function MapPage() {
   // 검색창(search)은 건드리지 않음 — 사용자가 타이핑한 검색어가 아니라
   // 목록 클릭이라 검색창에 남길 이유가 없음(대화 중 요청).
   const attractionSearchMutation = useMutation({
-    mutationFn: (name: string) => searchKakaoArea(name, effectiveCoords),
+    mutationFn: (name: string) => searchKakaoArea(name, realCameraCenter),
     onSuccess: (result) => {
       if (!result) {
         toast.error(t('map.search_area_not_found'))
@@ -466,6 +479,7 @@ export default function MapPage() {
             setSearchCenter(coord)
             setQueryCenter(coord)
           }}
+          onCameraCenterChange={setRealCameraCenter}
           myLocation={isPrecise ? coords : null}
           highlightIds={kakaoSearchResultIds}
           compact={!isDesktop && mobilePanelState === 'full'}

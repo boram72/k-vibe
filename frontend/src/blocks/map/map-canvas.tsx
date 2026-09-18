@@ -35,6 +35,19 @@ interface MapCanvasProps {
   // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
   // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
   onSearchArea?: (coords: Coordinates) => void
+  // 4번(plan.md) — "지금 지도가 실제로 보여주고 있는 위치"를 부모(MapPage)에
+  // 그대로 올려준다. 드래그(아직 "이 지역에서 검색" 미확정), 장소 선택으로
+  // 카메라가 팬되는 경우(검색 후보 목록 클릭 등 selectedPlaceId 변경), GPS
+  // 갱신/검색 확정(center prop 변경) 전부 포함 — 검색창 직접 입력(상호명
+  // 검색)이 카카오 keywordSearch에 넘기는 위치 힌트(near)가 지금은 이걸 몰라서
+  // "마지막으로 확정된 검색 중심"(effectiveCoords)만 쓰는 바람에, 드래그나
+  // 장소 선택으로 카메라가 이미 다른 곳으로 옮겨간 뒤에도 검색 힌트만 옛
+  // 위치인 채로 어긋나는 문제가 있었음(예: 서울에서 "불국사" 클릭 → 경주로
+  // 이동 → 바로 "스타벅스" 검색 → 여전히 서울 근처 결과가 나옴).
+  // searchCenter/queryCenter(=/places 재조회, 실제 검색 확정 상태)는 이 값과
+  // 완전히 무관 — 이 콜백은 검색 힌트 계산용 참고 상태만 올려줄 뿐, 지도
+  // 데이터 재조회나 지도 중심(center prop) 자체를 절대 건드리지 않는다.
+  onCameraCenterChange?: (coords: Coordinates) => void
   // 팀 태스크보드 12번 — 실제 GPS 실측값일 때만 부모(MapPage)가 채워서 내려줌
   // (마지막 위치 캐시/서울 폴백일 땐 null로 내려와 마커를 안 그림 — 실제로 그
   // 자리에 있는 것처럼 오해하지 않도록). route-mini-map.tsx의 빨간 펄스
@@ -293,6 +306,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     locationLabel,
     isAnalysisResult,
     onSearchArea,
+    onCameraCenterChange,
     myLocation,
     compact,
     highlightIds,
@@ -351,6 +365,15 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     const place = places.find((p) => p.id === selectedPlaceId)
     if (place) setFocusCenter({ lat: place.lat, lng: place.lng })
   }
+
+  // 4번(plan.md) — "실제로 지금 지도가 보여주는 위치"의 단일 소스. 드래그
+  // 중(pendingCenter)이 최우선, 그다음 장소 선택으로 팬된 위치(focusCenter),
+  // 둘 다 없으면 확정된 center prop. 위 onCameraCenterChange 주석 참고.
+  const realCameraCenter = pendingCenter ?? focusCenter ?? center
+  useEffect(() => {
+    onCameraCenterChange?.(realCameraCenter)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realCameraCenter.lat, realCameraCenter.lng, onCameraCenterChange])
 
   useEffect(() => {
     if (!map || focusCenter || boundedPlaces.length === 0) return

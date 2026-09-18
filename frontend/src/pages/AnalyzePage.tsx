@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Compass, MapPin, Plus, Sparkles } from 'lucide-react'
+import { Compass, MapPin, PlayCircle, Plus, Sparkles } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
 import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
+import { PopularVideos } from '@/blocks/analyze/popular-videos'
 import { AnalysisProgress } from '@/blocks/analyze/analysis-progress'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
@@ -25,6 +26,7 @@ export default function AnalyzePage() {
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
   // 카드에 "추가됨" 표시를 하기 위한 상태 — 마운트 시점에 한 번 localStorage를
   // 읽어서 초기화한다. "내 루트" 탭에서 삭제하고 이 탭으로 돌아오면(라우트
   // 전환으로 이 컴포넌트가 다시 마운트됨) 그때 다시 읽어서 최신 상태로
@@ -170,7 +172,22 @@ export default function AnalyzePage() {
                   <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.local_mode_body')}</p>
                 </div>
               </div>
-              <UsageTutorial />
+
+              <button
+                type="button"
+                onClick={() => setTutorialOpen(true)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs font-semibold text-foreground/80 transition-colors hover:bg-primary/10"
+              >
+                <PlayCircle className="h-3.5 w-3.5 text-primary" />
+                {t('analyze.tutorial_title')}
+              </button>
+
+              <PopularVideos
+                onSelect={(videoUrl) => {
+                  setUrl(videoUrl)
+                  clearResult()
+                }}
+              />
             </>
           )}
         </ErrorBoundary>
@@ -205,6 +222,15 @@ export default function AnalyzePage() {
               {t('analyze.add_to_route')}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('analyze.tutorial_title')}</DialogTitle>
+          </DialogHeader>
+          <UsageTutorial />
         </DialogContent>
       </Dialog>
     </div>

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { PlayCircle } from 'lucide-react'
 import tutorialGifMobile from '@/assets/analyze-tutorial/how-to-use.gif'
 import tutorialGifDesktop from '@/assets/analyze-tutorial/how-to-use-desktop.gif'
 import { renderStepText } from '@/lib/step-text'
@@ -30,6 +29,10 @@ import { renderStepText } from '@/lib/step-text'
 // 로직(renderStepText/ButtonChip)은 blocks/route의 "내 루트 비어있을 때"
 // 안내에서도 똑같이 써서 @/lib/step-text.tsx로 공용화했다 — 자세한 이유는
 // 그 파일 주석 참고.
+// 2026-09: 원래 idle 화면에 항상 보이는 인라인 블록이었는데, 코치마크 투어와
+// 내용이 거의 겹쳐서(둘 다 "이렇게 쓰세요" 안내) 페이지가 길어지기만
+// 했다(사용자 피드백) — 버튼 + 팝업(Dialog)으로 옮기고, 팝업 자체 제목은
+// 그 Dialog가 맡으므로 이 컴포넌트는 GIF와 단계 목록만 그린다.
 export function UsageTutorial() {
   const { t } = useTranslation()
 
@@ -40,11 +43,7 @@ export function UsageTutorial() {
     // 로컬 녹화용) 이 블록 자체를 화면에서 지우고 찍는 데 쓴다 -- 안 지우면
     // GIF 안에 이 GIF 미리보기가 또 보이고 그 안에 또 보이고... 식으로
     // 화면 속 화면이 계속 중첩돼서 첫 장면이 정신없어 보인다(사용자 피드백).
-    <div data-testid="usage-tutorial" className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-      <div className="mb-2 flex items-center gap-1.5">
-        <PlayCircle className="h-3.5 w-3.5 text-primary" />
-        <p className="text-xs font-semibold text-foreground/80">{t('analyze.tutorial_title')}</p>
-      </div>
+    <div data-testid="usage-tutorial">
       <div className="mx-auto max-w-[280px] overflow-hidden rounded-lg border border-border shadow-sm md:hidden">
         <img src={tutorialGifMobile} alt={t('analyze.tutorial_gif_alt')} className="w-full" />
       </div>

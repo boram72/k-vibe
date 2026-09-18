@@ -413,7 +413,7 @@
     "help_body": "登录后可在多设备间同步已保存的地点和路线;以访客身份继续使用,本设备上的功能依然可用。",
     "guest_title": "访客用户",
     "guest_subtitle": "登录后可同步已保存的地点和路线。",
-    "guest_auto_close_notice": "5秒后自动关闭",
+    "guest_auto_close_notice": "{{seconds}}秒后自动关闭",
     "edit_name": "编辑名称",
     "edit_name_error": "保存名称失败，请重试。",
     "stats_places": "已保存地点",

@@ -413,7 +413,7 @@
     "help_body": "Sign in to sync your saved places and routes, or continue as a guest — everything still works on this device either way.",
     "guest_title": "Guest traveler",
     "guest_subtitle": "Sign in to sync your saved places and routes.",
-    "guest_auto_close_notice": "Closing automatically in 5s",
+    "guest_auto_close_notice": "Closing automatically in {{seconds}}s",
     "edit_name": "Edit name",
     "edit_name_error": "Couldn't save your name. Please try again.",
     "stats_places": "Places",

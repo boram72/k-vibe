@@ -22,14 +22,29 @@ interface ProfileDialogProps {
 //
 // 팝업을 열 때마다(로그인 안 한 상태라면) 로그인 프롬프트부터 다시 시작 —
 // "게스트로 계속" 선택은 이 팝업이 열려있는 동안만 유지되고 영속되지 않는다.
+// 게스트로 이용하기 선택 직후 팝업이 자동으로 닫히기까지의 대기 시간.
+const GUEST_AUTO_CLOSE_MS = 5000
+
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const [showProfileView, setShowProfileView] = useState(!!user)
+  // "게스트로 이용하기"를 방금 눌러서 뜬 프로필뷰인지 여부 — 로그인 완료 후
+  // 보이는 프로필뷰와 구분해서, 이 경우에만 자동종료 안내+타이머를 건다.
+  const [justContinuedAsGuest, setJustContinuedAsGuest] = useState(false)
 
   useEffect(() => {
-    if (open) setShowProfileView(!!user)
+    if (open) {
+      setShowProfileView(!!user)
+      setJustContinuedAsGuest(false)
+    }
   }, [open, user])
+
+  useEffect(() => {
+    if (!justContinuedAsGuest) return
+    const timer = setTimeout(() => onOpenChange(false), GUEST_AUTO_CLOSE_MS)
+    return () => clearTimeout(timer)
+  }, [justContinuedAsGuest, onOpenChange])
 
   const showLogin = !user && !showProfileView
 
@@ -37,10 +52,20 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         {showLogin ? (
-          <LoginModalContent onGuestContinue={() => setShowProfileView(true)} />
+          <LoginModalContent
+            onGuestContinue={() => {
+              setShowProfileView(true)
+              setJustContinuedAsGuest(true)
+            }}
+          />
         ) : (
           <>
             <DialogTitle className="sr-only">{t('profile.title')}</DialogTitle>
+            {justContinuedAsGuest && (
+              <p className="absolute top-2 right-10 flex h-7 items-center text-xs font-medium text-destructive">
+                {t('profile.guest_auto_close_notice')}
+              </p>
+            )}
             <div className="min-w-0 space-y-4">
               <ProfileHeader onSignInClick={() => setShowProfileView(false)} />
               <SettingsList />

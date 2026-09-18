@@ -286,7 +286,7 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
   )
 
   return (
-    <section className="w-full space-y-3">
+    <section data-tour="home-persona" className="w-full space-y-3">
       <div>
         <h2 className="mt-0.5 flex items-center gap-1.5 text-lg font-bold text-foreground">
           <Sparkles className="h-4.5 w-4.5 text-primary" />

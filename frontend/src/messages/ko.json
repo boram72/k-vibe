@@ -440,5 +440,39 @@
     "switch_to_login": "이미 계정이 있으신가요? 로그인",
     "credentials_error": "요청이 실패했습니다. 아이디/비밀번호 또는 backend 서버 상태를 확인하세요.",
     "oauth_failed": "로그인에 실패했습니다. 다시 시도해주세요."
+  },
+  "tour": {
+    "button_label": "K-Vibe 투어",
+    "next": "다음",
+    "done": "시작하기",
+    "skip": "건너뛰기",
+    "home_nav_title": "여기서 다른 화면으로 이동해요",
+    "home_nav_body": "지도, SNS 분석기, 페르소나, 내 루트로 언제든 이동할 수 있어요.",
+    "home_cta_title": "루트를 바로 만들어보세요",
+    "home_cta_body": "이 버튼을 누르면 나만의 여행 루트를 만들기 시작해요.",
+    "home_saved_title": "찜한 장소도 모아볼 수 있어요",
+    "home_saved_body": "지도에서 하트를 누른 장소가 여기 모여요.",
+    "home_persona_title": "좋아하는 아티스트를 골라보세요",
+    "home_persona_body": "아티스트나 테마를 고르면 바로 하루 루트가 만들어져요.",
+    "home_topbar_title": "언어, 화면 모드, 로그인도 여기서",
+    "home_topbar_body": "언어를 바꾸거나 다크모드로 전환하고, 로그인 상태도 확인할 수 있어요.",
+    "home_replay_title": "투어는 언제든 다시 볼 수 있어요",
+    "home_replay_body": "나중에 다시 보고 싶으면 이 버튼을 눌러주세요.",
+    "map_search_title": "장소나 지역을 검색해보세요",
+    "map_search_body": "이름이나 지역을 입력하면 원하는 곳을 바로 찾을 수 있어요.",
+    "map_filter_title": "카테고리나 페르소나로 필터링해요",
+    "map_filter_body": "카테고리별 또는 좋아하는 페르소나별로 장소를 골라볼 수 있어요.",
+    "map_locate_title": "내 위치로 이동해요",
+    "map_locate_body": "이 버튼을 누르면 내 위치 주변으로 지도가 이동해요.",
+    "map_list_title": "장소를 눌러 자세히 보세요",
+    "map_list_body": "장소를 누르면 상세 정보를 보고 내 루트에 추가할 수 있어요.",
+    "persona_grid_title": "좋아하는 아티스트나 테마를 골라보세요",
+    "persona_grid_body": "카드를 누르면 그 자리에서 바로 하루 여행 루트가 만들어져요."
+  },
+  "welcome": {
+    "title": "K-Vibe에 오신 것을 환영해요!",
+    "tour_prompt": "K-Vibe를 함께 둘러볼까요?",
+    "start_tour": "둘러보기",
+    "skip": "건너뛰기"
   }
 }

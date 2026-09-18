@@ -1,0 +1,38 @@
+export interface TourStep {
+  // data-tour 속성값으로 실제 화면 요소를 찾는다. 데스크탑/모바일처럼 같은
+  // 값을 가진 요소가 여러 개 있을 수 있어(사이드바 vs 하단 내비 등),
+  // 그 중 실제로 화면에 보이는(getBoundingClientRect가 0이 아닌) 요소를 쓴다.
+  target: string
+  titleKey: string
+  bodyKey: string
+}
+
+export const HOME_TOUR_KEY = 'home'
+export const MAP_TOUR_KEY = 'map'
+export const PERSONA_TOUR_KEY = 'persona'
+
+export const HOME_TOUR_STEPS: TourStep[] = [
+  { target: 'home-nav', titleKey: 'tour.home_nav_title', bodyKey: 'tour.home_nav_body' },
+  { target: 'home-cta', titleKey: 'tour.home_cta_title', bodyKey: 'tour.home_cta_body' },
+  { target: 'home-saved', titleKey: 'tour.home_saved_title', bodyKey: 'tour.home_saved_body' },
+  { target: 'home-persona', titleKey: 'tour.home_persona_title', bodyKey: 'tour.home_persona_body' },
+  { target: 'home-topbar-utils', titleKey: 'tour.home_topbar_title', bodyKey: 'tour.home_topbar_body' },
+  { target: 'home-tour-button', titleKey: 'tour.home_replay_title', bodyKey: 'tour.home_replay_body' },
+]
+
+export const MAP_TOUR_STEPS: TourStep[] = [
+  { target: 'map-search', titleKey: 'tour.map_search_title', bodyKey: 'tour.map_search_body' },
+  { target: 'map-filter', titleKey: 'tour.map_filter_title', bodyKey: 'tour.map_filter_body' },
+  { target: 'map-locate', titleKey: 'tour.map_locate_title', bodyKey: 'tour.map_locate_body' },
+  { target: 'map-list', titleKey: 'tour.map_list_title', bodyKey: 'tour.map_list_body' },
+]
+
+export const PERSONA_TOUR_STEPS: TourStep[] = [
+  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body' },
+]
+
+export const TOUR_REGISTRY: Record<string, TourStep[]> = {
+  [HOME_TOUR_KEY]: HOME_TOUR_STEPS,
+  [MAP_TOUR_KEY]: MAP_TOUR_STEPS,
+  [PERSONA_TOUR_KEY]: PERSONA_TOUR_STEPS,
+}

@@ -103,7 +103,7 @@ export function SavedPlacesGrid() {
 
   if (places.length === 0) {
     return (
-      <section className="space-y-3">
+      <section data-tour="home-saved" className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
           <Heart className="h-4 w-4 text-primary" />
           {t('profile.saved_places')}
@@ -121,7 +121,7 @@ export function SavedPlacesGrid() {
   }
 
   return (
-    <section className="space-y-3">
+    <section data-tour="home-saved" className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
         <Heart className="h-4 w-4 text-primary" />
         {t('profile.saved_places')}

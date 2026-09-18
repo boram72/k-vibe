@@ -7,7 +7,10 @@ export function BottomNav() {
   const { t } = useTranslation()
 
   return (
-    <nav className="sticky bottom-0 z-40 flex h-16 shrink-0 items-center justify-around border-t border-border bg-background md:hidden">
+    <nav
+      data-tour="home-nav"
+      className="sticky bottom-0 z-40 flex h-16 shrink-0 items-center justify-around border-t border-border bg-background md:hidden"
+    >
       {NAV_ITEMS.map((item) => (
         <NavLink
           key={item.key}

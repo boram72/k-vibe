@@ -440,5 +440,39 @@
     "switch_to_login": "Already have an account? Log in",
     "credentials_error": "Request failed. Check your username/password or the backend server.",
     "oauth_failed": "Sign-in failed. Please try again."
+  },
+  "tour": {
+    "button_label": "K-Vibe Tour",
+    "next": "Next",
+    "done": "Get started",
+    "skip": "Skip",
+    "home_nav_title": "Get around from here",
+    "home_nav_body": "Jump to Map, SNS Analyzer, Persona, or My Route anytime.",
+    "home_cta_title": "Build a route right away",
+    "home_cta_body": "Tap this button to start building your own travel route.",
+    "home_saved_title": "Your saved places live here too",
+    "home_saved_body": "Places you've hearted on the map show up here.",
+    "home_persona_title": "Pick a favorite artist",
+    "home_persona_body": "Choose an artist or theme and a one-day route is generated instantly.",
+    "home_topbar_title": "Language, theme, and sign-in live here",
+    "home_topbar_body": "Switch languages, toggle dark mode, or check your sign-in status.",
+    "home_replay_title": "You can replay this tour anytime",
+    "home_replay_body": "Tap this button whenever you want to see it again.",
+    "map_search_title": "Search for a place or area",
+    "map_search_body": "Type a name or area to find exactly what you're looking for.",
+    "map_filter_title": "Filter by category or persona",
+    "map_filter_body": "Narrow places down by category or by your favorite persona.",
+    "map_locate_title": "Jump to your location",
+    "map_locate_body": "Tap this button to move the map to your current location.",
+    "map_list_title": "Tap a place for details",
+    "map_list_body": "Tap a place to see details and add it to your route.",
+    "persona_grid_title": "Pick a favorite artist or theme",
+    "persona_grid_body": "Tap a card and a one-day route is generated right away."
+  },
+  "welcome": {
+    "title": "Welcome to K-Vibe!",
+    "tour_prompt": "Want to take a quick look around K-Vibe?",
+    "start_tour": "Take the tour",
+    "skip": "Skip"
   }
 }

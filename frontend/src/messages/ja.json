@@ -440,5 +440,39 @@
     "switch_to_login": "すでにアカウントをお持ちですか? ログイン",
     "credentials_error": "リクエストに失敗しました。ユーザー名/パスワードまたはbackendサーバーの状態を確認してください。",
     "oauth_failed": "ログインに失敗しました。もう一度お試しください。"
+  },
+  "tour": {
+    "button_label": "K-Vibeツアー",
+    "next": "次へ",
+    "done": "はじめる",
+    "skip": "スキップ",
+    "home_nav_title": "ここから他の画面へ移動できます",
+    "home_nav_body": "地図、SNS分析、ペルソナ、マイルートへいつでも移動できます。",
+    "home_cta_title": "すぐにルートを作ってみましょう",
+    "home_cta_body": "このボタンを押すと、自分だけの旅行ルート作りが始まります。",
+    "home_saved_title": "お気に入りの場所もここに集まります",
+    "home_saved_body": "地図でハートを押した場所がここに表示されます。",
+    "home_persona_title": "好きなアーティストを選んでみましょう",
+    "home_persona_body": "アーティストやテーマを選ぶと、すぐに1日ルートが作られます。",
+    "home_topbar_title": "言語・画面モード・ログインもここで",
+    "home_topbar_body": "言語の切り替えやダークモードへの変更、ログイン状態の確認ができます。",
+    "home_replay_title": "ツアーはいつでも見直せます",
+    "home_replay_body": "また見たくなったら、このボタンを押してください。",
+    "map_search_title": "場所やエリアを検索してみましょう",
+    "map_search_body": "名前やエリアを入力すると、探している場所をすぐに見つけられます。",
+    "map_filter_title": "カテゴリーやペルソナで絞り込めます",
+    "map_filter_body": "カテゴリー別、または好きなペルソナ別に場所を選べます。",
+    "map_locate_title": "現在地へ移動します",
+    "map_locate_body": "このボタンを押すと、現在地周辺に地図が移動します。",
+    "map_list_title": "場所をタップして詳細を見ましょう",
+    "map_list_body": "場所をタップすると詳細情報を見たり、マイルートに追加できます。",
+    "persona_grid_title": "好きなアーティストやテーマを選んでみましょう",
+    "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。"
+  },
+  "welcome": {
+    "title": "K-Vibeへようこそ!",
+    "tour_prompt": "K-Vibeを一緒に見て回りましょうか?",
+    "start_tour": "見て回る",
+    "skip": "スキップ"
   }
 }

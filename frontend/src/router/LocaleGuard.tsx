@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Navigate, Outlet, useParams } from 'react-router-dom'
 import i18n, { LOCALE_STORAGE_KEY, SUPPORTED_LOCALES, type Locale } from '@/i18n'
 import { AnalysisCompletionToast } from '@/blocks/analyze/analysis-completion-toast'
+import { TourOverlay } from '@/blocks/tour/tour-overlay'
 
 export function LocaleGuard() {
   const { locale } = useParams<{ locale: string }>()
@@ -36,6 +37,7 @@ export function LocaleGuard() {
           이 라우트 기준 상대경로로 locale 세그먼트를 유지한다 — 자세한 이유는
           analysis-completion-toast.tsx 참고. */}
       <AnalysisCompletionToast />
+      <TourOverlay />
     </>
   )
 }

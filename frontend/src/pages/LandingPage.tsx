@@ -11,6 +11,7 @@ import { PersonaPicker } from '@/blocks/landing/persona-picker'
 // 컴포넌트/API 자체는 삭제하지 않음(복구 시 아래 import + 렌더 라인만 되돌리면 됨).
 // import { TrendingKeywords } from '@/blocks/landing/trending-keywords'
 import { SavedPlacesGrid } from '@/blocks/profile/saved-places-grid'
+import { WelcomeGate } from '@/blocks/tour/welcome-gate'
 import { usePageHelpStore } from '@/store/page-help-store'
 import type { KContentPersona } from '@/api/personas'
 
@@ -34,6 +35,10 @@ export default function LandingPage() {
 
   return (
     <div className="flex h-dvh flex-col">
+      {/* 처음 홈에 들어온 사용자에게만 언어 선택 → "둘러볼까요?" 확인을 거쳐
+          홈 투어를 자동으로 시작한다(재방문 시엔 "?" 자리의 투어 버튼으로만
+          다시 볼 수 있음 — welcome-gate.tsx 참고). */}
+      <WelcomeGate />
       <TopBar />
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <SidebarNav />

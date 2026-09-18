@@ -34,27 +34,29 @@ export function TopBar() {
 
       <div className="flex items-center gap-2">
         <HelpButton />
-        <LanguageDropdown />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          aria-label="Toggle theme"
-        >
-          {resolvedTheme === 'dark' ? (
-            <Moon className="h-4 w-4" />
-          ) : (
-            <Sun className="h-4 w-4" />
-          )}
-        </Button>
+        <div data-tour="home-topbar-utils" className="flex items-center gap-2">
+          <LanguageDropdown />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === 'dark' ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </Button>
 
-        <Link to="profile" aria-label="Profile">
-          <Avatar>
-            <AvatarFallback>
-              {user ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+          <Link to="profile" aria-label="Profile">
+            <Avatar>
+              <AvatarFallback>
+                {user ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+        </div>
       </div>
     </header>
   )

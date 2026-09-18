@@ -106,6 +106,11 @@ export function TourOverlay() {
     // 이펙트 전체가 다시 실행되면서 자동으로 초기화되므로, 다른 스텝의
     // 타겟과 잘못 비교될 일은 없다.
     let lastGoodRect: DOMRect | null = null
+    // hintEffect가 있는 단계는 실제 타겟 DOM에 반복 애니메이션 클래스를
+    // 직접 건다("눌러야 할지 애매하다"/"드래그 방향을 모르겠다" 피드백
+    // 대응). 클린업에서 반드시 떼어내야 해서 어떤 요소에 붙였는지 기억한다.
+    let animatedTarget: HTMLElement | null = null
+    const hintClass = step!.hintEffect === 'pulse' ? 'animate-card-pulse' : step!.hintEffect === 'drag-bob' ? 'animate-drag-bob' : null
     function handleRealClick(event: MouseEvent) {
       if (event.target instanceof Element && event.target.closest('button, a')) next(steps!.length)
     }
@@ -148,6 +153,11 @@ export function TourOverlay() {
         target.addEventListener('click', handleRealClick)
         attachedTarget = target
       }
+      if (hintClass && target !== animatedTarget) {
+        animatedTarget?.classList.remove(hintClass)
+        target?.classList.add(hintClass)
+        animatedTarget = target
+      }
     }
 
     measure()
@@ -167,6 +177,7 @@ export function TourOverlay() {
       window.removeEventListener('scroll', measure, true)
       window.clearInterval(poll)
       attachedTarget?.removeEventListener('click', handleRealClick)
+      if (hintClass) animatedTarget?.classList.remove(hintClass)
     }
   }, [step, stepIndex, steps, next])
 

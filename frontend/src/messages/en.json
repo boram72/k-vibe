@@ -303,7 +303,7 @@
     "help_title": "Plan Your Days",
     "help_body": "Drag stops to reorder, or use the up/down buttons. Tap a stop's time to set a specific date/time — everything after it recalculates from there.",
     "editable_eyebrow": "Editable itinerary",
-    "helper": "Drag stops to reorder them. Track completion and total distance at a glance.",
+    "helper": "Drag stops to reorder them.",
     "empty_title": "No route yet",
     "empty_desc": "Add spots from the map, SNS analysis, or persona builder to start your route.",
     "empty_guide_title": "Here's how to add places",

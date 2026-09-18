@@ -7,7 +7,9 @@ import { BottomNav } from '@/blocks/layout/bottom-nav'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { HomeBanner } from '@/blocks/landing/home-banner'
 import { PersonaPicker } from '@/blocks/landing/persona-picker'
-import { TrendingKeywords } from '@/blocks/landing/trending-keywords'
+// 2026-09 대화 중 요청 — "지금 한국에서 핫한"(TrendingKeywords) 카드 숨김.
+// 컴포넌트/API 자체는 삭제하지 않음(복구 시 아래 import + 렌더 라인만 되돌리면 됨).
+// import { TrendingKeywords } from '@/blocks/landing/trending-keywords'
 import { SavedPlacesGrid } from '@/blocks/profile/saved-places-grid'
 import { WelcomeGate } from '@/blocks/tour/welcome-gate'
 import { usePageHelpStore } from '@/store/page-help-store'
@@ -46,7 +48,7 @@ export default function LandingPage() {
               <HomeBanner />
               <SavedPlacesGrid />
               <PersonaPicker onSelect={handleSelectPersona} />
-              <TrendingKeywords />
+              {/* <TrendingKeywords /> — 위 import 주석 참고 */}
             </div>
           </ErrorBoundary>
         </main>

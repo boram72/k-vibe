@@ -468,8 +468,8 @@
     "map_list_body": "点击地点可以查看详细信息，并添加到我的路线。",
     "persona_grid_title": "挑选喜欢的艺人或主题",
     "persona_grid_body": "点击卡片，即可立即生成一日路线。",
-    "persona_add_title": "保存这条路线",
-    "persona_add_body": "点击这个按钮，即可把刚看到的路线保存到我的路线。"
+    "persona_exclude_title": "把不想去的地点去掉",
+    "persona_exclude_body": "点击X按钮，即可把这个地点从路线中移除。打造属于你自己的路线吧!"
   },
   "welcome": {
     "title": "欢迎来到K-Vibe!",

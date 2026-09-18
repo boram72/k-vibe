@@ -34,7 +34,7 @@ export const MAP_TOUR_STEPS: TourStep[] = [
 
 export const PERSONA_TOUR_STEPS: TourStep[] = [
   { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true },
-  { target: 'persona-add-to-route', titleKey: 'tour.persona_add_title', bodyKey: 'tour.persona_add_body', clickThrough: true },
+  { target: 'persona-exclude', titleKey: 'tour.persona_exclude_title', bodyKey: 'tour.persona_exclude_body', clickThrough: true },
 ]
 
 export const TOUR_REGISTRY: Record<string, TourStep[]> = {

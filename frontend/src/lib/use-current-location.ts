@@ -27,32 +27,40 @@ export function useCurrentLocation() {
     if (cached) {
       setCoords(cached)
       setLocationLabel(t('map.last_known_location'))
-    } else {
-      setCoords(SEOUL_CENTER)
-      setLocationLabel(t('map.seoul_fallback'))
+      return cached
     }
+    setCoords(SEOUL_CENTER)
+    setLocationLabel(t('map.seoul_fallback'))
+    return SEOUL_CENTER
   }, [t])
 
-  const requestLocation = useCallback(() => {
+  // 2026-09 — plan.md 6번(관할 정부처 랜딩)이 "실제 좌표가 뭐로 정해지든(신선한
+  // GPS/마지막 위치 캐시/서울 폴백) 그 값을 갖고 행정구역을 판별"해야 해서,
+  // 호출부가 결과를 기다렸다가 이어서 처리할 수 있도록 Promise로 반환한다.
+  const requestLocation = useCallback((): Promise<{ lat: number; lng: number }> => {
     if (!navigator.geolocation) {
-      fallbackToLastKnownOrSeoul()
+      const fallback = fallbackToLastKnownOrSeoul()
       toast.warning(t('map.location_unavailable'))
-      return
+      return Promise.resolve(fallback)
     }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const next = { lat: position.coords.latitude, lng: position.coords.longitude }
-        setCoords(next)
-        setLocationLabel(t('map.current_location'))
-        setIsPrecise(true)
-        writeLastKnownLocation(next)
-      },
-      () => {
-        fallbackToLastKnownOrSeoul()
-        toast.warning(t('map.location_unavailable'))
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 300_000 },
-    )
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const next = { lat: position.coords.latitude, lng: position.coords.longitude }
+          setCoords(next)
+          setLocationLabel(t('map.current_location'))
+          setIsPrecise(true)
+          writeLastKnownLocation(next)
+          resolve(next)
+        },
+        () => {
+          const fallback = fallbackToLastKnownOrSeoul()
+          toast.warning(t('map.location_unavailable'))
+          resolve(fallback)
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 300_000 },
+      )
+    })
   }, [t, fallbackToLastKnownOrSeoul])
 
   return { coords, locationLabel, requestLocation, isPrecise }

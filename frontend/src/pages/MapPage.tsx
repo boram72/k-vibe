@@ -9,12 +9,14 @@ import { PlaceDetailSheet } from '@/blocks/map/place-detail-sheet'
 import { fetchMapPlaces, DEFAULT_MAP_SEARCH_RADIUS } from '@/api/places'
 import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
+import { resolveAdminOfficeCoords } from '@/lib/kakao-admin-region'
 import { fetchPersonaPlaces } from '@/api/personas'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
-import { useCurrentLocation } from '@/lib/use-current-location'
+import { useCurrentLocation, SEOUL_CENTER } from '@/lib/use-current-location'
 import { useMediaQuery } from '@/lib/use-media-query'
+import { Skeleton } from '@/components/ui/skeleton'
 import { type Place, type PlaceCategory } from '@/types/place'
 import type { Locale } from '@/i18n'
 import { cn } from '@/lib/utils'
@@ -151,6 +153,19 @@ export default function MapPage() {
     ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng }
     : (searchCenter ?? coords)
 
+  // 2026-09 — 위치기반서비스사업자 등록 없이 배포하려면 실측 GPS를 백엔드로
+  // 보내면 안 됨(plan.md 6번). effectiveCoords(위)는 지도 뷰 중심·카카오
+  // 클라이언트사이드 검색 힌트용으로 실측 GPS를 그대로 써도 되지만(브라우저
+  // 밖으로 안 나감), 우리 백엔드로 나가는 값(/places, /attractions/related)은
+  // queryCenter라는 완전히 독립된 state로 분리 — setSearchCenter를 부르는
+  // 딱 4곳(주소 매칭 2곳, 관광지 키워드 매칭 1곳, 드래그확인 "이 지역에서
+  // 검색" 1곳)에서만 같이 갱신되고, "현재위치" 버튼(GPS 갱신)으로는 절대
+  // 안 바뀐다. effectiveCoords의 파생값이 아니라서 handleRequestLocation이
+  // searchCenter를 null로 되돌려 뷰가 GPS를 되찾아도 queryCenter는 전혀
+  // 영향받지 않는다.
+  const [queryCenter, setQueryCenter] = useState(effectiveCoords)
+  const queryCoords = focusPlaces[0] ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng } : queryCenter
+
   function handleRequestLocation() {
     setSearchCenter(null)
     setKakaoSearchResults([])
@@ -183,6 +198,7 @@ export default function MapPage() {
       if (result.type === 'address') {
         // 행정구역 매칭 — 예전처럼 그 위치로 바로 이동, 후보 목록은 없음.
         setSearchCenter(result.center)
+        setQueryCenter(result.center)
         setKakaoSearchResults([])
         setAreaSearchLists(null)
       } else {
@@ -222,9 +238,12 @@ export default function MapPage() {
       // 흐름의 다중 매치 강조 방식 자체는 이번 요청 범위 밖).
       if (result.type === 'address') {
         setSearchCenter(result.center)
+        setQueryCenter(result.center)
         setKakaoSearchResults([])
       } else if (result.relevance.length > 0) {
-        setSearchCenter({ lat: result.relevance[0].lat, lng: result.relevance[0].lng })
+        const target = { lat: result.relevance[0].lat, lng: result.relevance[0].lng }
+        setSearchCenter(target)
+        setQueryCenter(target)
         setKakaoSearchResults(result.relevance)
       }
     },
@@ -240,11 +259,11 @@ export default function MapPage() {
   const canSearchArea = Boolean(import.meta.env.VITE_KAKAO_MAP_KEY)
 
   const { data: places = [], isLoading } = useQuery({
-    queryKey: ['map-places', effectiveCoords.lat, effectiveCoords.lng, i18n.language],
+    queryKey: ['map-places', queryCoords.lat, queryCoords.lng, i18n.language],
     queryFn: () =>
       fetchMapPlaces({
-        lat: effectiveCoords.lat,
-        lng: effectiveCoords.lng,
+        lat: queryCoords.lat,
+        lng: queryCoords.lng,
         radius: DEFAULT_MAP_SEARCH_RADIUS,
         locale: i18n.language,
       }),
@@ -288,11 +307,31 @@ export default function MapPage() {
   // without this, requestLocation() fires twice on a denied/unavailable
   // geolocation request, producing two identical toasts. The ref persists
   // across that synthetic remount, so the second invocation is a no-op.
+  // 2026-09 — 관할 정부처 랜딩(아래)이 확정되기 전까진 실측 GPS 위치가
+  // 잠깐 화면에 보였다가 정부처 좌표로 "점프"하는 게 버그처럼 보인다는
+  // 피드백 — focus 핸드오프가 없을 때만 켜서, 랜딩이 정해질 때까지 지도
+  // 자리에 스켈레톤을 보여주고 실측 위치 자체를 노출하지 않는다.
+  const [isResolvingLanding, setIsResolvingLanding] = useState(!focusPlaces.length)
+
   const didRequestLocationRef = useRef(false)
   useEffect(() => {
     if (!focusPlaces.length && !didRequestLocationRef.current) {
       didRequestLocationRef.current = true
-      requestLocation()
+      // 2026-09 — plan.md 6-1. 초기 랜딩은 실측 GPS(또는 마지막 위치 캐시/서울
+      // 폴백)가 뭐로 정해지든, 그 좌표를 그대로 검색에 쓰지 않고 행정구역
+      // 판별 후 관할 정부처 좌표로 변환해서만 지도 뷰·서버 검색에 반영한다
+      // (setSearchCenter/setQueryCenter — 6-2에서 만든 "명시적 트리거" 경로를
+      // 그대로 재사용). 관할 정부처를 못 찾으면(SDK 미로드/지오코딩 실패 등)
+      // 실측 GPS로 폴백하면 우회 자체가 무의미해지므로 **서울시청(SEOUL_CENTER)
+      // 으로 디폴트 랜딩**한다.
+      requestLocation().then((resolved) => {
+        resolveAdminOfficeCoords(resolved).then((office) => {
+          const landing = office ?? SEOUL_CENTER
+          setSearchCenter(landing)
+          setQueryCenter(landing)
+          setIsResolvingLanding(false)
+        })
+      })
     }
     // run once on mount only — focusState is a one-time handoff, not a live dependency
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -388,7 +427,12 @@ export default function MapPage() {
         isDesktop && isPanelCollapsed ? 'md:grid-cols-[1fr_64px]' : 'md:grid-cols-[1fr_380px]',
       )}
     >
-      <div className={cn('min-h-0 md:h-full md:flex-none', !isDesktop ? mobileMapFlexClass(mobilePanelState) : 'flex-4')}>
+      <div className={cn('relative min-h-0 md:h-full md:flex-none', !isDesktop ? mobileMapFlexClass(mobilePanelState) : 'flex-4')}>
+        {/* MapCanvas는 랜딩 확정 여부와 무관하게 항상 마운트해둔다 — 카카오
+            SDK 로딩(useKakaoLoader)이 이 컴포넌트 안에서 일어나므로, 스켈레톤이
+            이걸 통째로 가려버리면 SDK 자체가 안 떠서 5초 타임아웃 후 항상
+            서울로만 폴백되는 버그가 있었음(실사용 재현으로 발견). 스켈레톤은
+            그 위에 겹쳐서 SDK가 백그라운드에서 계속 로드되게 한다. */}
         <MapCanvas
           center={effectiveCoords}
           places={filtered}
@@ -397,42 +441,63 @@ export default function MapPage() {
           onSelectPlace={handleSelectPlace}
           onRequestLocation={handleRequestLocation}
           locationLabel={effectiveLocationLabel}
-          onSearchArea={setSearchCenter}
+          onSearchArea={(coord) => {
+            setSearchCenter(coord)
+            setQueryCenter(coord)
+          }}
           myLocation={isPrecise ? coords : null}
           highlightIds={kakaoSearchResultIds}
           compact={!isDesktop && mobilePanelState === 'full'}
         />
+        {/* z-30 — 카카오 지도 SDK가 내부적으로 위치버튼/줌컨트롤/현재위치 핀에
+            z-10~20을 쓰고 있어서, 그보다 확실히 위여야 실측 GPS 위치가 잠깐
+            비쳐 보이는 일 없이 스켈레톤이 완전히 가린다(실사용 확인 후 조정). */}
+        {isResolvingLanding && <Skeleton className="absolute inset-0 z-30 h-full w-full rounded-none" />}
       </div>
 
-      <SpotListPanel
-        isDesktop={isDesktop}
-        isCollapsed={isPanelCollapsed}
-        onCollapsedChange={setIsPanelCollapsed}
-        mobilePanelState={mobilePanelState}
-        onMobilePanelStateChange={setMobilePanelState}
-        filterMode={filterMode}
-        onFilterModeChange={setFilterMode}
-        categories={categories}
-        onCategoriesChange={setCategories}
-        starFilter={starFilter}
-        onStarFilterChange={setStarFilter}
-        search={search}
-        onSearchChange={handleSearchChange}
-        onSubmitAreaSearch={handleSearchArea}
-        isSearchingArea={areaSearchMutation.isPending}
-        canSearchArea={canSearchArea}
-        showSavedList={showSavedList}
-        onShowSavedListChange={setShowSavedList}
-        showAttractions={showAttractions}
-        onShowAttractionsChange={setShowAttractions}
-        onSelectAttraction={handleSelectAttraction}
-        areaSearchLists={areaSearchLists}
-        savedPlaces={savedPlaces}
-        places={filtered}
-        isLoading={isLoading}
-        onSelectPlace={handleSelectPlace}
-        center={effectiveCoords}
-      />
+      {isResolvingLanding ? (
+        <div className="flex flex-col gap-3 border-t border-border p-4 md:border-l md:border-t-0">
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-16 rounded-full" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+            <Skeleton className="h-8 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+        </div>
+      ) : (
+        <SpotListPanel
+          isDesktop={isDesktop}
+          isCollapsed={isPanelCollapsed}
+          onCollapsedChange={setIsPanelCollapsed}
+          mobilePanelState={mobilePanelState}
+          onMobilePanelStateChange={setMobilePanelState}
+          filterMode={filterMode}
+          onFilterModeChange={setFilterMode}
+          categories={categories}
+          onCategoriesChange={setCategories}
+          starFilter={starFilter}
+          onStarFilterChange={setStarFilter}
+          search={search}
+          onSearchChange={handleSearchChange}
+          onSubmitAreaSearch={handleSearchArea}
+          isSearchingArea={areaSearchMutation.isPending}
+          canSearchArea={canSearchArea}
+          showSavedList={showSavedList}
+          onShowSavedListChange={setShowSavedList}
+          showAttractions={showAttractions}
+          onShowAttractionsChange={setShowAttractions}
+          onSelectAttraction={handleSelectAttraction}
+          areaSearchLists={areaSearchLists}
+          savedPlaces={savedPlaces}
+          places={filtered}
+          isLoading={isLoading}
+          onSelectPlace={handleSelectPlace}
+          center={queryCoords}
+        />
+      )}
 
       <PlaceDetailSheet
         place={selectedPlace}

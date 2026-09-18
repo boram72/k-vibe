@@ -30,7 +30,7 @@ function buildRouteTitle(persona: KContentPersona, locale: string): string {
 // 정사각 카드 사진 룩으로 통일 — 카드 클릭 시 선택은 그대로 동작하되, 사진
 // 자체는 클릭하면(ZoomableImage) 확대 팝업이 뜨도록 기존 PersonaAvatar와
 // 같은 인터랙션 유지.
-function PersonaCardImage({ persona }: { persona: KContentPersona }) {
+function PersonaCardImage({ persona, disableZoom }: { persona: KContentPersona; disableZoom?: boolean }) {
   const [imageFailed, setImageFailed] = useState(false)
 
   if (persona.profileImg && !imageFailed) {
@@ -42,6 +42,7 @@ function PersonaCardImage({ persona }: { persona: KContentPersona }) {
         referrerPolicy="no-referrer"
         onError={() => setImageFailed(true)}
         className="h-full w-full object-cover"
+        disableZoom={disableZoom}
       />
     )
   }
@@ -60,6 +61,14 @@ export default function PersonaPage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const startTour = useTourStore((s) => s.start)
+  const activeTourKey = useTourStore((s) => s.activeTourKey)
+  const tourStepIndex = useTourStore((s) => s.stepIndex)
+  // 페르소나 투어 1단계(카드 하이라이트, PERSONA_TOUR_STEPS[0])가 첫 번째
+  // 카드를 가리키는 동안만 그 카드 사진의 확대 팝업을 끈다 — 사진(카드에서
+  // 가장 크고 누르기 쉬운 영역)을 눌렀을 때 확대 팝업이 아니라 실제
+  // "선택"이 일어나야 한다는 사용자 피드백 대응. 투어가 끝나면 평소처럼
+  // 사진을 눌러 확대해볼 수 있다.
+  const firstCardZoomDisabled = activeTourKey === PERSONA_TOUR_KEY && tourStepIndex === 0
 
   const locale = i18n.language as Locale
 
@@ -229,7 +238,7 @@ export default function PersonaPage() {
                   )}
                 >
                   <div className="aspect-square w-full bg-muted">
-                    <PersonaCardImage persona={persona} />
+                    <PersonaCardImage persona={persona} disableZoom={index === 0 && firstCardZoomDisabled} />
                   </div>
                   <div className="space-y-0.5 p-2 md:space-y-1 md:p-3">
                     <p className="truncate text-xs font-semibold text-foreground md:text-sm">

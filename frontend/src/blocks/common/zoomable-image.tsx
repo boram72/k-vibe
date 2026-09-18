@@ -14,6 +14,11 @@ interface ZoomableImageProps {
   // 등)를 쓰는 기존 호출부는 이 문제가 없어서(퍼센트가 아니라 절대값) 기본값
   // false로 유지 — 그 호출부들의 flex 레이아웃까지 건드리지 않기 위함.
   fill?: boolean
+  // true면 이 이미지를 눌러도 확대 팝업을 안 띄우고 클릭을 그대로 부모(카드
+  // 버튼)로 흘려보낸다 — 페르소나 투어 1단계에서 카드 사진(가장 크고 누르기
+  // 쉬운 영역)을 눌렀을 때 확대 팝업 대신 실제 "선택" 동작이 일어나야
+  // 한다는 사용자 피드백 대응. 투어가 이 카드를 가리키는 동안만 켠다.
+  disableZoom?: boolean
 }
 
 // Avatar/character thumbnails across the app (48px persona picker, 40px persona
@@ -27,15 +32,17 @@ interface ZoomableImageProps {
 // `<span role="button">`, never a nested `<button>` — invalid HTML and it
 // would also fight the parent's own click handling. stopPropagation keeps a
 // click on the image from also triggering the parent card's onClick.
-export function ZoomableImage({ src, alt, className, referrerPolicy, onError, fill = false }: ZoomableImageProps) {
+export function ZoomableImage({ src, alt, className, referrerPolicy, onError, fill = false, disableZoom = false }: ZoomableImageProps) {
   const [open, setOpen] = useState(false)
 
   function handleOpen(event: MouseEvent) {
+    if (disableZoom) return // 클릭을 막지 않고 그대로 부모 카드로 흘려보낸다
     event.stopPropagation()
     setOpen(true)
   }
 
   function handleKeyDown(event: KeyboardEvent) {
+    if (disableZoom) return
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
     event.stopPropagation()
@@ -50,7 +57,7 @@ export function ZoomableImage({ src, alt, className, referrerPolicy, onError, fi
         aria-label={alt}
         onClick={handleOpen}
         onKeyDown={handleKeyDown}
-        className={cn(fill ? 'block h-full w-full' : 'inline-block shrink-0', 'cursor-zoom-in')}
+        className={cn(fill ? 'block h-full w-full' : 'inline-block shrink-0', !disableZoom && 'cursor-zoom-in')}
       >
         <img
           src={src}

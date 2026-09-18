@@ -15,6 +15,8 @@ interface PlaceReviewTabProps {
   placeId: string
 }
 
+const REVIEW_MAX_LENGTH = 300
+
 function StarRatingInput({ value, onChange, disabled }: { value: number; onChange: (next: number) => void; disabled?: boolean }) {
   return (
     <div className="flex items-center gap-1">
@@ -139,8 +141,12 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
           disabled={!user || mutation.isPending}
           placeholder={user ? t('placeDetail.review_placeholder') : t('placeDetail.review_login_required')}
           rows={2}
+          maxLength={REVIEW_MAX_LENGTH}
           className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
         />
+        <p className="text-right text-[10px] text-muted-foreground">
+          {content.length}/{REVIEW_MAX_LENGTH}
+        </p>
         <Button
           size="sm"
           className="w-full"
@@ -195,8 +201,12 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
                     onChange={(e) => setEditContent(e.target.value)}
                     disabled={updateMutation.isPending}
                     rows={2}
+                    maxLength={REVIEW_MAX_LENGTH}
                     className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
                   />
+                  <p className="text-right text-[10px] text-muted-foreground">
+                    {editContent.length}/{REVIEW_MAX_LENGTH}
+                  </p>
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => setEditingReviewId(null)}>
                       {t('common.cancel')}

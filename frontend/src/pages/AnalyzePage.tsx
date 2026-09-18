@@ -16,6 +16,8 @@ import { detectSnsPlatform, extractVideoId } from '@/lib/youtube'
 import { addStopToRouteDraft, addStopsToRouteDraft, analysisStopId, readRouteDraftStopIds } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useAnalyzeStore } from '@/store/analyze-store'
+import { useTourStore, canAutoStartTour } from '@/store/tour-store'
+import { ANALYZE_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import type { Locale } from '@/i18n'
 import type { MapFocusState } from './MapPage'
 
@@ -24,6 +26,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const startTour = useTourStore((s) => s.start)
   const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis } = useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
   const [tutorialOpen, setTutorialOpen] = useState(false)
@@ -40,6 +43,13 @@ export default function AnalyzePage() {
 
   const isAnalyzing = status === 'running'
   const hasError = status === 'error'
+
+  // URL 입력창/인기 영상처럼 투어가 가리킬 요소는 결과가 없는 idle 화면에만
+  // 있으므로, 결과가 이미 있는 상태(예: 분석 후 재방문)에서는 자동으로
+  // 띄우지 않는다.
+  useEffect(() => {
+    if (!result && canAutoStartTour(ANALYZE_TOUR_KEY)) startTour(ANALYZE_TOUR_KEY)
+  }, [result, startTour])
   // 2026-09: 분석이 store에서 백그라운드로 돌기 때문에(다른 탭으로 이동해도
   // 계속 진행) 결과도 react-query가 아니라 store에서 바로 읽는다 — 이 컴포넌트가
   // 언마운트됐다 다시 마운트돼도(다른 탭 갔다 옴) store 상태를 그대로 이어받는다.
@@ -167,6 +177,7 @@ export default function AnalyzePage() {
             <>
               <button
                 type="button"
+                data-tour="analyze-tutorial-button"
                 onClick={() => setTutorialOpen(true)}
                 className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs font-semibold text-foreground/80 transition-colors hover:bg-primary/10"
               >

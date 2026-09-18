@@ -27,7 +27,7 @@ export function PopularVideos({ onSelect }: PopularVideosProps) {
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-xl border border-border bg-muted p-3">
+    <div className="rounded-xl border border-border bg-muted p-3" data-tour="analyze-popular-videos">
       <p className="text-xs font-semibold text-foreground/80">{t('analyze.popular_videos_title')}</p>
       <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{t('analyze.popular_videos_subtitle')}</p>
       <div className="mt-2.5 grid grid-cols-2 gap-2">

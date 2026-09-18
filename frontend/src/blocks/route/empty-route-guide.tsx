@@ -2,15 +2,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { renderStepText } from '@/lib/step-text'
 import { cn } from '@/lib/utils'
-import mapStep1 from '@/assets/route-guide/map-step1.png'
-import mapStep2 from '@/assets/route-guide/map-step2.png'
-import mapStep3 from '@/assets/route-guide/map-step3.png'
-import analyzeStep1 from '@/assets/route-guide/analyze-step1.png'
-import analyzeStep2 from '@/assets/route-guide/analyze-step2.png'
-import analyzeStep3 from '@/assets/route-guide/analyze-step3.png'
-import personaStep1 from '@/assets/route-guide/persona-step1.png'
-import personaStep2 from '@/assets/route-guide/persona-step2.png'
-import personaStep3 from '@/assets/route-guide/persona-step3.png'
+import mapGif from '@/assets/route-guide/route-guide-map.gif'
+import analyzeGif from '@/assets/route-guide/route-guide-analyze.gif'
+import personaGif from '@/assets/route-guide/route-guide-persona.gif'
 
 // 2026-09: "내 루트"가 비어있을 때 안내 문구("아직 루트가 없어요...")만 있고
 // 그 아래가 텅 비어있어서, 처음 온 사용자는 "그래서 뭘 눌러야 하지?" 싶을 수
@@ -18,9 +12,18 @@ import personaStep3 from '@/assets/route-guide/persona-step3.png'
 // 페르소나)마다 짧은 단계별 안내를 붙였다.
 //
 // 탭 형태로 만든 이유(사용자 피드백: "현재 상태라면 너무 길게 보이는데") —
-// 3개를 전부 세로로 나열하면(특히 캡처 이미지까지 들어가면) 화면이 너무
-// 길어져서, 한 번에 하나의 방법만 보여주고 나머지는 탭으로 전환하게 했다.
-// 어떤 탭을 보든 페이지 높이가 크게 안 바뀌어서 레이아웃도 안정적이다.
+// 3개를 전부 세로로 나열하면(특히 GIF까지 들어가면) 화면이 너무 길어져서,
+// 한 번에 하나의 방법만 보여주고 나머지는 탭으로 전환하게 했다. 어떤 탭을
+// 보든 페이지 높이가 크게 안 바뀌어서 레이아웃도 안정적이다.
+//
+// 2026-09: 단계별 정지 캡처 3장을 SNS 분석기의 "이렇게 사용해요"와 같은
+// 형태(실제 클릭 액션이 담긴 GIF 1개 + 그 아래 번호 매긴 줄글 설명)로
+// 통일했다(사용자 요청) — GIF 자체가 각 단계에서 무엇을 눌러야 하는지
+// 빨간 하이라이트 링 + 커서 클릭 동작으로 보여주므로, 정지 이미지를 단계마다
+// 끼워 넣을 필요가 없어졌다. GIF 생성/재촬영 스크립트는
+// scripts/record_route_guide_gifs.js(저장소엔 없고 로컬 녹화용,
+// blocks/analyze/usage-tutorial.tsx의 record_gif.js와 동일한 하이라이트 링 +
+// 커서 스타일 재사용) 참고.
 //
 // 버튼 이름을 강조하는 방식(renderStepText)은 blocks/analyze/usage-tutorial.tsx의
 // "이렇게 사용해요" 안내와 동일 — 번역 문자열 안에서 버튼 이름을 따옴표/대괄호로
@@ -30,7 +33,8 @@ interface GuideTab {
   tabLabel: string
   panelLabel: string
   steps: string[]
-  images?: string[]
+  gif: string
+  gifAlt: string
 }
 
 export function EmptyRouteGuide() {
@@ -43,21 +47,24 @@ export function EmptyRouteGuide() {
       tabLabel: t('map.title'),
       panelLabel: t('route.empty_guide_map_label'),
       steps: t('route.empty_guide_map_steps', { returnObjects: true }) as string[],
-      images: [mapStep1, mapStep2, mapStep3],
+      gif: mapGif,
+      gifAlt: t('route.empty_guide_map_label'),
     },
     {
       key: 'analyze',
       tabLabel: t('analyze.nav_title'),
       panelLabel: t('route.empty_guide_analyze_label'),
       steps: t('route.empty_guide_analyze_steps', { returnObjects: true }) as string[],
-      images: [analyzeStep1, analyzeStep2, analyzeStep3],
+      gif: analyzeGif,
+      gifAlt: t('route.empty_guide_analyze_label'),
     },
     {
       key: 'persona',
       tabLabel: t('persona.nav_title'),
       panelLabel: t('route.empty_guide_persona_label'),
       steps: t('route.empty_guide_persona_steps', { returnObjects: true }) as string[],
-      images: [personaStep1, personaStep2, personaStep3],
+      gif: personaGif,
+      gifAlt: t('route.empty_guide_persona_label'),
     },
   ]
   const active = tabs.find((tab) => tab.key === activeKey) ?? tabs[0]
@@ -84,16 +91,16 @@ export function EmptyRouteGuide() {
 
       <div className="mt-2 rounded-xl border border-border bg-muted p-3 md:p-4">
         <p className="mb-2 text-xs font-semibold text-foreground md:text-sm">{active.panelLabel}</p>
-        <ol className="space-y-3">
+
+        <div className="mx-auto max-w-[240px] overflow-hidden rounded-lg border border-border shadow-sm">
+          <img key={active.key} src={active.gif} alt={active.gifAlt} className="w-full" />
+        </div>
+
+        <ol className="mt-3 space-y-1.5">
           {active.steps.map((step, idx) => (
-            <li key={idx} className="space-y-1.5 text-xs leading-5 text-muted-foreground md:text-sm">
-              <div className="flex gap-1.5">
-                <span className="shrink-0 font-semibold text-primary">{idx + 1}.</span>
-                <span>{renderStepText(step)}</span>
-              </div>
-              {active.images?.[idx] && (
-                <img src={active.images[idx]} alt="" className="mx-auto mt-1 w-56 rounded-lg border border-border shadow-sm md:w-72" />
-              )}
+            <li key={idx} className="flex gap-1.5 text-xs leading-5 text-muted-foreground md:text-sm">
+              <span className="shrink-0 font-semibold text-primary">{idx + 1}.</span>
+              <span>{renderStepText(step)}</span>
             </li>
           ))}
         </ol>

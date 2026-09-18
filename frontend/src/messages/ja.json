@@ -452,7 +452,8 @@
     "button_label": "K-Vibeツアー",
     "next": "次へ",
     "done": "はじめる",
-    "skip": "スキップ",
+    "skip": "二度と表示しない",
+    "close": "閉じる",
     "home_nav_title": "ここから他の画面へ移動できます",
     "home_nav_body": "地図、SNS分析、ペルソナ、マイルートへいつでも移動できます。",
     "home_cta_title": "すぐにルートを作ってみましょう",
@@ -473,8 +474,8 @@
     "map_locate_body": "このボタンを押すと、現在地周辺に地図が移動します。",
     "map_list_title": "場所をタップして詳細を見ましょう",
     "map_list_body": "場所をタップすると詳細情報を見たり、マイルートに追加できます。",
-    "persona_grid_title": "好きなアーティストやテーマを選んでみましょう",
-    "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。",
+    "persona_grid_title": "このカードをタップしてみましょう",
+    "persona_grid_body": "タップすると、その場ですぐに1日ルートが作られます。他のカードも同じように選べます。",
     "persona_exclude_title": "気に入らない場所は外してみましょう",
     "persona_exclude_body": "Xボタンを押すと、この場所がルートから外れます。自分だけのルートにしてみましょう!",
     "route_drag_title": "ハンドルをドラッグして順番を変えましょう",
@@ -484,12 +485,20 @@
     "route_location_title": "次の場所までの距離を確認しましょう",
     "route_location_body": "ここを押すと、今いる場所から次の場所までの距離がわかります。",
     "route_actions_title": "ルートを共有したりリセットしたりできます",
-    "route_actions_body": "完成したルートを友達に共有したり、最初からやり直したりできます。"
+    "route_actions_body": "完成したルートを友達に共有したり、最初からやり直したりできます。",
+    "analyze_input_title": "ここにYouTubeのリンクを貼り付けます",
+    "analyze_input_body": "SNSで見たYouTube動画のリンクを貼り付けると、動画の中の場所を探します。",
+    "analyze_submit_title": "スポット分析を押して開始します",
+    "analyze_submit_body": "リンクを入力したら、このボタンを押すと分析が始まります。",
+    "analyze_popular_title": "サンプル動画ですぐに試せます",
+    "analyze_popular_body": "サムネイルを押すとリンクが自動で入力されます。試してみましょう!",
+    "analyze_tutorial_title": "使い方をもう一度見たいときは",
+    "analyze_tutorial_body": "このボタンを押すと使い方をもう一度確認できます。"
   },
   "welcome": {
     "title": "K-Vibeへようこそ!",
     "tour_prompt": "K-Vibeを一緒に見て回りましょうか?",
     "start_tour": "見て回る",
-    "skip": "スキップ"
+    "skip": "二度と表示しない"
   }
 }

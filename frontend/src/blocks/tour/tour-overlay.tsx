@@ -1,7 +1,7 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { ArrowDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useTourStore } from '@/store/tour-store'
@@ -71,8 +71,11 @@ export function TourOverlay() {
   const activeTourKey = useTourStore((s) => s.activeTourKey)
   const stepIndex = useTourStore((s) => s.stepIndex)
   const next = useTourStore((s) => s.next)
-  const skip = useTourStore((s) => s.skip)
+  const close = useTourStore((s) => s.close)
+  const optOut = useTourStore((s) => s.optOut)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const [tooltipHeight, setTooltipHeight] = useState(TOOLTIP_HEIGHT_ESTIMATE)
+  const tooltipRef = useRef<HTMLDivElement | null>(null)
 
   const steps = activeTourKey ? TOUR_REGISTRY[activeTourKey] : null
   const step = steps?.[stepIndex] ?? null
@@ -101,6 +104,11 @@ export function TourOverlay() {
         hasScrolledIntoView = true
       }
       setRect(target?.getBoundingClientRect() ?? null)
+      // 말풍선 실제 높이를 측정해서 below/above 판단에 쓴다 — 고정 추정치
+      // (TOOLTIP_HEIGHT_ESTIMATE)만 쓰면 내용이 짧은 단계에서도 여백이 부족한
+      // 것처럼 계산돼 불필요하게 "위쪽"으로 밀려나는 경우가 있었다(사용자
+      // 피드백: 지도 투어 말풍선이 아래쪽에 있으면 좋겠다).
+      if (tooltipRef.current) setTooltipHeight(tooltipRef.current.offsetHeight)
       // advanceOnClick이 명시적으로 false인 단계(예: 드래그로 완료 신호를
       // 직접 보내는 단계)는 클릭 리스너를 안 붙인다 — pointer-events는 여전히
       // 실제 요소로 전달돼서 드래그 자체는 그대로 동작한다.
@@ -145,7 +153,7 @@ export function TourOverlay() {
   const viewportH = window.innerHeight
   const viewportW = window.innerWidth
   const tooltipWidth = Math.min(TOOLTIP_MAX_WIDTH, viewportW - VIEWPORT_MARGIN * 2)
-  const { top: tooltipTop, left: tooltipLeft } = computeTooltipPosition(box, tooltipWidth, TOOLTIP_HEIGHT_ESTIMATE, viewportW, viewportH)
+  const { top: tooltipTop, left: tooltipLeft } = computeTooltipPosition(box, tooltipWidth, tooltipHeight, viewportW, viewportH)
 
   // clickThrough 단계는 바깥 전체를 pointer-events-none으로 풀어서 하이라이트
   // 박스/어둡게 처리된 배경이 클릭을 가로채지 않게 한다 — 말풍선만은
@@ -162,7 +170,25 @@ export function TourOverlay() {
         <div className="absolute inset-0 bg-black/60" />
       )}
 
+      {/* 드래그 손잡이를 "어떻게" 드래그해야 하는지 모르겠다는 피드백 대응
+          (사용자 요청) — 손잡이 옆에 까딱이는 아래 화살표를 보여줘서 드래그
+          방향을 알려준다. 위아래 양방향 화살표(ChevronsUpDown)는 헷갈린다는
+          피드백으로 아래 방향 화살표 하나로 단순화했다(사용자 요청). 이 투어
+          단계에서만 보이고 실제 편집 화면에는 영향 없다. 말풍선이 놓인
+          반대쪽(아래에 말풍선이 있으면 위, 아니면 아래)에 둬서 서로 겹치지
+          않게 한다. */}
+      {box && step.dragHint && (
+        <ArrowDown
+          className="pointer-events-none absolute h-5 w-5 animate-bounce text-primary"
+          style={{
+            top: tooltipTop >= box.top + box.height - 4 ? box.top - 24 : box.top + box.height + 4,
+            left: box.left + box.width / 2 - 10,
+          }}
+        />
+      )}
+
       <div
+        ref={tooltipRef}
         className="pointer-events-auto absolute rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300"
         style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
       >
@@ -170,14 +196,14 @@ export function TourOverlay() {
           <span className="text-[11px] font-semibold text-muted-foreground">
             {stepIndex + 1} / {steps.length}
           </span>
-          <button type="button" onClick={skip} aria-label={t('tour.skip')} className="text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={close} aria-label={t('tour.close')} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
         <p className="text-sm font-bold text-foreground">{t(step.titleKey)}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{t(step.bodyKey)}</p>
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={skip} className="text-xs font-medium text-muted-foreground underline">
+          <button type="button" onClick={optOut} className="text-xs font-medium text-muted-foreground underline">
             {t('tour.skip')}
           </button>
           <Button size="sm" onClick={() => next(steps.length)}>

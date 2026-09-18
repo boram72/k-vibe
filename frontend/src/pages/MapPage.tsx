@@ -147,9 +147,18 @@ export default function MapPage() {
   // 거리순 두 후보 목록을 그대로 보여준다(목록에서 직접 고른 것만 이동+강조).
   const [areaSearchLists, setAreaSearchLists] = useState<{ relevance: Place[]; distance: Place[] } | null>(null)
 
+  // 2026-09 대화 중 요청 — 우측 하단(검정) 버튼 전용 오버라이드. focusPlaces
+  // 핸드오프가 있는 동안은 effectiveCoords/effectiveLocationLabel이 항상
+  // focusPlaces[0]을 우선하므로, 그 버튼을 눌러도 뷰가 절대 실제 GPS로
+  // 못 돌아가는 문제가 있었음(대화 중 발견) — 이 플래그가 true인 동안만
+  // focusPlaces 우선순위를 해제한다. queryCoords(백엔드로 나가는 검색 좌표)는
+  // 이 플래그와 무관하게 focusPlaces[0]을 계속 우선한다("현재위치 버튼은
+  // 카메라만 이동, 검색 상태는 안 건드림" 원칙 — 위 queryCenter 주석 참고).
+  const [viewIgnoresFocus, setViewIgnoresFocus] = useState(false)
+
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
-  const effectiveCoords = focusPlaces[0]
+  const effectiveCoords = focusPlaces[0] && !viewIgnoresFocus
     ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng }
     : (searchCenter ?? coords)
 
@@ -172,6 +181,15 @@ export default function MapPage() {
     setAreaSearchLists(null)
     setHighlightedPlaceId(null)
     requestLocation()
+  }
+
+  // 우측 하단(검정) 버튼 전용 — focusPlaces 핸드오프 유무와 무관하게 항상
+  // 실제 GPS로 강제 이동해야 하므로, viewIgnoresFocus를 켜서 effectiveCoords/
+  // effectiveLocationLabel의 focusPlaces 우선순위 자체를 해제한 뒤 기존
+  // handleRequestLocation과 동일하게 처리한다.
+  function handleForceCurrentLocation() {
+    setViewIgnoresFocus(true)
+    handleRequestLocation()
   }
 
   // 팀 태스크보드 6번 — "동네검색". 기존 검색창(search)은 그대로 두고(이미 불러온
@@ -337,7 +355,8 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const effectiveLocationLabel = focusPlaces.length ? t('map.analysis_result') : locationLabel
+  const isShowingAnalysisResult = focusPlaces.length > 0 && !viewIgnoresFocus
+  const effectiveLocationLabel = isShowingAnalysisResult ? t('map.analysis_result') : locationLabel
 
   // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
   // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
@@ -440,7 +459,9 @@ export default function MapPage() {
           selectedPlaceId={highlightedPlaceId ?? undefined}
           onSelectPlace={handleSelectPlace}
           onRequestLocation={handleRequestLocation}
+          onForceCurrentLocation={handleForceCurrentLocation}
           locationLabel={effectiveLocationLabel}
+          isAnalysisResult={isShowingAnalysisResult}
           onSearchArea={(coord) => {
             setSearchCenter(coord)
             setQueryCenter(coord)

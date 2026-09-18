@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LocateFixed, MapPin } from 'lucide-react'
+import { LocateFixed, MapPin, ScanSearch } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { Button } from '@/components/ui/button'
 import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
@@ -19,7 +19,18 @@ interface MapCanvasProps {
   selectedPlaceId?: string
   onSelectPlace: (place: Place) => void
   onRequestLocation: () => void
+  // 2026-09 대화 중 요청 — 왼쪽 상단 라벨 버튼(LocationOverlay, onRequestLocation)과
+  // 달리, 우측 하단 아이콘 버튼(MapActionButtons)은 SNS 분석기 등에서 넘어온
+  // focusPlaces 핸드오프와 무관하게 항상 실제 GPS로 뷰를 강제 이동시킨다.
+  // 별도 핸들러가 필요한 이유: onRequestLocation은 GPS를 새로 받아오기만 할
+  // 뿐 effectiveCoords의 focusPlaces 우선순위 자체를 못 이기므로, MapPage가
+  // 그 우선순위를 해제하는 로직까지 같이 실행해야 함.
+  onForceCurrentLocation: () => void
   locationLabel: string
+  // locationLabel이 "분석결과"(SNS 분석기 핸드오프)를 보여주는 중인지 —
+  // LocationOverlay가 이때만 다른 아이콘(ScanSearch)으로 바꿔서 "이건 GPS가
+  // 아니라 분석결과 위치"임을 구분되게 표시한다.
+  isAnalysisResult?: boolean
   // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
   // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
   // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
@@ -112,8 +123,17 @@ function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[]) {
 // configured — confirmed on the deployed site via elementFromPoint() at the
 // button's own coordinates returning a kakao SVG node, not the button. Same
 // class of bug (and same fix) as route-mini-map.tsx's Directions button.
-function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: string; onRequestLocation: () => void }) {
+function LocationOverlay({
+  locationLabel,
+  onRequestLocation,
+  isAnalysisResult,
+}: {
+  locationLabel: string
+  onRequestLocation: () => void
+  isAnalysisResult?: boolean
+}) {
   const { t } = useTranslation()
+  const Icon = isAnalysisResult ? ScanSearch : LocateFixed
   return (
     <button
       type="button"
@@ -121,7 +141,7 @@ function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: 
       title={t('map.refresh_location')}
       className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
     >
-      <LocateFixed className="h-3.5 w-3.5 text-primary" />
+      <Icon className="h-3.5 w-3.5 text-primary" />
       <span className="text-xs font-semibold text-popover-foreground">{locationLabel}</span>
     </button>
   )
@@ -129,14 +149,14 @@ function LocationOverlay({ locationLabel, onRequestLocation }: { locationLabel: 
 
 // Standalone "open the analyzer" shortcut was removed — SNS 분석기 already has
 // its own bottom-nav/sidebar tab, so this was a redundant second entry point.
-function MapActionButtons({ onRequestLocation }: { onRequestLocation: () => void }) {
+function MapActionButtons({ onForceCurrentLocation }: { onForceCurrentLocation: () => void }) {
   const { t } = useTranslation()
   return (
     <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
       <Button
         size="icon"
         data-tour="map-locate"
-        onClick={onRequestLocation}
+        onClick={onForceCurrentLocation}
         title={t('map.refresh_location')}
         aria-label={t('map.refresh_location')}
       >
@@ -176,7 +196,20 @@ function pinPosition(coord: Coordinates, center: Coordinates, fitPlaces: Place[]
   return { left: `${left}%`, top: `${top}%` }
 }
 
-function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, myLocation, compact, highlightIds }: MapCanvasProps) {
+function PercentMapCanvas({
+  center,
+  places,
+  fitPlaces = [],
+  selectedPlaceId,
+  onSelectPlace,
+  onRequestLocation,
+  onForceCurrentLocation,
+  locationLabel,
+  isAnalysisResult,
+  myLocation,
+  compact,
+  highlightIds,
+}: MapCanvasProps) {
   return (
     <div className={cn('relative h-full w-full overflow-hidden bg-muted', compact ? 'min-h-0' : 'min-h-70')}>
       <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
@@ -227,8 +260,8 @@ function PercentMapCanvas({ center, places, fitPlaces = [], selectedPlaceId, onS
         </div>
       )}
 
-      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} />
-      <MapActionButtons onRequestLocation={onRequestLocation} />
+      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} isAnalysisResult={isAnalysisResult} />
+      <MapActionButtons onForceCurrentLocation={onForceCurrentLocation} />
     </div>
   )
 }
@@ -249,7 +282,21 @@ function SearchAreaButton({ onClick }: { onClick: () => void }) {
 }
 
 function KakaoMapCanvas(props: MapCanvasProps) {
-  const { center, places, fitPlaces = [], selectedPlaceId, onSelectPlace, onRequestLocation, locationLabel, onSearchArea, myLocation, compact, highlightIds } = props
+  const {
+    center,
+    places,
+    fitPlaces = [],
+    selectedPlaceId,
+    onSelectPlace,
+    onRequestLocation,
+    onForceCurrentLocation,
+    locationLabel,
+    isAnalysisResult,
+    onSearchArea,
+    myLocation,
+    compact,
+    highlightIds,
+  } = props
   const boundedPlaces = useMemo(() => fitPlaces.filter(hasValidCoordinates), [fitPlaces])
   const boundsKey = boundedPlaces.map((place) => `${place.id}:${place.lat},${place.lng}`).join('|')
   // Explicit https:// — the SDK's default loader URL is protocol-relative
@@ -354,6 +401,19 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     }
   }
 
+  // 2026-09 대화 중 요청 — 우측 하단(검정) 버튼 전용. SNS 분석기 등에서
+  // 넘어온 focusPlaces 핸드오프와 무관하게 항상 실제 GPS로 강제 이동해야
+  // 하므로, MapPage의 onForceCurrentLocation(뷰의 focusPlaces 우선순위 자체를
+  // 해제)을 부른다 — 그 외 camera 재동기화 로직은 handleRequestLocation과 동일.
+  function handleForceCurrentLocation() {
+    onForceCurrentLocation()
+    setFocusCenter(null)
+    setPendingCenter(null)
+    if (map && typeof kakao !== 'undefined' && kakao.maps) {
+      map.panTo(new kakao.maps.LatLng(center.lat, center.lng))
+    }
+  }
+
   // 팀 태스크보드 5번 — 사용자가 지도를 손으로 드래그해서 놓은 순간의 중심좌표를
   // 기억해둔다(아직 검색 확정 아님, 버튼 노출용). 카카오 지도 내부 드래그는
   // React state를 전혀 거치지 않으므로 dragend 이벤트에서 map.getCenter()로 직접 읽는다.
@@ -427,8 +487,8 @@ function KakaoMapCanvas(props: MapCanvasProps) {
         )}
       </KakaoMap>
 
-      <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} />
-      <MapActionButtons onRequestLocation={handleRequestLocation} />
+      <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} isAnalysisResult={isAnalysisResult} />
+      <MapActionButtons onForceCurrentLocation={handleForceCurrentLocation} />
       {onSearchArea && pendingCenter && <SearchAreaButton onClick={handleSearchArea} />}
     </div>
   )

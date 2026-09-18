@@ -90,7 +90,10 @@
     "related_attractions_empty": "이 지역의 연관 관광지 데이터가 아직 없어요",
     "area_search_results_title": "검색 결과",
     "area_search_relevance": "정확도순",
-    "area_search_distance": "거리순"
+    "area_search_distance": "거리순",
+    "close_search_results": "검색 결과 닫기",
+    "sns_analyzer_title": "SNS 분석기",
+    "persona_visited_places_title": "페르소나 방문 장소"
   },
   "placeDetail": {
     "add_to_route": "루트에 추가",

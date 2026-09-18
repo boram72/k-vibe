@@ -1,6 +1,6 @@
 import { useRef, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search, Sparkles } from 'lucide-react'
+import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search, Sparkles, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CategoryFilter } from '@/blocks/map/category-filter'
 import { StarFilter } from '@/blocks/map/star-filter'
@@ -67,10 +67,26 @@ interface SpotListPanelProps {
   // 자동 이동 대신 정확도순/거리순 후보 목록을 보여준다. null이면(검색 안 함/
   // 행정구역 매칭) 이 섹션 자체를 숨김. 찜/관광지 추천보다도 위, 최우선 노출.
   areaSearchLists: { relevance: Place[]; distance: Place[] } | null
+  // 5-4(plan.md) — 검색결과 목록은 한번 뜨면 닫을 방법이 없었음(사용자 요청) —
+  // 이 콜백이 areaSearchLists만 비워서 결과 섹션을 숨긴다. 검색창 텍스트 자체는
+  // 그대로 둔다("뭘 검색했는지 보이게" 하는 기존 의도와는 무관한, 별개의 동작).
+  onCloseAreaSearchResults: () => void
+  // 5-1(plan.md, 대화 중 요청) — SNS 분석기에서 넘어온 결과(focusPlaces)는
+  // "주변 스팟"과 섞이면 안 됨(둘은 성격이 다른 목록) — 검색결과/찜 목록과
+  // 동일하게 자기만의 독립된 섹션으로 분리해서 보여준다. 빈 배열이면 섹션
+  // 자체를 숨김(핸드오프 없이 들어온 일반적인 경우).
+  analyzerPlaces: Place[]
   savedPlaces: Place[]
+  // "주변 스팟"(또는 페르소나별 탭이면 "페르소나 방문 장소") 목록 — analyzerPlaces
+  // 는 이미 별도 섹션으로 빠졌으므로 여기엔 안 섞여 들어온다(MapPage가 미리
+  // 제외하고 내려줌).
   places: Place[]
   isLoading: boolean
   onSelectPlace: (place: Place) => void
+  // 5-3(plan.md) — 페르소나별 탭일 때는 이 목록이 "주변"이 아니라 "페르소나
+  // 방문지"라 다른 문구를 써야 함 — 어떤 문구를 쓸지는 MapPage가 결정해서
+  // 그대로 내려준다.
+  listTitle: string
   // RelatedAttractionsList가 백엔드(/attractions/related)로 그대로 보내는
   // 값 — 지도가 실제로 보여주는 뷰 중심(effectiveCoords)이 아니라 MapPage의
   // queryCoords를 받는다(GPS 버튼만으로는 안 바뀌는, 명시적 검색 좌표).
@@ -100,11 +116,14 @@ export function SpotListPanel({
   onShowAttractionsChange,
   onSelectAttraction,
   areaSearchLists,
+  onCloseAreaSearchResults,
+  analyzerPlaces,
   savedPlaces,
   places,
   isLoading,
   onSelectPlace,
   center,
+  listTitle,
 }: SpotListPanelProps) {
   const { t } = useTranslation()
   const touchStartY = useRef<number | null>(null)
@@ -297,7 +316,7 @@ export function SpotListPanel({
 
   const titleRow = (
     <div className="flex items-center justify-between px-4 pb-2 pt-1">
-      <p className="text-sm font-bold text-foreground">{t('map.nearby_spots')}</p>
+      <p className="text-sm font-bold text-foreground">{listTitle}</p>
       <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
         {places.length}
       </span>
@@ -312,22 +331,53 @@ export function SpotListPanel({
   // 고른 장소에만 빨간 핀이 붙는다(기존 "여러 결과 전부 빨간 핀" 방식과 달리
   // 이 흐름은 목록에서 하나를 고르는 게 핵심이라 의도적으로 다르게 처리).
   const areaSearchResultsSection = areaSearchLists && (areaSearchLists.relevance.length > 0 || areaSearchLists.distance.length > 0) && (
-    <div className="max-h-72 overflow-y-auto border-b border-border">
-      <div className="px-4 pb-1 pt-2">
+    <div className="border-b border-border">
+      {/* 타이틀+닫기 버튼은 이 스크롤 영역 밖으로 — 원래는 아래 목록과 같은
+          overflow-y-auto 안에 있어서 목록을 스크롤하면 같이 밀려 올라가
+          닫기 버튼까지 안 보이게 됐었음(대화 중 발견). "주변 스팟"
+          타이틀(titleRow)/찜 목록(savedListSection)과 동일하게 타이틀은
+          고정, 목록만 스크롤되도록 통일. */}
+      <div className="flex items-center justify-between px-4 pb-1 pt-2">
         <p className="text-sm font-bold text-foreground">{t('map.area_search_results_title')}</p>
+        <button
+          type="button"
+          onClick={onCloseAreaSearchResults}
+          aria-label={t('map.close_search_results')}
+          className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
       </div>
-      {areaSearchLists.relevance.length > 0 && (
-        <div>
-          <p className="px-4 pb-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_relevance')}</p>
-          {areaSearchLists.relevance.map(renderPlaceRow)}
-        </div>
-      )}
-      {areaSearchLists.distance.length > 0 && (
-        <div>
-          <p className="px-4 pb-1 pt-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_distance')}</p>
-          {areaSearchLists.distance.map(renderPlaceRow)}
-        </div>
-      )}
+      <div className="max-h-72 overflow-y-auto">
+        {areaSearchLists.relevance.length > 0 && (
+          <div>
+            <p className="px-4 pb-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_relevance')}</p>
+            {areaSearchLists.relevance.map(renderPlaceRow)}
+          </div>
+        )}
+        {areaSearchLists.distance.length > 0 && (
+          <div>
+            <p className="px-4 pb-1 pt-1 text-[11px] font-semibold text-muted-foreground">{t('map.area_search_distance')}</p>
+            {areaSearchLists.distance.map(renderPlaceRow)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  // 5-1(plan.md, 대화 중 요청) — SNS 분석기에서 넘어온 결과 전용 섹션. "지금
+  // 막 분석해서 온" 목적이 이 페이지 방문의 핵심이라 검색결과보다도 위,
+  // 최우선 노출 — 다른 섹션들과 동일하게 자체 높이 제한(overflow-y-auto)을 둬서
+  // 아래 목록들을 밀어내지 않는다.
+  const analyzerSection = analyzerPlaces.length > 0 && (
+    <div className="border-b border-border">
+      <div className="flex items-center justify-between px-4 pb-2 pt-1">
+        <p className="text-sm font-bold text-foreground">{t('map.sns_analyzer_title')}</p>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+          {analyzerPlaces.length}
+        </span>
+      </div>
+      <div className="max-h-72 overflow-y-auto">{analyzerPlaces.map(renderPlaceRow)}</div>
     </div>
   )
 
@@ -421,6 +471,7 @@ export function SpotListPanel({
             {mobilePanelState !== "minimized" && (
               <>
                 {filterTabs}
+                {analyzerSection}
                 {areaSearchResultsSection}
                 {savedListSection}
                 {attractionsSection}
@@ -433,6 +484,7 @@ export function SpotListPanel({
       ) : (
         <>
           {searchAndFilter}
+          {analyzerSection}
           {areaSearchResultsSection}
           {savedListSection}
           {attractionsSection}

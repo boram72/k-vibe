@@ -175,6 +175,19 @@ export default function MapPage() {
   const [queryCenter, setQueryCenter] = useState(effectiveCoords)
   const queryCoords = focusPlaces[0] ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng } : queryCenter
 
+  // 4번(plan.md) — "지금 지도가 실제로 보여주는 위치"를 MapCanvas가 그대로
+  // 올려준다(드래그 중/장소 선택 팬/확정된 center 변경 전부 포함). 상호명
+  // 검색(검색창)/관광지 추천 클릭이 카카오 keywordSearch에 넘기는 위치
+  // 힌트(near)가 지금은 이걸 몰라서 effectiveCoords(마지막으로 "확정"된 검색
+  // 중심)만 써서, 드래그나 장소 선택으로 카메라가 이미 다른 곳으로 옮겨간
+  // 뒤에도 검색 힌트만 옛 위치인 채로 어긋나던 문제 — 예: 서울에서 "불국사"를
+  // 검색해 클릭하면 경주로 카메라는 이동하지만(handleSelectPlace는
+  // searchCenter를 안 건드림), 그 직후 검색 힌트는 여전히 서울 근처였음.
+  // searchCenter/queryCenter(=/places 재조회, 실제 검색 확정 상태)는 이 값과
+  // 완전히 무관 — 이 state는 검색 힌트 계산에만 쓰이고, 지도 데이터 재조회나
+  // center prop 자체를 절대 건드리지 않는다.
+  const [realCameraCenter, setRealCameraCenter] = useState(effectiveCoords)
+
   function handleRequestLocation() {
     setSearchCenter(null)
     setKakaoSearchResults([])
@@ -234,7 +247,7 @@ export default function MapPage() {
 
   function handleSearchArea() {
     if (!search.trim() || areaSearchMutation.isPending) return
-    areaSearchMutation.mutate({ query: search, near: effectiveCoords })
+    areaSearchMutation.mutate({ query: search, near: realCameraCenter })
   }
 
   // 6번 — "관광지 추천" 리스트 항목 클릭. TourAPI 연관관광지 응답엔 좌표가
@@ -242,7 +255,7 @@ export default function MapPage() {
   // 검색창(search)은 건드리지 않음 — 사용자가 타이핑한 검색어가 아니라
   // 목록 클릭이라 검색창에 남길 이유가 없음(대화 중 요청).
   const attractionSearchMutation = useMutation({
-    mutationFn: (name: string) => searchKakaoArea(name, effectiveCoords),
+    mutationFn: (name: string) => searchKakaoArea(name, realCameraCenter),
     onSuccess: (result) => {
       if (!result) {
         toast.error(t('map.search_area_not_found'))
@@ -358,6 +371,19 @@ export default function MapPage() {
   const isShowingAnalysisResult = focusPlaces.length > 0 && !viewIgnoresFocus
   const effectiveLocationLabel = isShowingAnalysisResult ? t('map.analysis_result') : locationLabel
 
+  // 5-3(plan.md) — "주변 스팟" 목록의 타이틀. 페르소나별(스타별) 탭일 때는
+  // "주변"이 아니라 "페르소나 방문 장소"가 더 정확한 설명이라 그 문구로 바꾼다.
+  // (SNS 분석기 결과는 더 이상 이 타이틀/목록에 안 섞임 — 아래 analyzerPlaces
+  // 참고, 자기만의 독립된 섹션으로 분리됨.)
+  const spotListTitle = filterMode === 'star' ? t('map.persona_visited_places_title') : t('map.nearby_spots')
+
+  // 5-4(plan.md) — 검색결과 목록을 닫는 버튼용. 검색창 텍스트/areaSearchedQuery는
+  // 그대로 둔다(뭘 검색했는지 보이게 하는 기존 동작과 무관 — 위 areaSearchMutation
+  // 주석 참고).
+  function handleCloseAreaSearchResults() {
+    setAreaSearchLists(null)
+  }
+
   // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
   // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
   // 그 의미가 깨진다(대화로 확정, plan.md 12번 참고).
@@ -434,6 +460,15 @@ export default function MapPage() {
     })
   }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
 
+  // 5-1(plan.md, 대화 중 요청) — "주변 스팟" 목록에는 SNS 분석기에서 넘어온
+  // 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로 보여줌 —
+  // SpotListPanel의 analyzerPlaces 참고). 지도 핀은 그대로 filtered 전체를
+  // 쓰고(focusPlaces도 계속 핀으로 보임), 목록 패널에 내려주는 것만 제외.
+  const nearbySpotListPlaces = useMemo(
+    () => (focusPlaces.length ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered),
+    [filtered, focusPlaces],
+  )
+
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
     if (place) toggleSaveMutation.mutate(place)
@@ -466,6 +501,7 @@ export default function MapPage() {
             setSearchCenter(coord)
             setQueryCenter(coord)
           }}
+          onCameraCenterChange={setRealCameraCenter}
           myLocation={isPrecise ? coords : null}
           highlightIds={kakaoSearchResultIds}
           compact={!isDesktop && mobilePanelState === 'full'}
@@ -512,11 +548,14 @@ export default function MapPage() {
           onShowAttractionsChange={setShowAttractions}
           onSelectAttraction={handleSelectAttraction}
           areaSearchLists={areaSearchLists}
+          onCloseAreaSearchResults={handleCloseAreaSearchResults}
+          analyzerPlaces={focusPlaces}
           savedPlaces={savedPlaces}
-          places={filtered}
+          places={nearbySpotListPlaces}
           isLoading={isLoading}
           onSelectPlace={handleSelectPlace}
           center={queryCoords}
+          listTitle={spotListTitle}
         />
       )}
 

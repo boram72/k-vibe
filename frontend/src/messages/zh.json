@@ -90,7 +90,10 @@
     "related_attractions_empty": "该地区暂无关联景点数据",
     "area_search_results_title": "搜索结果",
     "area_search_relevance": "按相关度",
-    "area_search_distance": "按距离"
+    "area_search_distance": "按距离",
+    "close_search_results": "关闭搜索结果",
+    "sns_analyzer_title": "SNS分析器",
+    "persona_visited_places_title": "角色到访地点"
   },
   "placeDetail": {
     "add_to_route": "添加到路线",

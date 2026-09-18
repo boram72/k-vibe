@@ -371,6 +371,19 @@ export default function MapPage() {
   const isShowingAnalysisResult = focusPlaces.length > 0 && !viewIgnoresFocus
   const effectiveLocationLabel = isShowingAnalysisResult ? t('map.analysis_result') : locationLabel
 
+  // 5-3(plan.md) — "주변 스팟" 목록의 타이틀. 페르소나별(스타별) 탭일 때는
+  // "주변"이 아니라 "페르소나 방문 장소"가 더 정확한 설명이라 그 문구로 바꾼다.
+  // (SNS 분석기 결과는 더 이상 이 타이틀/목록에 안 섞임 — 아래 analyzerPlaces
+  // 참고, 자기만의 독립된 섹션으로 분리됨.)
+  const spotListTitle = filterMode === 'star' ? t('map.persona_visited_places_title') : t('map.nearby_spots')
+
+  // 5-4(plan.md) — 검색결과 목록을 닫는 버튼용. 검색창 텍스트/areaSearchedQuery는
+  // 그대로 둔다(뭘 검색했는지 보이게 하는 기존 동작과 무관 — 위 areaSearchMutation
+  // 주석 참고).
+  function handleCloseAreaSearchResults() {
+    setAreaSearchLists(null)
+  }
+
   // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
   // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
   // 그 의미가 깨진다(대화로 확정, plan.md 12번 참고).
@@ -446,6 +459,15 @@ export default function MapPage() {
       return matchCategory && matchStar && matchSearch
     })
   }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
+
+  // 5-1(plan.md, 대화 중 요청) — "주변 스팟" 목록에는 SNS 분석기에서 넘어온
+  // 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로 보여줌 —
+  // SpotListPanel의 analyzerPlaces 참고). 지도 핀은 그대로 filtered 전체를
+  // 쓰고(focusPlaces도 계속 핀으로 보임), 목록 패널에 내려주는 것만 제외.
+  const nearbySpotListPlaces = useMemo(
+    () => (focusPlaces.length ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered),
+    [filtered, focusPlaces],
+  )
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -526,11 +548,14 @@ export default function MapPage() {
           onShowAttractionsChange={setShowAttractions}
           onSelectAttraction={handleSelectAttraction}
           areaSearchLists={areaSearchLists}
+          onCloseAreaSearchResults={handleCloseAreaSearchResults}
+          analyzerPlaces={focusPlaces}
           savedPlaces={savedPlaces}
-          places={filtered}
+          places={nearbySpotListPlaces}
           isLoading={isLoading}
           onSelectPlace={handleSelectPlace}
           center={queryCoords}
+          listTitle={spotListTitle}
         />
       )}
 

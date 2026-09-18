@@ -471,8 +471,6 @@
   },
   "welcome": {
     "title": "Welcome to K-Vibe!",
-    "language_prompt": "Please choose your language.",
-    "next": "Next",
     "tour_prompt": "Want to take a quick look around K-Vibe?",
     "start_tour": "Take the tour",
     "skip": "Skip"

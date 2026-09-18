@@ -471,8 +471,6 @@
   },
   "welcome": {
     "title": "K-Vibe에 오신 것을 환영해요!",
-    "language_prompt": "사용하실 언어를 선택해 주세요.",
-    "next": "다음",
     "tour_prompt": "K-Vibe를 함께 둘러볼까요?",
     "start_tour": "둘러보기",
     "skip": "건너뛰기"

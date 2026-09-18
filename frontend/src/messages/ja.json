@@ -104,7 +104,16 @@
     "review_submit": "レビューを投稿",
     "review_submitted": "レビューを投稿しました",
     "review_submit_error": "レビューの投稿に失敗しました。もう一度お試しください。",
-    "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！"
+    "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！",
+    "review_edit": "レビューを編集",
+    "review_delete": "レビューを削除",
+    "review_save": "保存",
+    "review_updated": "レビューを更新しました",
+    "review_update_error": "レビューの更新に失敗しました。もう一度お試しください。",
+    "review_deleted": "レビューを削除しました",
+    "review_delete_error": "レビューの削除に失敗しました。もう一度お試しください。",
+    "review_delete_confirm_title": "このレビューを削除しますか？",
+    "review_delete_confirm_desc": "削除すると元に戻せません。"
   },
   "analyze": {
     "title": "SNSスポット分析",

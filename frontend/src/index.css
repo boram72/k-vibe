@@ -162,7 +162,7 @@ body {
   }
 }
 .animate-marquee {
-  animation: kv-marquee 12s linear infinite;
+  animation: kv-marquee 15s linear infinite;
 }
 
 /* 투어에서 "이 카드를 눌러보세요"/"손잡이를 드래그해보세요" 단계가 실제

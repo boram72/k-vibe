@@ -162,8 +162,7 @@ body {
   }
 }
 .animate-marquee {
-  /* 대화 중 요청 — 기존 8s보다 1.3배 느리게(10.4s) */
-  animation: kv-marquee 10.4s linear infinite;
+  animation: kv-marquee 12s linear infinite;
 }
 
 /* 투어에서 "이 카드를 눌러보세요"/"손잡이를 드래그해보세요" 단계가 실제

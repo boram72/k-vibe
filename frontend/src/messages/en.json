@@ -452,7 +452,8 @@
     "button_label": "K-Vibe Tour",
     "next": "Next",
     "done": "Get started",
-    "skip": "Skip",
+    "skip": "Don't show again",
+    "close": "Close",
     "home_nav_title": "Get around from here",
     "home_nav_body": "Jump to Map, SNS Analyzer, Persona, or My Route anytime.",
     "home_cta_title": "Build a route right away",
@@ -484,12 +485,20 @@
     "route_location_title": "Check the distance to your next stop",
     "route_location_body": "Tap here to see how far you are from the next place.",
     "route_actions_title": "Share or reset your route",
-    "route_actions_body": "Share your finished route with friends, or start over from scratch."
+    "route_actions_body": "Share your finished route with friends, or start over from scratch.",
+    "analyze_input_title": "Paste a YouTube link here",
+    "analyze_input_body": "Paste a link to a video you saw on social media, and we'll find the spots in it.",
+    "analyze_submit_title": "Tap Analyze to start",
+    "analyze_submit_body": "After pasting a link, tap this button to start the analysis.",
+    "analyze_popular_title": "Try one of these example videos",
+    "analyze_popular_body": "Tap a thumbnail to fill in the link automatically. Give it a try!",
+    "analyze_tutorial_title": "Want to see how it works again?",
+    "analyze_tutorial_body": "Tap this button to review how to use this page."
   },
   "welcome": {
     "title": "Welcome to K-Vibe!",
     "tour_prompt": "Want to take a quick look around K-Vibe?",
     "start_tour": "Take the tour",
-    "skip": "Skip"
+    "skip": "Don't show again"
   }
 }

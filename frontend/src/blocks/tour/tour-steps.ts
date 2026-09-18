@@ -21,6 +21,7 @@ export const HOME_TOUR_KEY = 'home'
 export const MAP_TOUR_KEY = 'map'
 export const PERSONA_TOUR_KEY = 'persona'
 export const ROUTE_TOUR_KEY = 'route'
+export const ANALYZE_TOUR_KEY = 'analyze'
 
 export const HOME_TOUR_STEPS: TourStep[] = [
   { target: 'home-nav', titleKey: 'tour.home_nav_title', bodyKey: 'tour.home_nav_body' },
@@ -55,9 +56,20 @@ export const ROUTE_TOUR_STEPS: TourStep[] = [
   { target: 'route-actions', titleKey: 'tour.route_actions_title', bodyKey: 'tour.route_actions_body' },
 ]
 
+// 인기 영상 썸네일 단계는 clickThrough로 둬서 실제로 눌러보면(썸네일 클릭 시
+// URL 입력창이 채워짐) 그 자리에서 바로 다음 단계로 넘어간다 — 페르소나/
+// 루트 투어와 같은 "실제로 해볼 수 있게" 패턴(사용자 요청).
+export const ANALYZE_TOUR_STEPS: TourStep[] = [
+  { target: 'analyze-url-input', titleKey: 'tour.analyze_input_title', bodyKey: 'tour.analyze_input_body' },
+  { target: 'analyze-submit', titleKey: 'tour.analyze_submit_title', bodyKey: 'tour.analyze_submit_body' },
+  { target: 'analyze-popular-videos', titleKey: 'tour.analyze_popular_title', bodyKey: 'tour.analyze_popular_body', clickThrough: true },
+  { target: 'analyze-tutorial-button', titleKey: 'tour.analyze_tutorial_title', bodyKey: 'tour.analyze_tutorial_body' },
+]
+
 export const TOUR_REGISTRY: Record<string, TourStep[]> = {
   [HOME_TOUR_KEY]: HOME_TOUR_STEPS,
   [MAP_TOUR_KEY]: MAP_TOUR_STEPS,
   [PERSONA_TOUR_KEY]: PERSONA_TOUR_STEPS,
   [ROUTE_TOUR_KEY]: ROUTE_TOUR_STEPS,
+  [ANALYZE_TOUR_KEY]: ANALYZE_TOUR_STEPS,
 }

@@ -11,7 +11,7 @@ import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona 
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
-import { useTourStore, hasSeenTour } from '@/store/tour-store'
+import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { PERSONA_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n'
@@ -84,7 +84,7 @@ export default function PersonaPage() {
   // 바로 들어온 경우(activePersonaId 있음)는 하이라이트할 그리드 자체가
   // 안 보이므로 대상이 아니다.
   useEffect(() => {
-    if (!activePersonaId && !hasSeenTour(PERSONA_TOUR_KEY)) startTour(PERSONA_TOUR_KEY)
+    if (!activePersonaId && canAutoStartTour(PERSONA_TOUR_KEY)) startTour(PERSONA_TOUR_KEY)
   }, [activePersonaId, startTour])
 
   const personasQuery = useQuery({

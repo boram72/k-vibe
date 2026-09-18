@@ -17,7 +17,7 @@ import { encodeRouteForShare, decodeRouteFromShare } from '@/lib/route-share'
 import { haversineKm } from '@/lib/haversine'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useRouteProgressStore } from '@/store/route-progress-store'
-import { useTourStore, hasSeenTour } from '@/store/tour-store'
+import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { ROUTE_TOUR_KEY, ROUTE_TOUR_STEPS } from '@/blocks/tour/tour-steps'
 import type { MapFocusState } from './MapPage'
 import type { RoutePlan } from '@/lib/route-timing'
@@ -98,7 +98,7 @@ export default function RoutePage() {
   // "이미 채워진 루트를 편집하는 법"만 다룬다(사용자 확인, localStorage
   // 플래그로 최초 1회만).
   useEffect(() => {
-    if (stops.length > 0 && !hasSeenTour(ROUTE_TOUR_KEY)) startTour(ROUTE_TOUR_KEY)
+    if (stops.length > 0 && canAutoStartTour(ROUTE_TOUR_KEY)) startTour(ROUTE_TOUR_KEY)
   }, [stops.length, startTour])
 
   useEffect(() => {

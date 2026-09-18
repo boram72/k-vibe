@@ -27,7 +27,7 @@ export function UrlInputCard({ url, onUrlChange, onAnalyze, isAnalyzing }: UrlIn
 
   return (
     <div className="space-y-3">
-      <div className="relative">
+      <div className="relative" data-tour="analyze-url-input">
         <InputIcon
           className={cn(
             'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
@@ -77,7 +77,7 @@ export function UrlInputCard({ url, onUrlChange, onAnalyze, isAnalyzing }: UrlIn
         </div>
       )}
 
-      <Button className="w-full" disabled={!urlValid || isAnalyzing} onClick={onAnalyze}>
+      <Button className="w-full" data-tour="analyze-submit" disabled={!urlValid || isAnalyzing} onClick={onAnalyze}>
         {isAnalyzing ? t('analyze.loading_button') : t('analyze.analyze_button')}
       </Button>
     </div>

@@ -469,7 +469,15 @@
     "persona_grid_title": "挑选喜欢的艺人或主题",
     "persona_grid_body": "点击卡片，即可立即生成一日路线。",
     "persona_exclude_title": "把不想去的地点去掉",
-    "persona_exclude_body": "点击X按钮，即可把这个地点从路线中移除。打造属于你自己的路线吧!"
+    "persona_exclude_body": "点击X按钮，即可把这个地点从路线中移除。打造属于你自己的路线吧!",
+    "route_drag_title": "拖动手柄调整顺序",
+    "route_drag_body": "按住这个手柄上下拖动，即可调整拜访顺序。",
+    "route_complete_title": "去过的地方可以打勾",
+    "route_complete_body": "点击这个按钮即可标记为已完成。",
+    "route_location_title": "查看到下一个地点的距离",
+    "route_location_body": "点击这里即可查看从当前位置到下一个地点的距离。",
+    "route_actions_title": "可以分享或重置路线",
+    "route_actions_body": "把完成的路线分享给朋友，或者从头重新制作。"
   },
   "welcome": {
     "title": "欢迎来到K-Vibe!",

@@ -17,6 +17,8 @@ import { encodeRouteForShare, decodeRouteFromShare } from '@/lib/route-share'
 import { haversineKm } from '@/lib/haversine'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useRouteProgressStore } from '@/store/route-progress-store'
+import { useTourStore, hasSeenTour } from '@/store/tour-store'
+import { ROUTE_TOUR_KEY, ROUTE_TOUR_STEPS } from '@/blocks/tour/tour-steps'
 import type { MapFocusState } from './MapPage'
 import type { RoutePlan } from '@/lib/route-timing'
 
@@ -81,11 +83,23 @@ export default function RoutePage() {
   // 핀으로도 보여준다. 페이지 진입만으로 위치 권한을 요청하지 않도록 null로
   // 시작(사용자가 버튼을 눌러야만 채워짐).
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const activeTourKey = useTourStore((s) => s.activeTourKey)
+  const tourStepIndex = useTourStore((s) => s.stepIndex)
+  const tourNext = useTourStore((s) => s.next)
+  const startTour = useTourStore((s) => s.start)
 
   useEffect(() => {
     setHelp(t('route.help_title'), t('route.help_body'))
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
+
+  // 루트에 장소가 처음 채워진 순간에만 투어를 띄운다 — 빈 화면일 때는
+  // EmptyRouteGuide가 이미 "추가하는 방법"을 안내하고 있어서, 이 투어는
+  // "이미 채워진 루트를 편집하는 법"만 다룬다(사용자 확인, localStorage
+  // 플래그로 최초 1회만).
+  useEffect(() => {
+    if (stops.length > 0 && !hasSeenTour(ROUTE_TOUR_KEY)) startTour(ROUTE_TOUR_KEY)
+  }, [stops.length, startTour])
 
   useEffect(() => {
     if (initialRoute.shareStatus === 'loaded') {
@@ -123,6 +137,11 @@ export default function RoutePage() {
       return arrayMove(prev, fromIdx, toIdx)
     })
     toast.success(t('route.order_updated'))
+    // 드래그는 클릭 이벤트가 안 나서(tour-overlay.tsx의 advanceOnClick 참고)
+    // 실제로 순서 바꾸기가 성공한 이 시점에 직접 투어를 다음 단계로 넘긴다.
+    if (activeTourKey === ROUTE_TOUR_KEY && ROUTE_TOUR_STEPS[tourStepIndex]?.target === 'route-drag-handle') {
+      tourNext(ROUTE_TOUR_STEPS.length)
+    }
   }
 
   function removeStop(id: string) {
@@ -240,7 +259,7 @@ export default function RoutePage() {
         </div>
       </div>
 
-      <div className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-border bg-background p-4">
+      <div data-tour="route-actions" className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-border bg-background p-4">
         <Button variant="outline" className="flex-1" onClick={shareRoute}>
           <Share2 className="h-3.5 w-3.5" />
           {t("route.share")}

@@ -469,7 +469,15 @@
     "persona_grid_title": "好きなアーティストやテーマを選んでみましょう",
     "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。",
     "persona_exclude_title": "気に入らない場所は外してみましょう",
-    "persona_exclude_body": "Xボタンを押すと、この場所がルートから外れます。自分だけのルートにしてみましょう!"
+    "persona_exclude_body": "Xボタンを押すと、この場所がルートから外れます。自分だけのルートにしてみましょう!",
+    "route_drag_title": "ハンドルをドラッグして順番を変えましょう",
+    "route_drag_body": "このハンドルを押して上下に動かすと訪問順を変えられます。",
+    "route_complete_title": "行った場所にチェックを入れましょう",
+    "route_complete_body": "このボタンを押すと完了マークが付きます。",
+    "route_location_title": "次の場所までの距離を確認しましょう",
+    "route_location_body": "ここを押すと、今いる場所から次の場所までの距離がわかります。",
+    "route_actions_title": "ルートを共有したりリセットしたりできます",
+    "route_actions_body": "完成したルートを友達に共有したり、最初からやり直したりできます。"
   },
   "welcome": {
     "title": "K-Vibeへようこそ!",

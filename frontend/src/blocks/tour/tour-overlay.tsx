@@ -101,7 +101,10 @@ export function TourOverlay() {
         hasScrolledIntoView = true
       }
       setRect(target?.getBoundingClientRect() ?? null)
-      if (step!.clickThrough && target && target !== attachedTarget) {
+      // advanceOnClick이 명시적으로 false인 단계(예: 드래그로 완료 신호를
+      // 직접 보내는 단계)는 클릭 리스너를 안 붙인다 — pointer-events는 여전히
+      // 실제 요소로 전달돼서 드래그 자체는 그대로 동작한다.
+      if (step!.clickThrough && step!.advanceOnClick !== false && target && target !== attachedTarget) {
         attachedTarget?.removeEventListener('click', handleRealClick)
         target.addEventListener('click', handleRealClick)
         attachedTarget = target

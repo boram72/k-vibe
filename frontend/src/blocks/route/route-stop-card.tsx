@@ -34,6 +34,7 @@ export function RouteStopCard({
   const completeBtn = (
     <button
       type="button"
+      data-tour="route-complete"
       onClick={onToggleComplete}
       aria-pressed={isCompleted}
       aria-label={t(isCompleted ? 'route.mark_incomplete' : 'route.mark_complete', { name: stop.name })}
@@ -95,6 +96,7 @@ export function RouteStopCard({
   const dragHandle = (
     <button
       type="button"
+      data-tour="route-drag-handle"
       {...attributes}
       {...listeners}
       aria-label={t('route.drag_handle')}

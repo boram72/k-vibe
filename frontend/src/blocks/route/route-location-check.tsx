@@ -96,7 +96,7 @@ export function RouteLocationCheck({ nextStop, onLocationChecked }: RouteLocatio
   }
 
   return (
-    <section className="rounded-xl border border-border bg-muted p-3">
+    <section data-tour="route-location-check" className="rounded-xl border border-border bg-muted p-3">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
           <LocateFixed className="h-[18px] w-[18px]" />

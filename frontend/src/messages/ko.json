@@ -104,7 +104,16 @@
     "review_submit": "리뷰 등록",
     "review_submitted": "리뷰가 등록됐어요",
     "review_submit_error": "리뷰 등록에 실패했어요. 다시 시도해주세요.",
-    "review_empty": "아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!"
+    "review_empty": "아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!",
+    "review_edit": "리뷰 수정",
+    "review_delete": "리뷰 삭제",
+    "review_save": "저장",
+    "review_updated": "리뷰가 수정됐어요",
+    "review_update_error": "리뷰 수정에 실패했어요. 다시 시도해주세요.",
+    "review_deleted": "리뷰가 삭제됐어요",
+    "review_delete_error": "리뷰 삭제에 실패했어요. 다시 시도해주세요.",
+    "review_delete_confirm_title": "리뷰를 삭제할까요?",
+    "review_delete_confirm_desc": "삭제하면 되돌릴 수 없어요."
   },
   "analyze": {
     "title": "SNS 스팟 분석",

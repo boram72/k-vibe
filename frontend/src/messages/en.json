@@ -104,7 +104,16 @@
     "review_submit": "Post review",
     "review_submitted": "Review posted",
     "review_submit_error": "Couldn't post your review. Please try again.",
-    "review_empty": "No reviews yet. Be the first to write one!"
+    "review_empty": "No reviews yet. Be the first to write one!",
+    "review_edit": "Edit review",
+    "review_delete": "Delete review",
+    "review_save": "Save",
+    "review_updated": "Review updated",
+    "review_update_error": "Couldn't update your review. Please try again.",
+    "review_deleted": "Review deleted",
+    "review_delete_error": "Couldn't delete your review. Please try again.",
+    "review_delete_confirm_title": "Delete this review?",
+    "review_delete_confirm_desc": "This can't be undone."
   },
   "analyze": {
     "title": "SNS Spot Analyzer",

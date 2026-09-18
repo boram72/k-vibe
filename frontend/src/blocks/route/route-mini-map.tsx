@@ -53,8 +53,15 @@ function fitKakaoMapToRoute(map: kakao.maps.Map, stops: RouteStop[], center: Coo
   if (typeof kakao === 'undefined' || !kakao.maps) return
 
   if (stops.length <= 1 && !currentLocation) {
-    map.setCenter(new kakao.maps.LatLng(center.lat, center.lng))
+    // 버그 수정 — setCenter() 먼저 부르고 setLevel()을 나중에 부르면, 레벨을
+    // 큰 폭으로 바꿀 때(예: 내 위치 포함 넓은 bounds였다가 스팟 하나로 확
+    // 좁혀질 때, 14→4처럼 10단계 이상 점프) 카카오 SDK가 줌 기준점을 다시
+    // 잡으면서 center가 실제 목표 좌표에서 최대 1~2km 정도 어긋나는 것을
+    // 실측으로 확인함(레벨 변경이 결국 center를 살짝 재계산하는 것으로 보임).
+    // 마지막 호출이 항상 이기도록 setLevel을 먼저, setCenter를 나중에 불러
+    // 최종 center가 항상 정확한 목표 좌표가 되게 순서를 바꿈.
     map.setLevel(4)
+    map.setCenter(new kakao.maps.LatLng(center.lat, center.lng))
     return
   }
 

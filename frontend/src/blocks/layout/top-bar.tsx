@@ -26,7 +26,10 @@ export function TopBar() {
     reopenHandledRef.current = true
     if (sessionStorage.getItem(PROFILE_POPUP_REOPEN_KEY)) {
       sessionStorage.removeItem(PROFILE_POPUP_REOPEN_KEY)
-      if (user) setProfileOpen(true)
+      // lint 수정 — sessionStorage 읽기/삭제는 렌더 중엔 할 수 없는 부수효과라
+      // effect에 남겨두되, setState 호출만 마이크로태스크로 미뤄
+      // react-hooks/set-state-in-effect(동기 setState 금지)를 피한다.
+      if (user) queueMicrotask(() => setProfileOpen(true))
     }
   }, [isLoading, user])
 

@@ -33,12 +33,18 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   // 보이는 프로필뷰와 구분해서, 이 경우에만 자동종료 안내+타이머를 건다.
   const [justContinuedAsGuest, setJustContinuedAsGuest] = useState(false)
 
-  useEffect(() => {
+  // lint 수정 — effect에서 setState하는 대신, React 공식 문서가 권장하는
+  // "렌더 중 이전 prop과 비교해 state 조정" 패턴으로 전환(map-canvas.tsx의
+  // focusCenter와 동일 패턴). open이 false→true로 바뀌는 그 렌더에서 즉시
+  // 반영되어 effect 한 프레임 지연 없이 동작.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
     if (open) {
       setShowProfileView(!!user)
       setJustContinuedAsGuest(false)
     }
-  }, [open, user])
+  }
 
   useEffect(() => {
     if (!justContinuedAsGuest) return

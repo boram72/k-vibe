@@ -2,6 +2,17 @@
 
 > 각 Step 완료 후 CLAUDE.md Execution Progress 업데이트할 것
 
+## 📌 현재 미해결 항목 요약 (2026-09-19 기준)
+
+아래 목록만 보면 지금 뭐가 안 됐는지 한눈에 파악 가능. 각 항목의 상세 내역/원인/구현 방향은 파일 하단 해당 섹션 참고(검색 키워드로 표시).
+
+- [ ] **지도 — 계정 클릭 시 장소 목록 노출** (`"⬜ 2026-09 팀 태스크보드"` 섹션 10번) — 우측 상단 "계정" 클릭 시 내정보/설정만 보이게, 지금 노출되는 장소 목록 제거 필요. 미착수.
+- [ ] **내 루트 — 다른 진입점 중복 추가 방지** (`"서로 다른 진입점"` 검색) — 페르소나로 추가한 장소를 지도에서 또 검색해 추가하면 중복됨. 원인/수정 방향은 정리됐으나 미구현(이름+좌표 유사도 판정 임계값 결정 필요).
+- [ ] **지도 — 검색 안정성 왔다갔다함** (`"왔다갔다함"` 검색) — 카카오 SDK 로딩 완료 전에 검색하면 조용히 실패하는 문제. 코드 수정은 이미 해둔 게 있으나 **PR이 안 올라간 채 로컬 브랜치(`fix/map-search-loading-state`, 커밋 `3b8e563`)에 남아있음** — PR부터 올려야 함.
+- [ ] **지도 리뷰 — 라이브 검증 미실시** (`"장소 리뷰 수정/삭제"` 섹션) — 코드는 완료, 백엔드 PATCH도 반영됐지만 실제 화면에서 삭제/수정 흐름을 직접 확인한 적은 아직 없음.
+- [ ] **지도 — 상호명 검색 기준점 검토** (`"상호명 검색 기준점"` 검색) — 검토만 된 상태, 설계 확정 전. 다음 작업 대상.
+- [ ] **지도 — 주변 스팟 영역/우선순위 재정리** (신규, 아래 최신 섹션 참고) — 우선순위 결정 전.
+
 ---
 
 ## ✅ Step 3 — React Router + react-i18next (완료)
@@ -986,22 +997,16 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
 - [x] **1. "이 지역에서 검색" 버튼 색상 변경** — `map-canvas.tsx`의 `SearchAreaButton`이 `bg-popover/90`(테마 기반 반투명, 지도와 밝기가 비슷해 잘 안 보임)였던 것을 `bg-neutral-900/90 text-white`(검정 계열)로 변경, 테두리(`border-border`)도 검정 배경에 불필요해 제거. 카카오맵 API 키가 등록된 포트(5173)에서만 로드되는 제약으로 색상 자체는 코드 리뷰+`tsc`/`eslint`로 검증(라이브 스크린샷은 5173에서 사용자 확인).
 - [x] **2. 상세 팝업 내 공유 버튼 삭제** — `place-detail-sheet.tsx`의 공유 버튼과 `handleShare` 함수, 안 쓰는 `Share2` import, `placeDetail.share`/`share_copied` i18n 키(4개 언어) 제거. Playwright로 공유 버튼 미노출 + "루트에 추가" 버튼 정상 동작 확인.
 - [x] **3. 빨간 강조 핀(SearchResultPin) z-index 최상위로 올리기** — TourAPI 스팟이 몰려있는 지역에서는 다른 카테고리 핀에 가려서 빨간 핀(선택/검색 강조)이 안 보임. **원인**: 기존엔 `zIndex={selected ? 2 : 1}`로 "지금 선택된 핀"만 우선순위를 높였는데, 다중 검색결과(`highlightIds`) 중 선택되지 않은 나머지 빨간 핀들은 일반 카테고리 핀과 동일한 zIndex(1)라 렌더 순서에 따라 가려질 수 있었음. **수정**: `showSearchPin`(검색/선택 강조 대상)이면 무조건 일반 핀보다 위(10), 그중 실제 선택된 것은 최상위(20)로 분리 — `KakaoMapCanvas`(`zIndex` prop)와 `PercentMapCanvas`(CSS `z-10`/`z-20` 클래스) 둘 다 동일하게 적용. Playwright로 검색 시 강조 핀들이 새 z-index 클래스를 받는 것 확인.
-- [ ] **4. 지도 검색 방식 변경** (4-1 완료, 4-2 미착수)
-  - **4-1. (완료)** 현재는 "행정구역 검색 → 음식점 검색" 순서라, "경복궁"을 검색하면 경복궁 주변 음식점이 먼저 뜸(엉뚱한 결과가 우선). API를 동시 호출하고, 검색 결과 목록을 주변 스팟 목록 최상단(찜/관광지 추천보다도 위, 1순위)에 노출. 클릭 시 해당 스팟으로 이동.
+- [x] **4. (완료) 지도 검색 방식 변경** (4-1, 4-2 둘 다 완료 — PR #103에 병합됨)
+  - **4-1.** 현재는 "행정구역 검색 → 음식점 검색" 순서라, "경복궁"을 검색하면 경복궁 주변 음식점이 먼저 뜸(엉뚱한 결과가 우선). API를 동시 호출하고, 검색 결과 목록을 주변 스팟 목록 최상단(찜/관광지 추천보다도 위, 1순위)에 노출. 클릭 시 해당 스팟으로 이동.
     - **4-1 진행 전 선행 진단(대화 중 요청) — "경복궁"/"인천공항"처럼 행정구역도 상호명도 아닌 랜드마크 검색이 안 되는 원인**: 카카오 API 자체는 정상(REST API 직접 호출로 확인, "경복궁"/"인천국제공항" 둘 다 정확도순 1위로 정확히 나옴). 원인은 프론트의 `kakao-area-search.ts`가 상호명 검색(예: "스타벅스") 정확도를 위해 넣은 `sort: SortBy.DISTANCE`(현재 위치 기준 거리순 정렬)를, 랜드마크처럼 "멀리 있는 유일한 장소" 검색에도 그대로 적용하고 있었던 것 — 거리순 정렬을 걸면 실제 랜드마크보다 **이름만 겹치는, 현재 위치에 훨씬 가까운 무관한 업체**가 1등으로 올라옴. 실측: "경복궁" 거리순 1위 = 인근 피부관리샵(쏘아베에스테틱), "인천공항" 거리순 1위 = 서울 시내 공항 대리주차 업체(실제 공항 아님). `searchKakaoArea()`는 무조건 1등 결과로 이동하므로, 사용자 입장에선 검색이 안 되는 것처럼 보임.
     - **수정**: `kakao-area-search.ts`의 `searchKakaoArea()`를 `{ type: 'address', center }`(행정구역 매칭, 기존과 동일하게 바로 이동) 또는 `{ type: 'keyword', relevance, distance }`(그 외, 두 목록만 반환·자동 이동 없음)로 재구성. `keywordSearch()`를 상호명 검색 정확도순(`sort` 없이 `near`만 지역 힌트로 사용 — 이 상태에서도 "경복궁"/"인천공항" 둘 다 1위로 정확히 나옴, 실측 확인)과 거리순(`sort: DISTANCE`) 두 번 동시 호출(`Promise.all`)하도록 분리, 거리순 목록에서 정확도순과 겹치는 장소는 제거(중복 시 정확도순 유지, 대화로 확정).
     - **검색창 직접 입력**(`areaSearchMutation`): `type: 'keyword'`면 자동 이동/강조 없이 `areaSearchLists`(정확도순/거리순) state에만 채워 넣고, `SpotListPanel`에 새 "검색 결과" 섹션으로 노출(찜/관광지 추천보다도 위, 최우선) — 정확도순 그룹이 위, 거리순 그룹이 아래. 목록 항목 클릭 시 기존 `onSelectPlace`(단일 선택 핀 메커니즘)를 그대로 재사용 — 클릭 전엔 아무 것도 강조되지 않고, 클릭한 장소 하나에만 빨간 핀이 붙음(기존 "검색 결과 전부 빨간 핀 유지" 방식을 이 흐름에 한해 명시적으로 변경, 대화로 확정). 이 목록에 뜬 장소는 카테고리 필터와 무관하게 항상 선택 가능하도록 `filtered`에 예외 처리 추가.
     - **관광지 추천 클릭**(`attractionSearchMutation`, 별도 플로우, 이번 요청 범위 밖)은 기존 "자동 이동 + 매치 전부 강조" 동작을 그대로 유지하되, 내부적으로 거리순 대신 정확도순(relevance) 결과를 사용하도록만 바꿔 같은 sort 버그의 영향은 받지 않게 함.
     - **검증**: 실제 Kakao API를 mock(REST API로 확인한 실제 응답 형태 그대로 재현)해서 `searchKakaoArea()` 단위 동작 확인 — 주소 매칭/키워드 매칭(정확도순에 진짜 랜드마크, 거리순에서 중복 제거)/무결과 케이스 전부 기대대로 동작. 카카오맵 JS 키가 특정 포트에만 허용되어 있어 실제 UI 종단 테스트(검색창 타이핑→목록 노출→클릭→이동)는 5173에서 사용자 확인 필요.
-  - **4-2.** 역(지하철역) 검색 지원 — "강남역"/"삼성역" 등 역명을 검색하면 이동이 안 됨. 역 검색이 가능한 API가 있는지 확인 필요, 없으면 대안 검색 방법 조사 필요. (미착수)
-- [ ] **1. "이 지역에서 검색" 버튼 색상 변경** — 지도 위에 뜨는 이 버튼이 지도 밝기와 버튼 밝기가 비슷해서 잘 안 보임. 검정색 계열로 변경 필요.
-- [ ] **2. 상세 팝업 내 공유 버튼 삭제** — `place-detail-sheet.tsx`의 공유 버튼 제거.
-- [ ] **3. 빨간 강조 핀(SearchResultPin) z-index 최상위로 올리기** — TourAPI 스팟이 몰려있는 지역에서는 다른 카테고리 핀에 가려서 빨간 핀(선택/검색 강조)이 안 보임.
-- [ ] **4. 지도 검색 방식 변경**
-  - **4-1.** 현재는 "행정구역 검색 → 음식점 검색" 순서라, "경복궁"을 검색하면 경복궁 주변 음식점이 먼저 뜸(엉뚱한 결과가 우선). API를 동시 호출하고, 검색 결과 목록을 주변 스팟 목록 최상단(찜/관광지 추천보다도 위, 1순위)에 노출. 클릭 시 해당 스팟으로 이동.
-  - **4-2.** 역(지하철역) 검색 지원 — "강남역"/"삼성역" 등 역명을 검색하면 이동이 안 됨. 역 검색이 가능한 API가 있는지 확인 필요, 없으면 대안 검색 방법 조사 필요.
+  - **4-2. (완료 — 별도 구현 불필요)** 역(지하철역) 검색 지원 — "강남역"/"삼성역" 등 역명을 검색하면 이동이 안 됨. **확인 결과**: 지하철역도 카카오 API 상에서는 랜드마크와 동일하게 상호명(POI)으로 등록돼 있어, 4-1에서 고친 keyword 검색 경로(관련도순/거리순 동시 조회 + 목록 제공)를 그대로 탄다. 실측(REST API 직접 호출, `sort` 없이 관련도순): "강남역"→"강남역 2호선"(지하철) 1위, "삼성역"→"삼성역 2호선"(지하철) 1위로 정확히 반환됨 — 4-2가 원래 가정했던 "역 검색 전용 API 필요"는 사실이 아니었고, 4-1 버그(랜드마크 검색 왜곡)와 근본 원인이 동일했음. 역명을 행정구역처럼 "검색 시 바로 이동"으로 처리하면 오히려 4-1에서 정한 "행정구역이 아니면 목록으로 제공" 원칙과 충돌하므로, 별도 구현 없이 4-1의 목록 UX를 그대로 적용하는 것이 맞는 방향으로 결론.
 - [ ] **5. 지도 검색이 될 때/안 될 때가 왔다갔다함** — 원인 파악 필요(재현 조건 확인부터).
-- [ ] **6. 지도 초기 랜딩·현재위치 동작 변경 — GPS를 서버로 보내지 않기 위한 우회 (2026-09-18, 대화 중 요청, 아직 미착수)**
+- [x] **6. (완료) 지도 초기 랜딩·현재위치 동작 변경 — GPS를 서버로 보내지 않기 위한 우회 (2026-09-18, PR #116에 병합됨)**
   - **배경/사유**: 위치기반서비스사업자 등록 없이 앱을 배포할 예정이라, 사용자의 실측 GPS 좌표를 백엔드 서버로 전송하면 안 됨(위치정보법상 "개인위치정보" 수집·이용에 해당할 소지). 현재는 `useCurrentLocation()`의 GPS 실측 좌표(`coords`)가 그대로 `effectiveCoords`를 거쳐 `GET /places?lat=&lng=`로 백엔드에 직접 전달되고 있음 — 지도 진입만 해도, "현재위치" 버튼만 눌러도 실측 GPS가 서버로 나가는 구조. 우회 방안: 서버로는 실측 GPS 대신 **행정구역 단위로 뭉뚱그린(예: 시/군/구 관할 정부처 좌표)** 지점만 보내도록 변경.
   - **6-1. (완료) 초기 랜딩**: 지도 진입 시 사용자 위치가 속한 행정구역의 관할 정부처(예: 서울 → 서울특별시청, 창원 → 창원시청)로 랜딩. 지도 뷰와 서버 검색 좌표 둘 다 이 좌표를 그대로 씀(둘 다 6-2에서 만든 `setSearchCenter`+`setQueryCenter` 명시적 트리거를 그대로 재사용 — 신규 장치 불필요).
     - **신규 파일** `src/lib/kakao-admin-region.ts` — `resolveAdminOfficeCoords(coords)`: ① `Geocoder.coord2RegionCode()`로 GPS→행정구역명 판별 ② 그 지역명으로 "{지역명}청"을 `Places.keywordSearch()`(둘 다 브라우저→카카오 서버 직통, 우리 백엔드 경유 없음)로 검색해 실제 정부처 건물 좌표를 받아옴. 특별시/광역시/특별자치시는 `region_1depth_name` 그대로("서울특별시청"), 그 외(도)는 `region_2depth_name` 사용(단 창원시/청주시처럼 내부에 구가 있는 통합시는 `region_2depth_name`이 "창원시 성산구"처럼 시+구가 합쳐져 나와서 앞 토큰만 취해 "창원시청"으로 — 구청이 아니라 시청으로 랜딩, 실측으로 발견해 수정).
@@ -1042,11 +1047,11 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
 지도 상세 팝업의 리뷰 탭엔 작성(create)/조회(read)만 있고 수정/삭제가 없다는 걸 확인 — 조사해보니 **삭제는 백엔드 엔드포인트가 이미 있었는데(`DELETE /reviews/{place_id}/{review_id}`, 본인 리뷰만) 프론트에서 여태 안 붙어있었고, 수정은 백엔드에도 엔드포인트 자체가 없었음**.
 
 - [x] **삭제** — `api/reviews.ts`에 `deletePlaceReview(placeId, reviewId, username)` 추가(기존 백엔드 엔드포인트 그대로 호출). `place-review-tab.tsx`: 본인 리뷰(`user.id === review.username`)에만 휴지통 아이콘 노출 → 클릭 시 확인 `Dialog`(취소/삭제, `route.clear_route` 확인 다이얼로그와 동일 패턴) → 확인하면 삭제+리스트 재조회.
-- [x] **수정(프론트만, 백엔드 API 대기 중)** — `api/reviews.ts`에 `updatePlaceReview(placeId, reviewId, username, rating, content)` 추가(백엔드에 `PATCH /reviews/{place_id}/{review_id}`가 아직 없어서 지금은 호출하면 404/405). `place-review-tab.tsx`: 본인 리뷰에만 연필 아이콘 노출 → 클릭 시 팝업 없이 **그 카드가 그 자리에서 인라인 편집 폼으로 전환**(`profile-header.tsx` 이름 수정과 동일한 "연필→인라인" 패턴, 별점 재입력+textarea+저장/취소) → 저장 시 `updatePlaceReview` 호출.
+- [x] **수정** — `api/reviews.ts`에 `updatePlaceReview(placeId, reviewId, username, rating, content)` 추가. `place-review-tab.tsx`: 본인 리뷰에만 연필 아이콘 노출 → 클릭 시 팝업 없이 **그 카드가 그 자리에서 인라인 편집 폼으로 전환**(`profile-header.tsx` 이름 수정과 동일한 "연필→인라인" 패턴, 별점 재입력+textarea+저장/취소) → 저장 시 `updatePlaceReview` 호출. **후속 확인**: 백엔드에 `PATCH /reviews/{place_id}/{review_id}`가 당시엔 없어서 404/405였는데, 이후 백엔드 팀이 엔드포인트를 추가해둔 것 확인(`backend/presentation_api/reviews.py`에 `@router.patch` 존재) — 이제 실제로 동작할 것으로 예상되나 라이브 검증은 아직 안 함(아래 항목).
 - [x] **백엔드 요청 등록**: `BACKEND_REQUESTS.md` 6번 — `PATCH /reviews/{place_id}/{review_id}` 신규 추가 요청(본인 리뷰만 수정 가능하도록 `username` 조건, 수정 후 `_recompute_location_rating` 재호출 포함). 이 세션에서는 **프론트 영역만 수정**(대화로 확정 — 백엔드 코드는 건드리지 않음), 엔드포인트가 추가되면 프론트 재배포 없이 바로 동작.
 - [x] i18n: `placeDetail.review_edit`/`review_delete`/`review_save`/`review_updated`/`review_update_error`/`review_deleted`/`review_delete_error`/`review_delete_confirm_title`/`review_delete_confirm_desc` 4개 언어 신규 추가.
 - [x] `npx tsc --noEmit`/`npx eslint src` 클린 확인.
-- [ ] Playwright 라이브 검증 — 본인 리뷰에만 아이콘 노출, 삭제 확인 다이얼로그 취소/확인 둘 다, 수정 인라인 폼 저장/취소, 남의 리뷰엔 아이콘 안 뜨는지. 수정은 백엔드 API가 아직 없어 실제 저장 성공까지는 확인 불가(에러 토스트만 확인 가능) — 백엔드 반영 후 재검증 필요.
+- [ ] Playwright 라이브 검증 — 본인 리뷰에만 아이콘 노출, 삭제 확인 다이얼로그 취소/확인 둘 다, 수정 인라인 폼 저장/취소(백엔드 PATCH 반영됐으니 이제 실제 저장 성공까지 확인 가능할 것), 남의 리뷰엔 아이콘 안 뜨는지 — 아직 미실시.
 
 ## ⬜ 2026-09 내 루트/페르소나/지도 수정 (대화 중 요청, 담당자: 보람)
 
@@ -1055,7 +1060,9 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
   - **참고(추가 발견, 미수정)**: TopBar 도움말 다이얼로그의 `route.help_body`("...스팟의 시각을 탭하면 날짜/시각을 직접 정할 수 있고, 그 이후 일정은 거기서부터 다시 계산돼요.")도 같은 이유로 존재하지 않는 기능을 설명하는 stale 텍스트임 — 이번 요청 범위(subtitle) 밖이라 손 안 댐, 별도 확인 필요.
 - [x] **2. (완료) 페르소나 카드 description marquee** — 홈(`persona-picker.tsx`)과 페르소나 메뉴 전체 목록(`PersonaPage.tsx`) 두 곳의 카드 설명(`persona.description`)을 `line-clamp-2`+`min-h` 대신 **1줄 고정 + 넘칠 때만 가로 스크롤**로 교체. 신규 공용 컴포넌트 `blocks/common/marquee-text.tsx`(`MarqueeText`) — `ResizeObserver`로 텍스트 실제 너비(`scrollWidth`)가 컨테이너보다 넓은지 측정해서, 넘칠 때만 텍스트를 2벌 이어붙이고 `-50%`까지 옮기는 CSS 애니메이션(`index.css`의 `kv-marquee` keyframe, `animate-marquee` 유틸)을 적용 — 안 넘치면 애니메이션 없이 정적 표시. 1줄 고정이라 텍스트 길이와 무관하게 카드 높이가 항상 동일해져서 7번에서 `min-h`로 억지로 맞췄던 것도 자연스럽게 해결됨(부수 효과, `min-h` 제거).
   - **검증**: Playwright로 실제 5173 서버 확인 — 홈 카드 5개 모두 높이 동일(349px), 그중 설명이 긴 카드 3개에서 `animate-marquee` 정상 적용 확인. PersonaPage 전체 목록도 5개 카드 중 marquee 적용분 확인, 스크린샷으로 레이아웃 깨짐 없음 확인. `tsc`/`eslint` 클린.
-- [ ] **3. 지도 현재위치 버튼 2개 동작 분리** — 지도엔 "현재위치" 버튼이 2개 있음(왼쪽 상단 라벨형 `LocationOverlay`, 우측 하단 아이콘형 `MapActionButtons`). 지금은 둘 다 완전히 동일한 콜백(`onRequestLocation`/`handleRequestLocation`)을 쓰는데, SNS 분석기를 통해 지도로 들어올 경우(`focusPlaces` 핸드오프) `effectiveCoords`가 `focusPlaces[0]`를 무조건 최우선으로 계산해서 두 버튼을 눌러도 뷰가 분석결과 지점에서 안 벗어나는 문제(코드로 확인: `focusPlaces[0] ? {...} : (searchCenter ?? coords)` — focusPlaces가 있는 한 뒤 조건은 평생 안 쓰임).
-  - **요구사항**: 우측 하단 아이콘 버튼(검정)은 **항상 실제 현재 위치로** 이동(분석결과 핸드오프와 무관하게 GPS 우선권을 갖도록 분리 필요). 왼쪽 상단 라벨 버튼은 그대로 두되, 라벨이 "분석결과"로 표시 중일 때는 아이콘을 다른 것으로 바꿔서 "이건 GPS가 아니라 분석결과 위치를 보여주는 중"임을 구분되게 표시.
-  - **구현 방향(검토 필요)**: `effectiveCoords`의 `focusPlaces[0]` 우선순위를 "완전 고정"이 아니라 "아직 아무 명시적 액션이 없을 때만"으로 바꾸거나, 우측 하단 버튼 전용으로 `focusPlaces`를 무시하고 무조건 실제 GPS로 강제 이동하는 별도 핸들러를 만들어야 함 — 다만 현재 `effectiveLocationLabel = focusPlaces.length ? t('map.analysis_result') : locationLabel`도 같이 얽혀 있어서(라벨은 focusPlaces 있으면 무조건 "분석결과") 우측 버튼만 GPS로 이동했을 때 왼쪽 라벨이 여전히 "분석결과"라고 뜨는 등 다른 어긋남이 안 생기게 설계 필요.
+- [x] **3. (완료) 지도 현재위치 버튼 2개 동작 분리** — 지도엔 "현재위치" 버튼이 2개 있음(왼쪽 상단 라벨형 `LocationOverlay`, 우측 하단 아이콘형 `MapActionButtons`). 기존엔 둘 다 완전히 동일한 콜백(`onRequestLocation`/`handleRequestLocation`)을 쓰는데, SNS 분석기를 통해 지도로 들어올 경우(`focusPlaces` 핸드오프) `effectiveCoords`가 `focusPlaces[0]`를 무조건 최우선으로 계산해서 두 버튼을 눌러도 뷰가 분석결과 지점에서 안 벗어나는 문제(코드로 확인: `focusPlaces[0] ? {...} : (searchCenter ?? coords)` — focusPlaces가 있는 한 뒤 조건은 평생 안 쓰임)가 있었음.
+  - **구현**: `MapPage.tsx`에 `viewIgnoresFocus` state 신규 추가 — `effectiveCoords`/`effectiveLocationLabel`(→`isShowingAnalysisResult`로 명명) 둘 다 `focusPlaces[0] && !viewIgnoresFocus`로 조건 통일. 우측 하단(검정) 아이콘 버튼 전용 `handleForceCurrentLocation()` 신규 — `viewIgnoresFocus`를 켠 뒤 기존 `handleRequestLocation()`을 그대로 호출해 GPS로 강제 이동. 왼쪽 상단 라벨 버튼의 클릭 핸들러(`onRequestLocation={handleRequestLocation}`)는 변경 없음(`viewIgnoresFocus`를 안 건드리므로 분석결과 핸드오프 중엔 눌러도 뷰가 그대로 유지됨 — 요구사항대로).
+  - `map-canvas.tsx`: `MapCanvasProps`에 `onForceCurrentLocation: () => void`(필수)/`isAnalysisResult?: boolean` 추가. `LocationOverlay`는 `isAnalysisResult`일 때 아이콘을 `LocateFixed`→`ScanSearch`(SNS 분석기 nav 아이콘 재사용)로 교체. `MapActionButtons`는 `onForceCurrentLocation` 전용 콜백 사용. `KakaoMapCanvas` 내부 `handleForceCurrentLocation()`이 `onForceCurrentLocation()` 호출 후 `setFocusCenter(null)`/`setPendingCenter(null)`+`map.panTo()`로 카메라도 즉시 재동기화. `queryCoords`(백엔드로 나가는 검색 좌표)는 `viewIgnoresFocus`와 무관하게 계속 `focusPlaces[0]`을 우선("현재위치 버튼 = 카메라만 이동, 검색 상태는 안 건드림" 원칙 유지).
+  - **검증**: Playwright로 SNS 분석기→"모두 지도에서 보기"→분석결과 핸드오프 상태 재현. 왼쪽 라벨이 "Analysis Result" + `ScanSearch` 아이콘 확인, 그 상태에서 왼쪽 라벨 버튼 클릭 시 라벨 그대로 유지(뷰 안 바뀜) 확인, 우측 하단 버튼 클릭 시 라벨이 "Current Location"으로 전환+지도 카메라 실제 이동+콘솔/페이지 에러 없음 확인. `npx tsc --noEmit -p tsconfig.app.json`(캐시 삭제 후 재실행)/`npx eslint src` 클린(shadcn `components/ui/` 3건 제외).
+  
 - [ ] **4. 상호명 검색 기준점을 지도 위치로 변경 (검토)** — 현재 상호명 검색(`areaSearchMutation`)이 카카오 `keywordSearch`에 넘기는 위치 힌트(`near: effectiveCoords`)가 실제로는 "지도가 지금 보여주는 위치"가 아니라 사용자 GPS/마지막 확정 검색 위치에 더 가깝게 동작함 — 지도를 손으로 드래그만 하고(아직 "이 지역에서 검색"을 안 눌러서 `searchCenter` 미확정) 바로 상호명을 검색하면, 실제 카카오 지도 카메라는 이미 옮겨간 새 위치에 있는데 검색 힌트는 옛 `effectiveCoords`(드래그 전 값)를 씀 — 드래그는 카카오 SDK 내부적으로 지도 인스턴스만 직접 움직이고 React state(`searchCenter`)는 안 건드리기 때문. **검토 필요**: 실제 지도 카메라의 현재 위치를 읽으려면 `map` 인스턴스 참조를 `MapCanvas` 밖(`MapPage`)으로 끌어올리거나, `MapCanvas`가 "현재 카메라 중심"을 콜백으로 올려주는 구조가 필요 — 범위가 있는 변경이라 실행 전 설계 확인 필요.

@@ -33,6 +33,13 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 // route registered in router/index.tsx.
 const OAUTH_CALLBACK_PATH = '/auth/callback'
 
+// TopBar의 프로필 팝업(profile-dialog.tsx)에서 로그인 버튼을 누르면 실제
+// OAuth 리다이렉트라 전체 페이지가 나갔다 돌아온다(팝업 state는 당연히 날아감).
+// 돌아온 뒤(OAuthCallbackPage → '/') TopBar가 이 플래그를 보고 로그인이
+// 완료됐으면 팝업을 다시 자동으로 열어 "뒷배경 블러 유지된 채 프로필뷰로
+// 전환된 것처럼" 보이게 한다.
+export const PROFILE_POPUP_REOPEN_KEY = 'k-vibe-profile-popup-reopen'
+
 function buildOAuthStartUrl(provider: AuthProvider): string {
   const redirectUri = `${window.location.origin}${OAUTH_CALLBACK_PATH}`
   return `${API_BASE_URL}/auth/${provider}/start?redirect_uri=${encodeURIComponent(redirectUri)}`
@@ -50,6 +57,7 @@ function buildOAuthStartUrl(provider: AuthProvider): string {
 // 필요해지면 이 타입에 'kakao'만 다시 추가하고 login-modal.tsx의
 // PROVIDER_BUTTONS에 항목만 되돌리면 됨(그 외 로직 변경 불필요).
 export function redirectToOAuthProvider(provider: AuthProvider): void {
+  sessionStorage.setItem(PROFILE_POPUP_REOPEN_KEY, '1')
   window.location.href = buildOAuthStartUrl(provider)
 }
 

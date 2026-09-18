@@ -1,0 +1,179 @@
+import { useState, type ComponentType, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { CheckCircle2 } from 'lucide-react'
+import { DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { useAuth } from '@/lib/use-auth'
+import { redirectToOAuthProvider, type AuthProvider } from '@/lib/auth'
+import { cn } from '@/lib/utils'
+import { GoogleIcon } from '@/assets/google-icon'
+
+const inputClassName =
+  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary'
+
+// 2026-09 팀 결정: 로그인은 SNS(OAuth)만 노출하고 ID/PW 로그인·회원가입은 숨긴다.
+// signupWithCredentials/loginWithCredentials(lib/auth.ts)는 실제 backend(user.py)를
+// 호출하는 진짜 기능이라 코드는 그대로 두고 UI만 숨김 — 나중에 필요해지면 이 상수만 true로.
+const SHOW_CREDENTIALS_LOGIN = false
+
+const PROVIDER_BUTTONS: {
+  id: AuthProvider
+  labelKey: string
+  className: string
+  icon: ComponentType<{ className?: string }>
+}[] = [
+  { id: 'google', labelKey: 'login.continue_google', className: 'border border-border bg-background text-foreground hover:bg-accent', icon: GoogleIcon },
+]
+
+interface LoginModalContentProps {
+  // 게스트로 계속하기 클릭 시 동작 — login-modal.tsx(ProfilePage용)는 팝업을
+  // 닫는 것, profile-dialog.tsx(TopBar 팝업용)는 같은 팝업 안에서 프로필뷰로
+  // 전환하는 것으로 서로 다르게 씀 — 호출부가 결정하도록 prop으로 분리.
+  onGuestContinue: () => void
+}
+
+// login-modal.tsx(Dialog 래퍼)와 profile-dialog.tsx(TopBar 팝업) 둘 다에서
+// 재사용하는 순수 콘텐츠(제목+OAuth버튼+게스트버튼+안내) — Dialog 마운트 여부는
+// 각 호출부가 소유.
+export function LoginModalContent({ onGuestContinue }: LoginModalContentProps) {
+  const { t } = useTranslation()
+  const {
+    signup,
+    isSigningUp,
+    signupError,
+    loginWithCredentials,
+    isLoggingInWithCredentials,
+    loginCredentialsError,
+  } = useAuth()
+  const guestFeatures = t('login.guest_features', { returnObjects: true }) as string[]
+
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [nationality, setNationality] = useState('')
+  const [email, setEmail] = useState('')
+
+  const isSubmitting = isSigningUp || isLoggingInWithCredentials
+  const credentialsError = signupError || loginCredentialsError
+
+  function handleCredentialsSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (mode === 'signup') {
+      signup({ username, nationality, email, password }, { onSuccess: onGuestContinue })
+    } else {
+      loginWithCredentials({ username, password }, { onSuccess: onGuestContinue })
+    }
+  }
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('login.title')}</DialogTitle>
+        <DialogDescription>{t('login.subtitle')}</DialogDescription>
+      </DialogHeader>
+
+      {mode === 'login' && (
+        <div className="space-y-2">
+          {PROVIDER_BUTTONS.map(({ id, labelKey, className, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => redirectToOAuthProvider(id)}
+              className={cn(
+                'flex w-full items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60',
+                className,
+              )}
+            >
+              <Icon className="h-4.5 w-4.5" />
+              {t(labelKey)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {SHOW_CREDENTIALS_LOGIN && (
+        <>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-px flex-1 bg-border" />
+            {t('login.credentials_divider')}
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <form onSubmit={handleCredentialsSubmit} className="space-y-2">
+            <input
+              className={inputClassName}
+              placeholder={t('login.username_label')}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            {mode === 'signup' && (
+              <>
+                <input
+                  className={inputClassName}
+                  placeholder={t('login.nationality_label')}
+                  value={nationality}
+                  onChange={(e) => setNationality(e.target.value)}
+                  required
+                />
+                <input
+                  className={inputClassName}
+                  type="email"
+                  placeholder={t('login.email_label')}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </>
+            )}
+            <input
+              className={inputClassName}
+              type="password"
+              placeholder={t('login.password_label')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            {credentialsError && (
+              <p className="text-xs text-destructive">{t('login.credentials_error')}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            >
+              {mode === 'signup' ? t('login.signup_button') : t('login.login_credentials_button')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
+              className="w-full text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {mode === 'signup' ? t('login.switch_to_login') : t('login.switch_to_signup')}
+            </button>
+          </form>
+        </>
+      )}
+
+      <button
+        type="button"
+        onClick={onGuestContinue}
+        className="w-full py-2 text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {t('login.continue_guest')}
+      </button>
+
+      <div className="space-y-1.5 rounded-xl bg-muted p-3 text-xs text-muted-foreground">
+        <p className="font-semibold text-foreground">{t('login.available_without_login')}</p>
+        {guestFeatures.map((feature) => (
+          <p key={feature} className="flex items-center gap-2">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-crowd-low" />
+            {feature}
+          </p>
+        ))}
+      </div>
+    </>
+  )
+}

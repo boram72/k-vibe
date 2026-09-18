@@ -41,7 +41,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         ) : (
           <>
             <DialogTitle className="sr-only">{t('profile.title')}</DialogTitle>
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <ProfileHeader onSignInClick={() => setShowProfileView(false)} />
               <SettingsList />
             </div>

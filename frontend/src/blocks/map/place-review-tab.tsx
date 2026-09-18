@@ -145,7 +145,7 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
           {reviewsQuery.data!.map((review) => (
             <div key={review.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-foreground">{review.username}</p>
+                <p className="text-xs font-semibold text-foreground">{review.displayName ?? review.username}</p>
                 <StarRatingDisplay rating={review.rating} />
               </div>
               <p className="mt-1.5 text-sm leading-5 text-foreground/90">{review.content}</p>

@@ -31,6 +31,7 @@ export default function OAuthCallbackPage() {
     const username = searchParams.get('username')
     const email = searchParams.get('email')
     const provider = searchParams.get('provider') as AuthProvider | null
+    const displayName = searchParams.get('display_name') || undefined
 
     if (error || !username || !email || !provider) {
       toast.error(t('login.oauth_failed'))
@@ -38,7 +39,7 @@ export default function OAuthCallbackPage() {
       return
     }
 
-    const user = completeOAuthLogin({ username, email, provider })
+    const user = completeOAuthLogin({ username, email, provider, displayName })
     Promise.all([mergeGuestSavedPlacesIntoUser(user.id), restoreRouteDraftFromServer()]).finally(() => {
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: SAVED_PLACES_QUERY_KEY })

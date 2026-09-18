@@ -63,8 +63,13 @@ export function redirectToOAuthProvider(provider: AuthProvider): void {
 
 // Called by the /auth/callback route once the backend redirects back with
 // the logged-in identity in the query string.
-export function completeOAuthLogin(data: { username: string; email: string; provider: AuthProvider }): AuthUser {
-  return toAuthUser({ username: data.username, email: data.email }, data.provider)
+export function completeOAuthLogin(data: {
+  username: string
+  email: string
+  provider: AuthProvider
+  displayName?: string
+}): AuthUser {
+  return toAuthUser({ username: data.username, email: data.email, display_name: data.displayName }, data.provider)
 }
 
 // 2026-09 QA 11번 — 로그아웃해도 "내 루트"(k-vibe-current-route 등)가 그대로

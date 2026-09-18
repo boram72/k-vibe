@@ -71,6 +71,9 @@ interface SpotListPanelProps {
   places: Place[]
   isLoading: boolean
   onSelectPlace: (place: Place) => void
+  // RelatedAttractionsList가 백엔드(/attractions/related)로 그대로 보내는
+  // 값 — 지도가 실제로 보여주는 뷰 중심(effectiveCoords)이 아니라 MapPage의
+  // queryCoords를 받는다(GPS 버튼만으로는 안 바뀌는, 명시적 검색 좌표).
   center: { lat: number; lng: number }
 }
 

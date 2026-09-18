@@ -7,6 +7,7 @@ import { Sparkles } from 'lucide-react'
 import { RouteResult } from '@/blocks/persona/route-result'
 import { Button } from '@/components/ui/button'
 import { ZoomableImage } from '@/blocks/common/zoomable-image'
+import { MarqueeText } from '@/blocks/common/marquee-text'
 import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona } from '@/api/personas'
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
@@ -238,9 +239,10 @@ export default function PersonaPage() {
                       {persona.routeCnt}
                       {t("persona.stops_suffix")}
                     </span>
-                    <p className="line-clamp-2 min-h-8 text-[10px] leading-4 text-muted-foreground md:min-h-10 md:text-xs md:leading-5">
-                      {persona.description}
-                    </p>
+                    <MarqueeText
+                      text={persona.description}
+                      className="text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5"
+                    />
                   </div>
                 </button>
               ))}

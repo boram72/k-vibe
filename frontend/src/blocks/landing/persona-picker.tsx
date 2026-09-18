@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { fetchKContentPersonas, fetchPersonaPlaces, type KContentPersona } from '@/api/personas'
+import { MarqueeText } from '@/blocks/common/marquee-text'
 import type { Locale } from '@/i18n'
 
 // Home-screen entry point for the persona feature (2026-09 redesign — this
@@ -218,7 +219,7 @@ function PersonaCard({ persona, images, onSelect }: PersonaCardProps) {
           <p className="truncate text-[10px] font-medium text-primary">
             {persona.moods.map((mood) => `#${mood}`).join(' ')}
           </p>
-          <p className="line-clamp-2 min-h-10 text-xs leading-5 text-muted-foreground">{persona.description}</p>
+          <MarqueeText text={persona.description} className="text-xs leading-5 text-muted-foreground" />
         </div>
       </button>
 

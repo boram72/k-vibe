@@ -37,5 +37,10 @@ def callback(provider: str, code: str | None = None, state: str | None = None):
     except oauthService.OAuthError:
         return RedirectResponse(f"{redirect_uri}?error=oauth_failed")
 
-    params = {"username": user["username"], "email": user.get("email") or "", "provider": provider}
+    params = {
+        "username": user["username"],
+        "email": user.get("email") or "",
+        "provider": provider,
+        "display_name": user.get("display_name") or "",
+    }
     return RedirectResponse(f"{redirect_uri}?{urlencode(params)}")

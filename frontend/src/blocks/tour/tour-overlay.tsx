@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronsUpDown, X } from 'lucide-react'
+import { ArrowDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useTourStore } from '@/store/tour-store'
@@ -171,12 +171,14 @@ export function TourOverlay() {
       )}
 
       {/* 드래그 손잡이를 "어떻게" 드래그해야 하는지 모르겠다는 피드백 대응
-          (사용자 요청) — 손잡이 옆에 위아래로 까딱이는 화살표를 보여줘서
-          세로로 드래그하면 된다는 걸 시각적으로 알려준다. 이 투어 단계에서만
-          보이고 실제 편집 화면에는 영향 없다. 말풍선이 놓인 반대쪽(아래에
-          말풍선이 있으면 위, 아니면 아래)에 둬서 서로 겹치지 않게 한다. */}
+          (사용자 요청) — 손잡이 옆에 까딱이는 아래 화살표를 보여줘서 드래그
+          방향을 알려준다. 위아래 양방향 화살표(ChevronsUpDown)는 헷갈린다는
+          피드백으로 아래 방향 화살표 하나로 단순화했다(사용자 요청). 이 투어
+          단계에서만 보이고 실제 편집 화면에는 영향 없다. 말풍선이 놓인
+          반대쪽(아래에 말풍선이 있으면 위, 아니면 아래)에 둬서 서로 겹치지
+          않게 한다. */}
       {box && step.dragHint && (
-        <ChevronsUpDown
+        <ArrowDown
           className="pointer-events-none absolute h-5 w-5 animate-bounce text-primary"
           style={{
             top: tooltipTop >= box.top + box.height - 4 ? box.top - 24 : box.top + box.height + 4,

@@ -22,8 +22,8 @@ interface ProfileDialogProps {
 //
 // 팝업을 열 때마다(로그인 안 한 상태라면) 로그인 프롬프트부터 다시 시작 —
 // "게스트로 계속" 선택은 이 팝업이 열려있는 동안만 유지되고 영속되지 않는다.
-// 게스트로 이용하기 선택 직후 팝업이 자동으로 닫히기까지의 대기 시간.
-const GUEST_AUTO_CLOSE_MS = 5000
+// 게스트로 이용하기 선택 직후 팝업이 자동으로 닫히기까지의 대기 시간(초).
+const GUEST_AUTO_CLOSE_SECONDS = 5
 
 export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   const { t } = useTranslation()
@@ -32,6 +32,8 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
   // "게스트로 이용하기"를 방금 눌러서 뜬 프로필뷰인지 여부 — 로그인 완료 후
   // 보이는 프로필뷰와 구분해서, 이 경우에만 자동종료 안내+타이머를 건다.
   const [justContinuedAsGuest, setJustContinuedAsGuest] = useState(false)
+  // 5→4→3→2→1로 화면에 보이는 카운트다운. 0이 되는 순간 닫는다.
+  const [guestCountdown, setGuestCountdown] = useState(GUEST_AUTO_CLOSE_SECONDS)
 
   // lint 수정 — effect에서 setState하는 대신, React 공식 문서가 권장하는
   // "렌더 중 이전 prop과 비교해 state 조정" 패턴으로 전환(map-canvas.tsx의
@@ -48,9 +50,15 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
 
   useEffect(() => {
     if (!justContinuedAsGuest) return
-    const timer = setTimeout(() => onOpenChange(false), GUEST_AUTO_CLOSE_MS)
-    return () => clearTimeout(timer)
-  }, [justContinuedAsGuest, onOpenChange])
+    const interval = setInterval(() => {
+      setGuestCountdown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [justContinuedAsGuest])
+
+  useEffect(() => {
+    if (justContinuedAsGuest && guestCountdown <= 0) onOpenChange(false)
+  }, [justContinuedAsGuest, guestCountdown, onOpenChange])
 
   const showLogin = !user && !showProfileView
 
@@ -62,6 +70,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             onGuestContinue={() => {
               setShowProfileView(true)
               setJustContinuedAsGuest(true)
+              setGuestCountdown(GUEST_AUTO_CLOSE_SECONDS)
             }}
           />
         ) : (
@@ -69,7 +78,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             <DialogTitle className="sr-only">{t('profile.title')}</DialogTitle>
             {justContinuedAsGuest && (
               <p className="absolute top-2 right-10 flex h-7 items-center text-xs font-medium text-destructive">
-                {t('profile.guest_auto_close_notice')}
+                {t('profile.guest_auto_close_notice', { seconds: Math.max(guestCountdown, 0) })}
               </p>
             )}
             <div className="min-w-0 space-y-4">

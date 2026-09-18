@@ -90,7 +90,10 @@
     "related_attractions_empty": "No related attraction data for this area yet",
     "area_search_results_title": "Search Results",
     "area_search_relevance": "Best match",
-    "area_search_distance": "Nearest"
+    "area_search_distance": "Nearest",
+    "close_search_results": "Close search results",
+    "sns_analyzer_title": "SNS Analyzer",
+    "persona_visited_places_title": "Persona Visited Places"
   },
   "placeDetail": {
     "add_to_route": "Add to Route",

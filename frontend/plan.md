@@ -10,8 +10,8 @@
 - [ ] **내 루트 — 다른 진입점 중복 추가 방지** (`"서로 다른 진입점"` 검색) — 페르소나로 추가한 장소를 지도에서 또 검색해 추가하면 중복됨. 원인/수정 방향은 정리됐으나 미구현(이름+좌표 유사도 판정 임계값 결정 필요).
 - [ ] **지도 — 검색 안정성 왔다갔다함** (`"왔다갔다함"` 검색) — 카카오 SDK 로딩 완료 전에 검색하면 조용히 실패하는 문제. 코드 수정은 이미 해둔 게 있으나 **PR이 안 올라간 채 로컬 브랜치(`fix/map-search-loading-state`, 커밋 `3b8e563`)에 남아있음** — PR부터 올려야 함.
 - [ ] **지도 리뷰 — 라이브 검증 미실시** (`"장소 리뷰 수정/삭제"` 섹션) — 코드는 완료, 백엔드 PATCH도 반영됐지만 실제 화면에서 삭제/수정 흐름을 직접 확인한 적은 아직 없음.
-- [ ] **지도 — 상호명 검색 기준점 검토** (`"상호명 검색 기준점"` 검색) — 검토만 된 상태, 설계 확정 전. 다음 작업 대상.
-- [ ] **지도 — 주변 스팟 영역/우선순위 재정리** (신규, 아래 최신 섹션 참고) — 우선순위 결정 전.
+- [ ] **지도 — 주변 스팟 영역/우선순위 재정리** (`"5. 주변스팟 영역 처리 필요"` 검색) — SNS분석기/찜/연관관광지/주변스팟 섹션 간 노출 우선순위 미정. 우선순위 추천 → 컨펌 후 개발 착수(아직 구현 금지). 페르소나별 탭 검색 버그(검색창/이 지역 검색 버튼 미동작) 포함. 다음 작업 대상.
+- [ ] **지도 — 여러 장소 bounds-fit 시 검색 힌트 미추적 (신규 발견, 미수정)** (`"bounds-fit"` 검색) — 4번 완료 과정에서 발견. 아직 손 안 댐.
 
 ---
 
@@ -1065,4 +1065,16 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
   - `map-canvas.tsx`: `MapCanvasProps`에 `onForceCurrentLocation: () => void`(필수)/`isAnalysisResult?: boolean` 추가. `LocationOverlay`는 `isAnalysisResult`일 때 아이콘을 `LocateFixed`→`ScanSearch`(SNS 분석기 nav 아이콘 재사용)로 교체. `MapActionButtons`는 `onForceCurrentLocation` 전용 콜백 사용. `KakaoMapCanvas` 내부 `handleForceCurrentLocation()`이 `onForceCurrentLocation()` 호출 후 `setFocusCenter(null)`/`setPendingCenter(null)`+`map.panTo()`로 카메라도 즉시 재동기화. `queryCoords`(백엔드로 나가는 검색 좌표)는 `viewIgnoresFocus`와 무관하게 계속 `focusPlaces[0]`을 우선("현재위치 버튼 = 카메라만 이동, 검색 상태는 안 건드림" 원칙 유지).
   - **검증**: Playwright로 SNS 분석기→"모두 지도에서 보기"→분석결과 핸드오프 상태 재현. 왼쪽 라벨이 "Analysis Result" + `ScanSearch` 아이콘 확인, 그 상태에서 왼쪽 라벨 버튼 클릭 시 라벨 그대로 유지(뷰 안 바뀜) 확인, 우측 하단 버튼 클릭 시 라벨이 "Current Location"으로 전환+지도 카메라 실제 이동+콘솔/페이지 에러 없음 확인. `npx tsc --noEmit -p tsconfig.app.json`(캐시 삭제 후 재실행)/`npx eslint src` 클린(shadcn `components/ui/` 3건 제외).
   
-- [ ] **4. 상호명 검색 기준점을 지도 위치로 변경 (검토)** — 현재 상호명 검색(`areaSearchMutation`)이 카카오 `keywordSearch`에 넘기는 위치 힌트(`near: effectiveCoords`)가 실제로는 "지도가 지금 보여주는 위치"가 아니라 사용자 GPS/마지막 확정 검색 위치에 더 가깝게 동작함 — 지도를 손으로 드래그만 하고(아직 "이 지역에서 검색"을 안 눌러서 `searchCenter` 미확정) 바로 상호명을 검색하면, 실제 카카오 지도 카메라는 이미 옮겨간 새 위치에 있는데 검색 힌트는 옛 `effectiveCoords`(드래그 전 값)를 씀 — 드래그는 카카오 SDK 내부적으로 지도 인스턴스만 직접 움직이고 React state(`searchCenter`)는 안 건드리기 때문. **검토 필요**: 실제 지도 카메라의 현재 위치를 읽으려면 `map` 인스턴스 참조를 `MapCanvas` 밖(`MapPage`)으로 끌어올리거나, `MapCanvas`가 "현재 카메라 중심"을 콜백으로 올려주는 구조가 필요 — 범위가 있는 변경이라 실행 전 설계 확인 필요.
+- [x] **4. (완료) 상호명 검색 기준점을 지도 위치로 변경** — 상호명 검색(`areaSearchMutation`)/관광지 추천 클릭(`attractionSearchMutation`)이 카카오 `keywordSearch`에 넘기는 위치 힌트(`near`)가 "지도가 지금 실제로 보여주는 위치"가 아니라 마지막으로 "확정"된 검색 중심(`effectiveCoords`)만 반영하던 문제. 처음엔 드래그(미확정) 케이스만 잡았다가, 대화 중 "서울에서 불국사 검색→클릭(경주로 카메라 이동)→바로 스타벅스 검색→서울 근처 결과가 뜸" 시나리오를 지적받아 범위를 넓힘 — 장소 선택으로 카메라가 팬되는 경우(`focusCenter`)도 `searchCenter`는 안 바뀌므로 동일한 문제였음.
+  - **구현**: `map-canvas.tsx`(`KakaoMapCanvas`)에 `realCameraCenter = pendingCenter ?? focusCenter ?? center`(드래그 미확정 → 장소선택 팬 → 확정된 center 순 우선순위) 계산 + 이 값이 바뀔 때마다 `onCameraCenterChange` 콜백으로 부모에 알리는 `useEffect` 추가(렌더 바디에서 부모 콜백을 직접 부르면 "다른 컴포넌트를 렌더 중 업데이트" 경고 위험이 있어 effect로 분리). `MapPage.tsx`는 `realCameraCenter` state로 받아 `areaSearchMutation`/`attractionSearchMutation` 둘 다의 `near`로 사용. **`searchCenter`/`queryCenter`(=`/places` 재조회, 실제 검색 확정 상태)는 전혀 안 건드림** — 이 값은 검색 힌트 계산에만 쓰이는 순수 참고용 상태.
+  - `<KakaoMap center>`에 실제로 넘어가는 `mapCenter = focusCenter ?? center`(드래그 중인 `pendingCenter`는 제외 — 드래그 중엔 카카오 SDK가 이미 자체적으로 그 위치를 보여주고 있어서 React가 다시 그 위치로 `center` prop을 밀어넣으면 `isPanto` 애니메이션이 오히려 튕겨 보일 수 있음)와 `realCameraCenter`(검색 힌트용, `pendingCenter` 포함)는 의도적으로 다른 값 — 헷갈리지 않게 이름을 분리해둠.
+  - **검증**: `npx tsc --noEmit -p tsconfig.app.json`(캐시 삭제 후)/`npx eslint src` 클린(shadcn 3건 제외). Playwright로 카카오 `keyword.json` 네트워크 요청을 직접 가로채 확인 — ① 드래그(미확정) 후 검색 시 실제 요청의 `x`/`y`가 드래그로 옮겨간 좌표로 전송됨 확인, ② "불국사" 검색→후보 클릭(경주로 카메라 이동)→바로 "스타벅스" 검색 시 `x`/`y`가 정확히 경주 좌표(약 129.33, 35.79)로 전송됨 확인, ③ 이 과정에서 `/places`(반경검색, `searchCenter`/`queryCenter` 기반) 재조회가 추가로 발생하지 않음을 네트워크 로그로 확인(장소 상세 조회 `/places/kakao-{id}` 1건은 무관한 기존 동작).
+  - **감사 중 발견(수정 안 함, 아래 새 항목 참고)**: 여러 장소로 지도가 자동 bounds-fit(페르소나/스타 필터, 다중 focusPlaces 핸드오프)될 때는 이 추적에서 빠짐 — 바로 아래 항목 참고.
+
+- [ ] **4-1. (신규 발견, 미수정) 여러 장소 bounds-fit 시 검색 힌트가 그 위치를 못 따라감** — 4번 구현 후 전수 감사 중 발견. `map-canvas.tsx`의 `fitKakaoMapToPlaces()`가 장소 2개 이상을 한 화면에 담을 때(페르소나/스타 필터로 여러 장소 선택, 또는 SNS 분석기에서 2개 이상 핸드오프) `map.setBounds(...)`를 **카카오 지도 인스턴스에 직접(imperatively)** 호출함 — 이건 `center`/`focusCenter`/`pendingCenter` 중 어느 것도 안 거치는 완전히 별도의 경로라, 4번에서 추가한 `realCameraCenter = pendingCenter ?? focusCenter ?? center` 추적이 이 경우엔 갱신되지 않음. **재현 시나리오**: 페르소나별(스타별) 탭에서 여러 장소를 가진 스타를 선택 → 지도가 자동으로 줌아웃해서 전부 담김(예: 서울+부산에 흩어진 스팟) → 이 상태에서 검색창에 상호명을 검색하면 그 bounds-fit된 넓은 화면 기준이 아니라 이전 `center`(예: GPS 위치) 기준으로 검색됨 — 4번이 고친 것과 같은 계열의 어긋남이지만 트리거 경로가 다름. **수정하지 않음(사용자 지시) — 필요 시 별도 항목으로 착수할 것.**
+
+- [ ] **5. 주변스팟 영역 처리 필요 (2026-09-19, 대화 중 요청, 신규)** — 우측 목록 패널에 섹션이 여러 개(검색결과/찜/이 지역 연관 관광지/주변 스팟) 켜질 수 있는데, 각 섹션이 차지하는 영역 때문에 정작 "주변 스팟"이 화면에 아예 안 보이는 문제. 찜/연관관광지 섹션 자체도 영역이 매우 협소함. **우선순위 결정 전 — 아래 우선순위 추천안을 사용자에게 먼저 제시하고 컨펌받은 뒤 개발 시작할 것(구현 착수 금지).**
+  - **5-1.** SNS 분석기에서 지도로 아이템을 불러온 경우(`focusPlaces` 핸드오프), 지금은 그 아이템들이 "주변 스팟" 섹션 하위로 나열됨 — 이 경우엔 "주변 스팟" 대신 "SNS 분석기" 타이틀로 아이템을 띄울 것.
+  - **5-2.** 검색결과/찜/이 지역 연관 관광지가 다 켜지면 각 섹션이 차지하는 영역 때문에 주변 스팟이 전혀 안 보임(찜/연관관광지 영역도 매우 협소). 섹션별 우선순위를 정해야 함 — 5-1과 연계해서 "어떤 경우에 어떤 목록을 어떻게 보여줄지" 우선순위를 추천 → 컨펌 후 개발 시작.
+  - **5-3.** 페르소나별(스타별) 탭에서 클릭 시 "주변 스팟" 대신 "페르소나 방문 장소"로 타이틀 이름 변경. **버그 발견**: 페르소나별 클릭 시(최상위 우선순위가 페르소나 장소 리스트로 고정되는 상태) 검색창 검색 / "이 지역에서 검색" 버튼이 전부 동작하지 않음 — 수정 필요.
+  - **5-4.** 검색결과 목록을 닫을 수 있는 UI 제공(현재는 한번 뜨면 닫는 방법이 없음).

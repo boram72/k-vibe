@@ -104,7 +104,16 @@
     "review_submit": "发表评论",
     "review_submitted": "评论已发布",
     "review_submit_error": "评论发布失败，请重试。",
-    "review_empty": "还没有评论，来写第一条吧！"
+    "review_empty": "还没有评论，来写第一条吧！",
+    "review_edit": "编辑评论",
+    "review_delete": "删除评论",
+    "review_save": "保存",
+    "review_updated": "评论已更新",
+    "review_update_error": "评论更新失败，请重试。",
+    "review_deleted": "评论已删除",
+    "review_delete_error": "评论删除失败，请重试。",
+    "review_delete_confirm_title": "要删除这条评论吗？",
+    "review_delete_confirm_desc": "删除后将无法恢复。"
   },
   "analyze": {
     "title": "SNS地点分析",
@@ -148,8 +157,6 @@
     "add_to_route": "添加到路线",
     "build_route": "全部添加到路线",
     "choose_action_hint": "选择对该地点要执行的操作",
-    "local_mode_title": "使用方法",
-    "local_mode_body": "粘贴YouTube链接后，AI会读取视频内容，找出可以直接添加到地图和路线的候选地点。",
     "popular_videos_title": "大家常搜索这些视频",
     "popular_videos_subtitle": "韩国旅游发展局官方视频，点击即可立即分析。",
     "popular_video_seoul": "首尔",
@@ -406,7 +413,7 @@
     "help_body": "登录后可在多设备间同步已保存的地点和路线;以访客身份继续使用,本设备上的功能依然可用。",
     "guest_title": "访客用户",
     "guest_subtitle": "登录后可同步已保存的地点和路线。",
-    "guest_auto_close_notice": "5秒后自动关闭",
+    "guest_auto_close_notice": "{{seconds}}秒后自动关闭",
     "edit_name": "编辑名称",
     "edit_name_error": "保存名称失败，请重试。",
     "stats_places": "已保存地点",
@@ -454,7 +461,8 @@
     "button_label": "K-Vibe导览",
     "next": "下一步",
     "done": "开始使用",
-    "skip": "跳过",
+    "skip": "不再显示",
+    "close": "关闭",
     "home_nav_title": "在这里切换其他页面",
     "home_nav_body": "随时可以前往地图、SNS分析、角色或我的路线。",
     "home_cta_title": "马上创建路线",
@@ -475,8 +483,8 @@
     "map_locate_body": "点击这个按钮，地图会移动到你所在的位置附近。",
     "map_list_title": "点击地点查看详情",
     "map_list_body": "点击地点可以查看详细信息，并添加到我的路线。",
-    "persona_grid_title": "挑选喜欢的艺人或主题",
-    "persona_grid_body": "点击卡片，即可立即生成一日路线。",
+    "persona_grid_title": "点击这张卡片试试看",
+    "persona_grid_body": "点击后会立即生成一日路线。其他卡片也可以用同样的方式选择。",
     "persona_exclude_title": "把不想去的地点去掉",
     "persona_exclude_body": "点击X按钮，即可把这个地点从路线中移除。打造属于你自己的路线吧!",
     "route_drag_title": "拖动手柄调整顺序",
@@ -486,12 +494,20 @@
     "route_location_title": "查看到下一个地点的距离",
     "route_location_body": "点击这里即可查看从当前位置到下一个地点的距离。",
     "route_actions_title": "可以分享或重置路线",
-    "route_actions_body": "把完成的路线分享给朋友，或者从头重新制作。"
+    "route_actions_body": "把完成的路线分享给朋友，或者从头重新制作。",
+    "analyze_input_title": "在这里粘贴YouTube链接",
+    "analyze_input_body": "粘贴在社交媒体上看到的YouTube视频链接，即可帮你找出视频中的地点。",
+    "analyze_submit_title": "点击“景点分析”开始",
+    "analyze_submit_body": "粘贴链接后，点击这个按钮即可开始分析。",
+    "analyze_popular_title": "用示例视频立即体验",
+    "analyze_popular_body": "点击缩略图会自动填入链接。试试看吧!",
+    "analyze_tutorial_title": "想再看一次使用方法?",
+    "analyze_tutorial_body": "点击这个按钮即可再次查看使用方法。"
   },
   "welcome": {
     "title": "欢迎来到K-Vibe!",
     "tour_prompt": "要不要一起逛逛K-Vibe?",
     "start_tour": "开始导览",
-    "skip": "跳过"
+    "skip": "不再显示"
   }
 }

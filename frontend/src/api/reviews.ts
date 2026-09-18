@@ -60,3 +60,32 @@ export async function createPlaceReview(
   if (!normalized) throw new Error('Invalid review response')
   return normalized
 }
+
+// 2026-09 — DELETE /reviews/{place_id}/{review_id}는 백엔드에 이미 있었지만
+// (본인 리뷰만 삭제 가능, username 조건까지 검사) 프론트에서 여태 안 붙어있었음.
+export async function deletePlaceReview(placeId: string, reviewId: string, username: string): Promise<void> {
+  await apiClient.delete(`/reviews/${encodeURIComponent(placeId)}/${encodeURIComponent(reviewId)}`, {
+    params: { username },
+  })
+}
+
+// 2026-09 — 수정(PATCH)은 백엔드에 엔드포인트 자체가 아직 없음
+// (BACKEND_REQUESTS.md 신규 항목 참고). 추가되는 대로 바로 동작하도록
+// create/delete와 동일한 모양으로 미리 만들어둠 — 그 전까진 호출하면
+// 404/405로 실패하고, 호출부가 그 실패를 그대로 사용자에게 보여준다.
+export async function updatePlaceReview(
+  placeId: string,
+  reviewId: string,
+  username: string,
+  rating: number,
+  content: string,
+): Promise<PlaceReview> {
+  const response = await apiClient.patch<RawReview>(`/reviews/${encodeURIComponent(placeId)}/${encodeURIComponent(reviewId)}`, {
+    username,
+    rating,
+    content,
+  })
+  const normalized = normalizeReview(response.data)
+  if (!normalized) throw new Error('Invalid review response')
+  return normalized
+}

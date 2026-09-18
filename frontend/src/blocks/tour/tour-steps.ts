@@ -15,12 +15,17 @@ export interface TourStep {
   // 아니라 다른 신호로 완료를 판단해야 하는 단계(예: 순서 바꾸기)는 false로
   // 두고, 그 화면이 직접 useTourStore().next(...)를 호출해서 넘긴다.
   advanceOnClick?: boolean
+  // 드래그 손잡이 옆에 위아래로 까딱이는 화살표 힌트를 보여준다 — "드래그를
+  // 어떻게 하는지 모르겠다"는 피드백(사용자 요청)에 대응. 이 투어 단계에서만
+  // 보이는 시각적 힌트일 뿐, 실제 편집 화면(투어 밖)에는 영향 없다.
+  dragHint?: boolean
 }
 
 export const HOME_TOUR_KEY = 'home'
 export const MAP_TOUR_KEY = 'map'
 export const PERSONA_TOUR_KEY = 'persona'
 export const ROUTE_TOUR_KEY = 'route'
+export const ANALYZE_TOUR_KEY = 'analyze'
 
 export const HOME_TOUR_STEPS: TourStep[] = [
   { target: 'home-nav', titleKey: 'tour.home_nav_title', bodyKey: 'tour.home_nav_body' },
@@ -49,10 +54,20 @@ export const PERSONA_TOUR_STEPS: TourStep[] = [
 // pointer-events는 clickThrough:true로 계속 실제 손잡이에 전달되므로 진짜
 // 드래그 자체는 그대로 동작한다.
 export const ROUTE_TOUR_STEPS: TourStep[] = [
-  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false },
+  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false, dragHint: true },
   { target: 'route-complete', titleKey: 'tour.route_complete_title', bodyKey: 'tour.route_complete_body', clickThrough: true },
   { target: 'route-location-check', titleKey: 'tour.route_location_title', bodyKey: 'tour.route_location_body' },
   { target: 'route-actions', titleKey: 'tour.route_actions_title', bodyKey: 'tour.route_actions_body' },
+]
+
+// 인기 영상 썸네일 단계는 clickThrough로 둬서 실제로 눌러보면(썸네일 클릭 시
+// URL 입력창이 채워짐) 그 자리에서 바로 다음 단계로 넘어간다 — 페르소나/
+// 루트 투어와 같은 "실제로 해볼 수 있게" 패턴(사용자 요청).
+export const ANALYZE_TOUR_STEPS: TourStep[] = [
+  { target: 'analyze-url-input', titleKey: 'tour.analyze_input_title', bodyKey: 'tour.analyze_input_body' },
+  { target: 'analyze-submit', titleKey: 'tour.analyze_submit_title', bodyKey: 'tour.analyze_submit_body' },
+  { target: 'analyze-popular-videos', titleKey: 'tour.analyze_popular_title', bodyKey: 'tour.analyze_popular_body', clickThrough: true },
+  { target: 'analyze-tutorial-button', titleKey: 'tour.analyze_tutorial_title', bodyKey: 'tour.analyze_tutorial_body' },
 ]
 
 export const TOUR_REGISTRY: Record<string, TourStep[]> = {
@@ -60,4 +75,5 @@ export const TOUR_REGISTRY: Record<string, TourStep[]> = {
   [MAP_TOUR_KEY]: MAP_TOUR_STEPS,
   [PERSONA_TOUR_KEY]: PERSONA_TOUR_STEPS,
   [ROUTE_TOUR_KEY]: ROUTE_TOUR_STEPS,
+  [ANALYZE_TOUR_KEY]: ANALYZE_TOUR_STEPS,
 }

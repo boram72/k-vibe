@@ -104,7 +104,16 @@
     "review_submit": "レビューを投稿",
     "review_submitted": "レビューを投稿しました",
     "review_submit_error": "レビューの投稿に失敗しました。もう一度お試しください。",
-    "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！"
+    "review_empty": "まだレビューがありません。最初のレビューを書いてみましょう！",
+    "review_edit": "レビューを編集",
+    "review_delete": "レビューを削除",
+    "review_save": "保存",
+    "review_updated": "レビューを更新しました",
+    "review_update_error": "レビューの更新に失敗しました。もう一度お試しください。",
+    "review_deleted": "レビューを削除しました",
+    "review_delete_error": "レビューの削除に失敗しました。もう一度お試しください。",
+    "review_delete_confirm_title": "このレビューを削除しますか？",
+    "review_delete_confirm_desc": "削除すると元に戻せません。"
   },
   "analyze": {
     "title": "SNSスポット分析",
@@ -148,8 +157,6 @@
     "add_to_route": "ルートに追加",
     "build_route": "すべてルートに追加",
     "choose_action_hint": "このスポットで行う操作を選んでください",
-    "local_mode_title": "使い方",
-    "local_mode_body": "YouTubeリンクを貼り付けると、AIが動画を読み取り、地図やルートにすぐ追加できる候補スポットを見つけます。",
     "popular_videos_title": "よく検索される動画",
     "popular_videos_subtitle": "韓国観光公社の公式動画です。タップしてすぐ分析してみましょう。",
     "popular_video_seoul": "ソウル",
@@ -406,7 +413,7 @@
     "help_body": "ログインすると保存した場所やルートを他のデバイスと同期できます。ゲストのままでもこの端末では引き続き利用できます。",
     "guest_title": "ゲスト旅行者",
     "guest_subtitle": "ログインすると保存した場所やルートを同期できます。",
-    "guest_auto_close_notice": "5秒後に自動的に閉じます",
+    "guest_auto_close_notice": "{{seconds}}秒後に自動的に閉じます",
     "edit_name": "名前を編集",
     "edit_name_error": "名前を保存できませんでした。もう一度お試しください。",
     "stats_places": "保存した場所",
@@ -454,7 +461,8 @@
     "button_label": "K-Vibeツアー",
     "next": "次へ",
     "done": "はじめる",
-    "skip": "スキップ",
+    "skip": "二度と表示しない",
+    "close": "閉じる",
     "home_nav_title": "ここから他の画面へ移動できます",
     "home_nav_body": "地図、SNS分析、ペルソナ、マイルートへいつでも移動できます。",
     "home_cta_title": "すぐにルートを作ってみましょう",
@@ -475,8 +483,8 @@
     "map_locate_body": "このボタンを押すと、現在地周辺に地図が移動します。",
     "map_list_title": "場所をタップして詳細を見ましょう",
     "map_list_body": "場所をタップすると詳細情報を見たり、マイルートに追加できます。",
-    "persona_grid_title": "好きなアーティストやテーマを選んでみましょう",
-    "persona_grid_body": "カードをタップすると、その場ですぐに1日ルートが作られます。",
+    "persona_grid_title": "このカードをタップしてみましょう",
+    "persona_grid_body": "タップすると、その場ですぐに1日ルートが作られます。他のカードも同じように選べます。",
     "persona_exclude_title": "気に入らない場所は外してみましょう",
     "persona_exclude_body": "Xボタンを押すと、この場所がルートから外れます。自分だけのルートにしてみましょう!",
     "route_drag_title": "ハンドルをドラッグして順番を変えましょう",
@@ -486,12 +494,20 @@
     "route_location_title": "次の場所までの距離を確認しましょう",
     "route_location_body": "ここを押すと、今いる場所から次の場所までの距離がわかります。",
     "route_actions_title": "ルートを共有したりリセットしたりできます",
-    "route_actions_body": "完成したルートを友達に共有したり、最初からやり直したりできます。"
+    "route_actions_body": "完成したルートを友達に共有したり、最初からやり直したりできます。",
+    "analyze_input_title": "ここにYouTubeのリンクを貼り付けます",
+    "analyze_input_body": "SNSで見たYouTube動画のリンクを貼り付けると、動画の中の場所を探します。",
+    "analyze_submit_title": "スポット分析を押して開始します",
+    "analyze_submit_body": "リンクを入力したら、このボタンを押すと分析が始まります。",
+    "analyze_popular_title": "サンプル動画ですぐに試せます",
+    "analyze_popular_body": "サムネイルを押すとリンクが自動で入力されます。試してみましょう!",
+    "analyze_tutorial_title": "使い方をもう一度見たいときは",
+    "analyze_tutorial_body": "このボタンを押すと使い方をもう一度確認できます。"
   },
   "welcome": {
     "title": "K-Vibeへようこそ!",
     "tour_prompt": "K-Vibeを一緒に見て回りましょうか?",
     "start_tour": "見て回る",
-    "skip": "スキップ"
+    "skip": "二度と表示しない"
   }
 }

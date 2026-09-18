@@ -11,7 +11,7 @@ import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
 import { fetchPersonaPlaces } from '@/api/personas'
 import { usePageHelpStore } from '@/store/page-help-store'
-import { useTourStore, hasSeenTour } from '@/store/tour-store'
+import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { useCurrentLocation } from '@/lib/use-current-location'
 import { useMediaQuery } from '@/lib/use-media-query'
@@ -277,9 +277,11 @@ export default function MapPage() {
   }, [setHelp, clearHelp, t])
 
   // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
-  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다.
+  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
+  // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
+  // 이 페이지가 처음이어도 뜨지 않는다.
   useEffect(() => {
-    if (!hasSeenTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
+    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
   }, [startTour])
 
   // Guards against StrictMode's dev-only double-invoke of mount effects —

@@ -5,4 +5,4 @@
 
 ---
 
-현재 대기 중인 요청 없음 — 이전에 등록됐던 1~5번 항목(display_name 컬럼/`/user/display-name` 엔드포인트, `/personas/places` 페르소나 3명 데이터 누락, `/places?locale=en|ja|zh` 카테고리 매핑, `/places/{content_id}` defaultYN/overviewYN 파라미터 오류, `/routes/generate` 크래시)은 전부 해결 완료(PR #83/#85 등).
+현재 대기 중인 요청 없음 — 이전에 등록됐던 1~5번 항목(display_name 컬럼/`/user/display-name` 엔드포인트, `/personas/places` 페르소나 3명 데이터 누락, `/places?locale=en|ja|zh` 카테고리 매핑, `/places/{content_id}` defaultYN/overviewYN 파라미터 오류, `/routes/generate` 크래시), 6번 항목(리뷰 수정 `PATCH /reviews/{place_id}/{review_id}` 엔드포인트 부재)까지 전부 해결 완료(PR #83/#85 등, 6번은 이번 PR에서 해결).

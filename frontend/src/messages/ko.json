@@ -104,7 +104,16 @@
     "review_submit": "리뷰 등록",
     "review_submitted": "리뷰가 등록됐어요",
     "review_submit_error": "리뷰 등록에 실패했어요. 다시 시도해주세요.",
-    "review_empty": "아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!"
+    "review_empty": "아직 리뷰가 없어요. 첫 리뷰를 남겨보세요!",
+    "review_edit": "리뷰 수정",
+    "review_delete": "리뷰 삭제",
+    "review_save": "저장",
+    "review_updated": "리뷰가 수정됐어요",
+    "review_update_error": "리뷰 수정에 실패했어요. 다시 시도해주세요.",
+    "review_deleted": "리뷰가 삭제됐어요",
+    "review_delete_error": "리뷰 삭제에 실패했어요. 다시 시도해주세요.",
+    "review_delete_confirm_title": "리뷰를 삭제할까요?",
+    "review_delete_confirm_desc": "삭제하면 되돌릴 수 없어요."
   },
   "analyze": {
     "title": "SNS 스팟 분석",
@@ -148,8 +157,6 @@
     "add_to_route": "루트에 추가",
     "build_route": "루트에 모두 추가",
     "choose_action_hint": "이 장소로 할 작업을 선택하세요",
-    "local_mode_title": "이렇게 작동해요",
-    "local_mode_body": "YouTube 링크를 넣으면 AI가 영상 속 장면을 읽고, 지도와 루트에 바로 추가할 후보 장소를 찾아드려요.",
     "popular_videos_title": "이 유튜브를 많이 검색해요",
     "popular_videos_subtitle": "한국관광공사 공식 영상이에요. 눌러서 바로 분석해보세요.",
     "popular_video_seoul": "서울",
@@ -406,7 +413,7 @@
     "help_body": "로그인하면 찜한 장소와 루트를 다른 기기와 동기화할 수 있어요. 게스트로도 이 기기에서는 그대로 사용 가능해요.",
     "guest_title": "게스트 여행자",
     "guest_subtitle": "로그인하면 찜한 장소와 루트를 동기화할 수 있어요.",
-    "guest_auto_close_notice": "5초 후 자동으로 닫혀요",
+    "guest_auto_close_notice": "{{seconds}}초 후 자동으로 닫혀요",
     "edit_name": "이름 수정",
     "edit_name_error": "이름을 저장하지 못했어요. 다시 시도해주세요.",
     "stats_places": "찜한 장소",
@@ -454,7 +461,8 @@
     "button_label": "K-Vibe 투어",
     "next": "다음",
     "done": "시작하기",
-    "skip": "건너뛰기",
+    "skip": "다시 보지 않기",
+    "close": "닫기",
     "home_nav_title": "여기서 다른 화면으로 이동해요",
     "home_nav_body": "지도, SNS 분석기, 페르소나, 내 루트로 언제든 이동할 수 있어요.",
     "home_cta_title": "루트를 바로 만들어보세요",
@@ -475,8 +483,8 @@
     "map_locate_body": "이 버튼을 누르면 내 위치 주변으로 지도가 이동해요.",
     "map_list_title": "장소를 눌러 자세히 보세요",
     "map_list_body": "장소를 누르면 상세 정보를 보고 내 루트에 추가할 수 있어요.",
-    "persona_grid_title": "좋아하는 아티스트나 테마를 골라보세요",
-    "persona_grid_body": "카드를 누르면 그 자리에서 바로 하루 여행 루트가 만들어져요.",
+    "persona_grid_title": "이 카드를 눌러보세요",
+    "persona_grid_body": "카드를 누르면 그 자리에서 바로 하루 여행 루트가 만들어져요. 다른 카드도 같은 방식으로 골라볼 수 있어요.",
     "persona_exclude_title": "원하지 않는 장소는 빼보세요",
     "persona_exclude_body": "X 버튼을 누르면 이 장소가 루트에서 제외돼요. 나만의 루트로 바꿔보세요!",
     "route_drag_title": "손잡이를 드래그해서 순서를 바꿔보세요",
@@ -486,12 +494,20 @@
     "route_location_title": "다음 장소까지 거리를 확인해요",
     "route_location_body": "여기를 누르면 지금 위치에서 다음 장소까지 거리를 알려줘요.",
     "route_actions_title": "루트를 공유하거나 초기화할 수 있어요",
-    "route_actions_body": "완성된 루트를 친구에게 공유하거나, 처음부터 다시 만들 수 있어요."
+    "route_actions_body": "완성된 루트를 친구에게 공유하거나, 처음부터 다시 만들 수 있어요.",
+    "analyze_input_title": "여기에 유튜브 링크를 붙여넣어요",
+    "analyze_input_body": "SNS에서 본 유튜브 영상 링크를 붙여넣으면 영상 속 장소를 찾아드려요.",
+    "analyze_submit_title": "스팟 분석을 눌러 시작해요",
+    "analyze_submit_body": "링크를 넣은 다음 이 버튼을 누르면 분석이 시작돼요.",
+    "analyze_popular_title": "예시 영상으로 바로 체험해보세요",
+    "analyze_popular_body": "썸네일을 누르면 링크가 자동으로 채워져요. 눌러보세요!",
+    "analyze_tutorial_title": "사용법을 다시 보고 싶다면",
+    "analyze_tutorial_body": "이 버튼을 누르면 사용 방법을 다시 볼 수 있어요."
   },
   "welcome": {
     "title": "K-Vibe에 오신 것을 환영해요!",
     "tour_prompt": "K-Vibe를 함께 둘러볼까요?",
     "start_tour": "둘러보기",
-    "skip": "건너뛰기"
+    "skip": "다시 보지 않기"
   }
 }

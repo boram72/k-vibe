@@ -104,7 +104,16 @@
     "review_submit": "Post review",
     "review_submitted": "Review posted",
     "review_submit_error": "Couldn't post your review. Please try again.",
-    "review_empty": "No reviews yet. Be the first to write one!"
+    "review_empty": "No reviews yet. Be the first to write one!",
+    "review_edit": "Edit review",
+    "review_delete": "Delete review",
+    "review_save": "Save",
+    "review_updated": "Review updated",
+    "review_update_error": "Couldn't update your review. Please try again.",
+    "review_deleted": "Review deleted",
+    "review_delete_error": "Couldn't delete your review. Please try again.",
+    "review_delete_confirm_title": "Delete this review?",
+    "review_delete_confirm_desc": "This can't be undone."
   },
   "analyze": {
     "title": "SNS Spot Analyzer",
@@ -148,8 +157,6 @@
     "add_to_route": "Add to Route",
     "build_route": "Add All to Route",
     "choose_action_hint": "Choose what to do with this spot",
-    "local_mode_title": "How it works",
-    "local_mode_body": "Paste a YouTube link and AI reads the video to find candidate spots you can add straight to the map or your route.",
     "popular_videos_title": "Popular videos to try",
     "popular_videos_subtitle": "Official Korea Tourism Organization videos — tap to analyze instantly.",
     "popular_video_seoul": "Seoul",
@@ -406,7 +413,7 @@
     "help_body": "Sign in to sync your saved places and routes, or continue as a guest — everything still works on this device either way.",
     "guest_title": "Guest traveler",
     "guest_subtitle": "Sign in to sync your saved places and routes.",
-    "guest_auto_close_notice": "Closing automatically in 5s",
+    "guest_auto_close_notice": "Closing automatically in {{seconds}}s",
     "edit_name": "Edit name",
     "edit_name_error": "Couldn't save your name. Please try again.",
     "stats_places": "Places",
@@ -454,7 +461,8 @@
     "button_label": "K-Vibe Tour",
     "next": "Next",
     "done": "Get started",
-    "skip": "Skip",
+    "skip": "Don't show again",
+    "close": "Close",
     "home_nav_title": "Get around from here",
     "home_nav_body": "Jump to Map, SNS Analyzer, Persona, or My Route anytime.",
     "home_cta_title": "Build a route right away",
@@ -475,8 +483,8 @@
     "map_locate_body": "Tap this button to move the map to your current location.",
     "map_list_title": "Tap a place for details",
     "map_list_body": "Tap a place to see details and add it to your route.",
-    "persona_grid_title": "Pick a favorite artist or theme",
-    "persona_grid_body": "Tap a card and a one-day route is generated right away.",
+    "persona_grid_title": "Tap this card to try it",
+    "persona_grid_body": "Tap it and a one-day route is generated right away. Other cards work the same way.",
     "persona_exclude_title": "Remove spots you don't want",
     "persona_exclude_body": "Tap the X to exclude this spot from the route. Make it your own!",
     "route_drag_title": "Drag the handle to reorder",
@@ -486,12 +494,20 @@
     "route_location_title": "Check the distance to your next stop",
     "route_location_body": "Tap here to see how far you are from the next place.",
     "route_actions_title": "Share or reset your route",
-    "route_actions_body": "Share your finished route with friends, or start over from scratch."
+    "route_actions_body": "Share your finished route with friends, or start over from scratch.",
+    "analyze_input_title": "Paste a YouTube link here",
+    "analyze_input_body": "Paste a link to a video you saw on social media, and we'll find the spots in it.",
+    "analyze_submit_title": "Tap Analyze to start",
+    "analyze_submit_body": "After pasting a link, tap this button to start the analysis.",
+    "analyze_popular_title": "Try one of these example videos",
+    "analyze_popular_body": "Tap a thumbnail to fill in the link automatically. Give it a try!",
+    "analyze_tutorial_title": "Want to see how it works again?",
+    "analyze_tutorial_body": "Tap this button to review how to use this page."
   },
   "welcome": {
     "title": "Welcome to K-Vibe!",
     "tour_prompt": "Want to take a quick look around K-Vibe?",
     "start_tour": "Take the tour",
-    "skip": "Skip"
+    "skip": "Don't show again"
   }
 }

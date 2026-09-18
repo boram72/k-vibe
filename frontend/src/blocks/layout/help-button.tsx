@@ -1,4 +1,4 @@
-import { Compass, HelpCircle } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -12,17 +12,17 @@ import {
 } from '@/components/ui/dialog'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useTourStore } from '@/store/tour-store'
-import { HOME_TOUR_KEY, MAP_TOUR_KEY, PERSONA_TOUR_KEY, ROUTE_TOUR_KEY, TOUR_REGISTRY } from '@/blocks/tour/tour-steps'
+import { HOME_TOUR_KEY, MAP_TOUR_KEY, PERSONA_TOUR_KEY, ROUTE_TOUR_KEY, ANALYZE_TOUR_KEY, TOUR_REGISTRY } from '@/blocks/tour/tour-steps'
 
 // locale 세그먼트를 뗀 나머지 경로('' = 홈, 'map', 'analyze' ...) 별로 어떤
 // 투어를 재생할지 매핑 — 아직 투어가 없는 페이지는 기존 정적 도움말 팝업으로
-// 자연스럽게 폴백된다(아래 참고). SNS 분석기는 화면 구조가 곧 바뀔 예정이라
-// 투어를 먼저 안 만든다(사용자 결정).
+// 자연스럽게 폴백된다(아래 참고).
 const PATH_TOUR_KEY: Record<string, string> = {
   '': HOME_TOUR_KEY,
   map: MAP_TOUR_KEY,
   persona: PERSONA_TOUR_KEY,
   route: ROUTE_TOUR_KEY,
+  analyze: ANALYZE_TOUR_KEY,
 }
 
 export function HelpButton() {
@@ -46,7 +46,7 @@ export function HelpButton() {
         data-tour="home-tour-button"
         onClick={() => startTour(tourKey)}
       >
-        <Compass className="h-4 w-4" />
+        <HelpCircle className="h-4 w-4" />
       </Button>
     )
   }

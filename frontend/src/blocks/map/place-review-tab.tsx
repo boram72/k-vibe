@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { AlertCircle, MessageSquare, Star } from 'lucide-react'
+import { AlertCircle, MessageSquare, Pencil, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { useAuth } from '@/lib/use-auth'
 import { cn } from '@/lib/utils'
-import { fetchPlaceReviews, createPlaceReview } from '@/api/reviews'
+import { fetchPlaceReviews, createPlaceReview, deletePlaceReview, updatePlaceReview, type PlaceReview } from '@/api/reviews'
 import type { Locale } from '@/i18n'
 
 interface PlaceReviewTabProps {
@@ -67,6 +68,14 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
   const queryClient = useQueryClient()
   const [rating, setRating] = useState(5)
   const [content, setContent] = useState('')
+  // 내 리뷰 수정 — 목록 안에서 그 카드만 인라인으로 편집 폼으로 바뀜
+  // (profile-header.tsx의 이름 편집과 동일한 "pencil 아이콘 → 인라인 폼" 패턴).
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [editRating, setEditRating] = useState(5)
+  const [editContent, setEditContent] = useState('')
+  // 삭제는 되돌릴 수 없어서 route.clear_route 확인 다이얼로그와 동일하게
+  // Dialog로 한 번 더 확인받는다. 대상 review id가 있으면 다이얼로그가 열림.
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const reviewsQuery = useQuery({
     queryKey: ['place-reviews', placeId],
@@ -84,9 +93,40 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
     onError: () => toast.error(t('placeDetail.review_submit_error')),
   })
 
+  const updateMutation = useMutation({
+    mutationFn: () => updatePlaceReview(placeId, editingReviewId!, user!.id, editRating, editContent.trim()),
+    onSuccess: () => {
+      setEditingReviewId(null)
+      queryClient.invalidateQueries({ queryKey: ['place-reviews', placeId] })
+      toast.success(t('placeDetail.review_updated'))
+    },
+    onError: () => toast.error(t('placeDetail.review_update_error')),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (reviewId: string) => deletePlaceReview(placeId, reviewId, user!.id),
+    onSuccess: () => {
+      setDeleteTargetId(null)
+      queryClient.invalidateQueries({ queryKey: ['place-reviews', placeId] })
+      toast.success(t('placeDetail.review_deleted'))
+    },
+    onError: () => toast.error(t('placeDetail.review_delete_error')),
+  })
+
   function handleSubmit() {
     if (!user || !content.trim()) return
     mutation.mutate()
+  }
+
+  function startEditing(review: PlaceReview) {
+    setEditingReviewId(review.id)
+    setEditRating(review.rating)
+    setEditContent(review.content)
+  }
+
+  function handleSaveEdit() {
+    if (!user || !editContent.trim()) return
+    updateMutation.mutate()
   }
 
   return (
@@ -142,20 +182,91 @@ export function PlaceReviewTab({ placeId }: PlaceReviewTabProps) {
 
       {!reviewsQuery.isPending && !reviewsQuery.isError && (reviewsQuery.data ?? []).length > 0 && (
         <div className="space-y-2">
-          {reviewsQuery.data!.map((review) => (
-            <div key={review.id} className="rounded-xl border border-border bg-background p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-foreground">{review.displayName ?? review.username}</p>
-                <StarRatingDisplay rating={review.rating} />
+          {reviewsQuery.data!.map((review) => {
+            const isMine = user?.id === review.username
+            const isEditing = editingReviewId === review.id
+
+            if (isEditing) {
+              return (
+                <div key={review.id} className="space-y-2 rounded-xl border border-border bg-muted/50 p-3">
+                  <StarRatingInput value={editRating} onChange={setEditRating} disabled={updateMutation.isPending} />
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    disabled={updateMutation.isPending}
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => setEditingReviewId(null)}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button size="sm" disabled={!editContent.trim() || updateMutation.isPending} onClick={handleSaveEdit}>
+                      {t('placeDetail.review_save')}
+                    </Button>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <div key={review.id} className="rounded-xl border border-border bg-background p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-foreground">{review.displayName ?? review.username}</p>
+                  <div className="flex items-center gap-2">
+                    <StarRatingDisplay rating={review.rating} />
+                    {isMine && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEditing(review)}
+                          aria-label={t('placeDetail.review_edit')}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTargetId(review.id)}
+                          aria-label={t('placeDetail.review_delete')}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-1.5 text-sm leading-5 text-foreground/90">{review.content}</p>
+                <p className="mt-1.5 text-[10px] text-muted-foreground">
+                  {new Date(review.createdAt).toLocaleDateString(i18n.language as Locale)}
+                </p>
               </div>
-              <p className="mt-1.5 text-sm leading-5 text-foreground/90">{review.content}</p>
-              <p className="mt-1.5 text-[10px] text-muted-foreground">
-                {new Date(review.createdAt).toLocaleDateString(i18n.language as Locale)}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
+
+      <Dialog open={deleteTargetId !== null} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <DialogContent className="p-6 sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('placeDetail.review_delete_confirm_title')}</DialogTitle>
+            <DialogDescription>{t('placeDetail.review_delete_confirm_desc')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 gap-2">
+            <Button variant="outline" disabled={deleteMutation.isPending} onClick={() => setDeleteTargetId(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteTargetId && deleteMutation.mutate(deleteTargetId)}
+            >
+              {t('placeDetail.review_delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocateFixed } from 'lucide-react'
 import { haversineKm } from '@/lib/haversine'
@@ -46,9 +46,17 @@ export function RouteLocationCheck({ nextStop, onLocationChecked }: RouteLocatio
   // 상태를 배경색으로 표시(별도 Switch+라벨로 분리하면 안내문구 등장 시
   // 레이아웃이 흔들려 보인다는 피드백으로 버튼 단일 요소 유지 확정).
   const [enabled, setEnabled] = useState(false)
+  // 버그 수정 — getCurrentPosition은 비동기(enableHighAccuracy라 최대 5초까지
+  // 걸릴 수 있음)라, 콜백이 오기 전에 사용자가 토글을 꺼버리면 늦게 도착한
+  // 콜백이 onLocationChecked(coords)를 다시 불러서 방금 끈 currentLocation을
+  // 되살렸다(스팟이 하나+내 위치가 멀 때 특히 눈에 띔 — 지도가 "스팟만" 보는
+  // 확대 뷰로 안 돌아가고 "스팟+내 위치"를 다 담는 축소 뷰로 되돌아가버림).
+  // ref로 "지금 이 콜백이 아직 유효한 토글인지" 확인 후에만 상태를 반영한다.
+  const enabledRef = useRef(false)
 
   function handleToggle(next: boolean) {
     setEnabled(next)
+    enabledRef.current = next
     if (next) {
       checkDistance()
     } else {
@@ -70,6 +78,7 @@ export function RouteLocationCheck({ nextStop, onLocationChecked }: RouteLocatio
     setCheck({ loading: true, message: t('route.checking_location'), tone: 'neutral' })
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!enabledRef.current) return
         const distanceM = Math.round(
           haversineKm(position.coords.latitude, position.coords.longitude, nextStop.lat, nextStop.lng) * 1000,
         )
@@ -83,6 +92,7 @@ export function RouteLocationCheck({ nextStop, onLocationChecked }: RouteLocatio
         onLocationChecked?.({ lat: position.coords.latitude, lng: position.coords.longitude })
       },
       (error) => {
+        if (!enabledRef.current) return
         setCheck({
           loading: false,
           message: t(

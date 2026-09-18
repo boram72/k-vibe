@@ -76,21 +76,8 @@ def upsert_place(
 
     호출부마다 갖고 있는 필드가 달라(route-draft는 imageUrl 없음, saved-places는
     description 없음 등) None인 필드는 payload에서 아예 제외해 기존 값을 덮어쓰지 않는다.
-
-    place_id 중복 방지: 페르소나 하드코딩 폴백 장소처럼 TourAPI place_id가 없는 곳은
-    프론트가 장소명을 임시 place_id로 대신 써서 넘기는 경우가 있다(찜하기/내 루트 추가).
-    이 place_id가 아직 location에 없는 신규 행이라면, 같은 name으로 이미 저장된(TourAPI
-    place_id를 가진) 행이 있는지 먼저 확인해 있으면 그 행의 place_id를 재사용한다 —
-    그렇지 않으면 같은 실제 장소가 place_id만 다른 행 2개로 쪼개져 location.name 중복
-    (`GROUP BY name HAVING COUNT(*)>1`)이 발생한다(실측: 페르소나 카탈로그 폴백 장소들).
     """
     client = get_supabase_client()
-
-    if name and not get_location_by_place_id(place_id):
-        existing = get_location(name)
-        if existing and existing.get("place_id") != place_id:
-            place_id = existing["place_id"]
-
     data = {"place_id": place_id}
     for key, value in {
         "name": name,

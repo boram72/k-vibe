@@ -1,4 +1,4 @@
-import { Compass, HelpCircle } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -46,7 +46,7 @@ export function HelpButton() {
         data-tour="home-tour-button"
         onClick={() => startTour(tourKey)}
       >
-        <Compass className="h-4 w-4" />
+        <HelpCircle className="h-4 w-4" />
       </Button>
     )
   }

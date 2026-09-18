@@ -148,8 +148,6 @@
     "add_to_route": "添加到路线",
     "build_route": "全部添加到路线",
     "choose_action_hint": "选择对该地点要执行的操作",
-    "local_mode_title": "使用方法",
-    "local_mode_body": "粘贴YouTube链接后，AI会读取视频内容，找出可以直接添加到地图和路线的候选地点。",
     "popular_videos_title": "大家常搜索这些视频",
     "popular_videos_subtitle": "韩国旅游发展局官方视频，点击即可立即分析。",
     "popular_video_seoul": "首尔",

@@ -4,6 +4,7 @@ export interface PlaceReview {
   id: string
   placeId: string
   username: string
+  displayName: string | null
   rating: number
   content: string
   createdAt: string
@@ -13,6 +14,7 @@ interface RawReview {
   id?: unknown
   place_id?: unknown
   username?: unknown
+  display_name?: unknown
   rating?: unknown
   content?: unknown
   created_at?: unknown
@@ -22,11 +24,12 @@ function normalizeReview(raw: RawReview): PlaceReview | null {
   if (typeof raw.id !== 'string' || typeof raw.content !== 'string') return null
   const placeId = typeof raw.place_id === 'string' ? raw.place_id : ''
   const username = typeof raw.username === 'string' ? raw.username : ''
+  const displayName = typeof raw.display_name === 'string' ? raw.display_name : null
   const rating = typeof raw.rating === 'number' ? raw.rating : Number(raw.rating) || 0
   const createdAt = typeof raw.created_at === 'string' ? raw.created_at : new Date().toISOString()
   if (!placeId || !username) return null
 
-  return { id: raw.id, placeId, username, rating, content: raw.content, createdAt }
+  return { id: raw.id, placeId, username, displayName, rating, content: raw.content, createdAt }
 }
 
 // 2026-09 버그 수정(FRONTEND_TODO_map_pan_search.md) — 예전엔 다른 api/*.ts처럼

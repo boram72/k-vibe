@@ -198,7 +198,7 @@ export default function PersonaPage() {
           <div className="mt-4 h-1 rounded-full bg-primary" />
         </div>
 
-        <div data-tour="persona-grid" className="rounded-xl bg-primary/[0.06] p-3">
+        <div className="rounded-xl bg-primary/[0.06] p-3">
           <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
             {personasQuery.isPending &&
               Array.from({ length: 4 }).map((_, index) => (
@@ -211,10 +211,16 @@ export default function PersonaPage() {
               ))}
 
             {!personasQuery.isPending &&
-              (personasQuery.data ?? []).map((persona) => (
+              (personasQuery.data ?? []).map((persona, index) => (
                 <button
                   key={persona.id}
                   type="button"
+                  // 투어 1단계는 카드 전체가 아니라 첫 번째 카드만 하이라이트한다
+                  // — 그리드 전체를 누를 수 있게 두면 어디를 눌러야 할지 애매해서
+                  // 안 눌러보고 넘어간다는 피드백(사용자 요청). 이름 대신
+                  // "첫 번째로 렌더링되는 카드"로 타겟팅해서 정렬 순서가 바뀌어도
+                  // 안전하다.
+                  data-tour={index === 0 ? 'persona-grid' : undefined}
                   onClick={() => selectPersona(persona)}
                   className={cn(
                     "overflow-hidden rounded-xl border text-left transition-all md:rounded-2xl",

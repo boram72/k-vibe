@@ -15,6 +15,10 @@ export interface TourStep {
   // 아니라 다른 신호로 완료를 판단해야 하는 단계(예: 순서 바꾸기)는 false로
   // 두고, 그 화면이 직접 useTourStore().next(...)를 호출해서 넘긴다.
   advanceOnClick?: boolean
+  // 드래그 손잡이 옆에 위아래로 까딱이는 화살표 힌트를 보여준다 — "드래그를
+  // 어떻게 하는지 모르겠다"는 피드백(사용자 요청)에 대응. 이 투어 단계에서만
+  // 보이는 시각적 힌트일 뿐, 실제 편집 화면(투어 밖)에는 영향 없다.
+  dragHint?: boolean
 }
 
 export const HOME_TOUR_KEY = 'home'
@@ -50,7 +54,7 @@ export const PERSONA_TOUR_STEPS: TourStep[] = [
 // pointer-events는 clickThrough:true로 계속 실제 손잡이에 전달되므로 진짜
 // 드래그 자체는 그대로 동작한다.
 export const ROUTE_TOUR_STEPS: TourStep[] = [
-  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false },
+  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false, dragHint: true },
   { target: 'route-complete', titleKey: 'tour.route_complete_title', bodyKey: 'tour.route_complete_body', clickThrough: true },
   { target: 'route-location-check', titleKey: 'tour.route_location_title', bodyKey: 'tour.route_location_body' },
   { target: 'route-actions', titleKey: 'tour.route_actions_title', bodyKey: 'tour.route_actions_body' },

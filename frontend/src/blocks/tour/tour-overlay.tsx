@@ -8,7 +8,9 @@ import { useTourStore } from '@/store/tour-store'
 import { TOUR_REGISTRY } from './tour-steps'
 
 const SPOTLIGHT_PADDING = 8
-const TOOLTIP_HEIGHT_ESTIMATE = 160
+// 실제 높이는 렌더 후 측정해서 쓰고(아래 tooltipRef), 이 값은 첫 프레임 추정치 —
+// 글씨를 키운 뒤 실측 범위(약 164~186px)에 맞춰 갱신.
+const TOOLTIP_HEIGHT_ESTIMATE = 176
 const TOOLTIP_MAX_WIDTH = 384
 const TOOLTIP_GAP = 12
 const VIEWPORT_MARGIN = 16
@@ -234,21 +236,26 @@ export function TourOverlay() {
         className="pointer-events-auto absolute rounded-2xl border border-border bg-background p-4 shadow-2xl transition-all duration-300"
         style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
       >
+        {/* 2026-09 사용자 요청 — 팝업 글씨가 작다는 의견으로 키웠다: 본문 12->14px,
+            제목 14->16px, 단계 번호 11->12px, "다시 보지 않기" 12->13px, 닫기(X)
+            아이콘 16->20px(누르는 영역도 함께 키움), "다음" 버튼 높이 28->40px
+            (모바일 터치 영역). 전부 rem 기반(text-sm/base)이라 브라우저/OS 글자
+            크기 설정에도 그대로 따라간다. */}
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-muted-foreground">
+          <span className="text-xs font-semibold text-muted-foreground">
             {stepIndex + 1} / {steps.length}
           </span>
-          <button type="button" onClick={close} aria-label={t('tour.close')} className="text-muted-foreground hover:text-foreground">
-            <X className="h-4 w-4" />
+          <button type="button" onClick={close} aria-label={t('tour.close')} className="-m-1 p-1 text-muted-foreground hover:text-foreground">
+            <X className="h-5 w-5" />
           </button>
         </div>
-        <p className="text-sm font-bold text-foreground">{t(step.titleKey)}</p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{t(step.bodyKey)}</p>
+        <p className="text-base font-bold text-foreground">{t(step.titleKey)}</p>
+        <p className="mt-1 text-sm leading-[22px] text-muted-foreground">{t(step.bodyKey)}</p>
         <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={optOut} className="text-xs font-medium text-muted-foreground underline">
+          <button type="button" onClick={optOut} className="text-[13px] font-medium text-muted-foreground underline">
             {t('tour.skip')}
           </button>
-          <Button size="sm" onClick={() => next(steps.length)}>
+          <Button size="sm" className="h-10 px-5 text-sm" onClick={() => next(steps.length)}>
             {stepIndex + 1 === steps.length ? t('tour.done') : t('tour.next')}
           </Button>
         </div>

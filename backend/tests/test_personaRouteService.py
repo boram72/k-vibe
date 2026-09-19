@@ -18,6 +18,8 @@ def test_normalize_db_location_reads_real_schema_columns():
         "category": "Culture",
         "crowd_level": "high",
         "tags": ["궁궐", "한복"],
+        "place_id": "3354946",
+        "address": "서울 종로구 사직로 161",
     }
 
     result = personaRouteService._normalize_db_location(row, "경복궁")
@@ -27,6 +29,19 @@ def test_normalize_db_location_reads_real_schema_columns():
     assert result["lng"] == 126.977
     assert result["crowdLevel"] == "high"
     assert result["openingHour"] == "09:00~18:00"
+    assert result["placeId"] == "3354946"
+    assert result["address"] == "서울 종로구 사직로 161"
+
+
+def test_normalize_db_location_defaults_place_id_and_address_when_absent():
+    """하드코딩 카탈로그 폴백 경로에서 오는 값은 place_id/address 컬럼이 없다 — None/빈문자열로
+    안전하게 기본값 처리되어야 routingService가 폴백 로직으로 분기할 수 있다."""
+    row = {"name": "경복궁", "latitude": 37.5796, "longitude": 126.977}
+
+    result = personaRouteService._normalize_db_location(row, "경복궁")
+
+    assert result["placeId"] is None
+    assert result["address"] == ""
 
 
 def test_normalize_db_location_returns_none_without_coordinates():
@@ -75,6 +90,7 @@ def test_load_persona_route_from_db_applies_location_story_and_pic(
         "en": "V가 한복을 입고 걸었던 그 골목",
     }
     assert location["characterImageUrl"].endswith("kyungbokplace_V.jpg")
+    assert location["placeId"] == "3354946"
     mock_build_pic_url.assert_called_once_with("kyungbokplace_V.jpg")
     mock_get_locations.assert_called_once_with(["3354946"])
 

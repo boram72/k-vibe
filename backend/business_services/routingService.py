@@ -87,11 +87,22 @@ def build_persona_route(persona_id: str, persona: dict, locations: list[dict], s
             prev = locations[index - 1]
             cursor += _walking_minutes(_haversine_km(prev["lat"], prev["lng"], location["lat"], location["lng"]))
 
+        # DB 경로(persona.locationname -> location.place_id)로 실제 TourAPI 장소에 매핑된
+        # 스팟은 place_id를 그대로 stop id로 써서, 프론트가 이 스팟을 "내 루트"에 추가할 때
+        # (PersonaPage.tsx의 placeId: s.id) 새 location 행을 만들지 않고 기존 행을 가리키게
+        # 한다. 하드코딩 카탈로그 폴백(place_id 없음)만 기존 합성 id를 유지한다.
+        place_id = location.get("placeId")
+        stop_id = place_id or f"{persona_id}-{_pick(location['label'], 'ko')}"
+        # 마찬가지로 실제 address가 있으면 그대로 쓰고(향후 route-draft 저장 시 location.address를
+        # 표시용 문자열로 덮어쓰지 않게 됨), 없는 폴백 카탈로그만 기존 표시용 문자열을 만든다.
+        real_address = location.get("address")
+        address = real_address or f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}"
+
         stop = {
-            "id": f"{persona_id}-{_pick(location['label'], 'ko')}",
+            "id": stop_id,
             "name": _pick(location["label"], locale),
             "category": location["category"],
-            "address": f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}",
+            "address": address,
             "crowdLevel": location["crowdLevel"],
             "lat": location["lat"],
             "lng": location["lng"],

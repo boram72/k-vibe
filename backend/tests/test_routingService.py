@@ -38,6 +38,30 @@ def test_build_persona_route_omits_character_image_url_when_absent():
     assert "characterImageUrl" not in result["stops"][0]
 
 
+def test_build_persona_route_uses_real_place_id_and_address_when_present():
+    """DB 경로로 매핑된 스팟(place_id/address 있음)은 그 값을 그대로 써야 한다 — 합성 id나
+    '동네 · ⭐평점 · 영업시간' 표시용 문자열을 만들면 안 된다(이걸 만들면 프론트가 "내 루트"에
+    추가할 때 이 합성 id로 location 테이블에 중복 행 + address에 ⭐ 문자열이 섞여 저장되는
+    버그가 있었다)."""
+    locations = [_location(placeId="3354946", address="서울 종로구 사직로 161")]
+
+    result = routingService.build_persona_route("BTS뷔", _PERSONA, locations, "10:00", "ko")
+
+    assert result["stops"][0]["id"] == "3354946"
+    assert result["stops"][0]["address"] == "서울 종로구 사직로 161"
+
+
+def test_build_persona_route_falls_back_to_synthetic_id_and_display_address_without_place_id():
+    """하드코딩 카탈로그 폴백(personaCatalogInfo.LOCATIONS)은 place_id/address가 없으므로
+    기존처럼 합성 id + 표시용 주소 문자열을 만들어야 한다(하위호환)."""
+    locations = [_location()]
+
+    result = routingService.build_persona_route("BTS뷔", _PERSONA, locations, "10:00", "ko")
+
+    assert result["stops"][0]["id"] == "BTS뷔-경복궁"
+    assert result["stops"][0]["address"] == "서울 종로구 · ⭐4.3 · 09:00~18:00"
+
+
 def test_pick_returns_requested_locale_when_present():
     text = {"ko": "한국어", "en": "English", "ja": "日本語", "zh": "中文"}
 

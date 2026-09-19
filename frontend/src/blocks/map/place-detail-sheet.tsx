@@ -49,7 +49,7 @@ export function PlaceDetailSheet({
   // instead of an early return.
   const { data: detail, isLoading: isDetailLoading } = useQuery({
     queryKey: ['place-detail', place?.id],
-    queryFn: () => fetchPlaceDetail(place!.id),
+    queryFn: () => fetchPlaceDetail(place!.id, place!.lat, place!.lng, place!.name),
     enabled: place !== null,
   })
 

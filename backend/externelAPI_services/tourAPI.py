@@ -8,6 +8,7 @@
 # - 편의점/약국/은행(ATM) 등 편의시설은 TourAPI에 해당 카테고리가 없어 카카오 로컬 API로
 #   조회한다 -> externelAPI_services/amenities.py 참고.
 import json
+import math
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
@@ -23,6 +24,16 @@ RELATED_ATTRACTIONS_AREA_BASED_URL = "https://apis.data.go.kr/B551011/TarRlteTar
 DETAIL_COMMON_URL = "https://apis.data.go.kr/B551011/KorService2/detailCommon2"
 DETAIL_INTRO_URL = "https://apis.data.go.kr/B551011/KorService2/detailIntro2"
 CATEGORY_CODE_URL = "https://apis.data.go.kr/B551011/KorService2/categoryCode2"
+
+EARTH_RADIUS_KM = 6371
+
+# SNS영상분석 등 TourAPI contentId를 모르는 장소명을 검색할 때 쓰는 최대 반경.
+# 실측(searchKeyword2 "청와대" 테스트) 결과 동명이인 후보가 다른 시/군에서도
+# 섞여 나오는 걸 확인했는데(경남 합천 "청와대 세트장"), 그런 오탐을 걸러내려면
+# 호출부가 이미 아는 좌표(카카오 검색으로 얻은 location 좌표) 기준으로 가까운
+# 후보만 채택해야 한다. 5km는 도보/시내 이동 범위를 넘는 동명이인은 대부분
+# 걸러내면서, 같은 관광단지 내 좌표 오차는 허용하는 값으로 정함.
+KEYWORD_SEARCH_MAX_DISTANCE_KM = 5.0
 
 # PLACE_DETAIL_INTEGRATION_REQUEST.md 참고 — contentTypeId별로 영업시간/휴무일
 # 필드명이 다르다. 체크인/체크아웃(32)·공연시간(15)은 이 2필드 패턴과 달라 별도 처리.
@@ -390,3 +401,97 @@ def get_place_detail(content_id: str) -> dict | None:
         "overview": _clean_text(common.get("overview")),
         "tags": [category_name] if category_name else [],
     }
+
+
+def _keyword_search_url(locale: str | None) -> str:
+    service = LOCALE_TO_SERVICE.get(locale, "KorService2")
+    return f"https://apis.data.go.kr/B551011/{service}/searchKeyword2"
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    d_lat = math.radians(lat2 - lat1)
+    d_lng = math.radians(lng2 - lng1)
+    a = (
+        math.sin(d_lat / 2) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lng / 2) ** 2
+    )
+    return EARTH_RADIUS_KM * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def _keyword_variants(name: str) -> list[str]:
+    """원본 키워드 + 공백만 다른 변형을 시도 목록으로 만든다.
+
+    실측(searchKeyword2 테스트)에서 "여행자의집"(0건)이 "여행자의 집"(마지막
+    1글자 앞에 공백 추가, 1건 매칭)로는 잡히는 케이스를 확인했다. 공백 삽입
+    위치를 미리 알 수 없어 마지막 1글자/2글자 앞 두 지점을 순서대로 시도한다.
+    반대로 원본에 공백이 있는 경우 공백을 없앤 변형도 시도한다. 이름 자체가
+    다른 경우(예: "전주성당" vs "전주전동성당")는 공백 문제가 아니라서 이
+    함수로 해결되지 않는다.
+    """
+    variants = [name]
+    stripped = name.replace(" ", "")
+    if stripped and stripped != name:
+        variants.append(stripped)
+    if " " not in name:
+        for split_len in (1, 2):
+            if len(name) > split_len:
+                variants.append(f"{name[:-split_len]} {name[-split_len:]}")
+    return variants
+
+
+def _fetch_keyword_page(keyword: str, locale: str | None) -> list[dict]:
+    params = {**_tour_api_common_params(), "numOfRows": 10, "pageNo": 1, "keyword": keyword}
+    response = httpx.get(_keyword_search_url(locale), params=params, timeout=5.0)
+    response.raise_for_status()
+    body = response.json().get("response", {}).get("body", {})
+    items = body.get("items", "")
+    if not items:
+        return []
+    item_list = items["item"]
+    if isinstance(item_list, dict):
+        item_list = [item_list]
+    return item_list
+
+
+def search_keyword(
+    name: str,
+    latitude: float,
+    longitude: float,
+    locale: str | None = None,
+) -> str | None:
+    """장소명으로 TourAPI를 검색해, 주어진 좌표에서 가장 가까운 후보의 contentId를 반환한다.
+
+    SNS영상분석 등에서 나온 장소명은 TourAPI 등록명과 정확히 일치하지 않는 경우가
+    많고, 동명이인처럼 이름은 같지만 다른 지역인 결과가 섞여 나오기도 한다(실측:
+    "청와대" 검색 시 경남 합천의 "청와대 세트장"도 포함됨). 호출부가 이미 아는
+    좌표(analysis-스팟은 카카오 검색으로 얻은 좌표가 location 테이블에 있음)
+    기준 KEYWORD_SEARCH_MAX_DISTANCE_KM 이내 후보만 채택해 이런 오탐을 거른다.
+    이름 자체가 다른 경우(예: "전주성당"↔"전주전동성당")는 이 함수로 해결하지
+    못한다 - 공백 유무 변형(_keyword_variants)만 재시도한다.
+    """
+    if not TOUR_API_KEY:
+        raise RuntimeError(
+            "TOUR_API_KEY 환경변수가 설정되지 않았습니다. backend/.env 파일을 확인하세요."
+        )
+
+    candidates: list[dict] = []
+    for keyword in _keyword_variants(name):
+        items = _fetch_keyword_page(keyword, locale)
+        if items:
+            candidates = items
+            break
+
+    nearby = []
+    for item in candidates:
+        mapx, mapy = item.get("mapx"), item.get("mapy")
+        if not mapx or not mapy:
+            continue
+        distance = _haversine_km(latitude, longitude, float(mapy), float(mapx))
+        if distance <= KEYWORD_SEARCH_MAX_DISTANCE_KM:
+            nearby.append((distance, item))
+
+    if not nearby:
+        return None
+
+    nearby.sort(key=lambda pair: pair[0])
+    return nearby[0][1].get("contentid")

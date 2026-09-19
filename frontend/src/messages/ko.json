@@ -74,6 +74,7 @@
     "last_known_location": "마지막으로 확인된 위치",
     "seoul_fallback": "서울 (기본값)",
     "location_unavailable": "위치를 가져올 수 없어 서울을 표시합니다",
+    "locating_title": "내 주변 스팟을 준비하고 있어요",
     "refresh_location": "위치 새로고침",
     "search_this_area": "이 지역에서 검색",
     "search_area_not_found": "해당 지역을 찾을 수 없어요",

@@ -15,8 +15,10 @@ import { usePageHelpStore } from '@/store/page-help-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { useCurrentLocation, SEOUL_CENTER } from '@/lib/use-current-location'
+import { haversineKm } from '@/lib/haversine'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { Skeleton } from '@/components/ui/skeleton'
+import { MapLandingOverlay } from '@/blocks/map/map-landing-overlay'
 import { type Place, type PlaceCategory } from '@/types/place'
 import type { Locale } from '@/i18n'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,17 @@ export interface MapFocusState {
 // 이 타입을 그대로 써야 해서 모듈 스코프로 export.
 export type ActiveSection = 'saved' | 'attractions' | 'searchResults' | 'analyzer' | null
 
+// 대화 중 요청 — 지도 페이지를 나갔다 다시 들어올 때마다 GPS+관할구역 조회를
+// 매번 처음부터 다시 하지 않도록, 마지막으로 성공한 결과를 모듈 스코프에
+// 캐시한다(컴포넌트가 언마운트돼도 살아남지만, 새로고침하면 초기화 — 그때는
+// 위치가 바뀌었을 수 있으니 다시 검사하는 게 안전). 그사이 실제로 멀리
+// 이동했을 수 있다는 지적(대화 중)에 따라, "그대로 있었다"를 시간(TTL)이
+// 아니라 매번 새로 잰 GPS 좌표와 캐시된 좌표 사이의 실제 거리로 판단한다 —
+// LANDING_CACHE_RADIUS_KM 이내면 캐시 재사용, 넘으면 다시 조회.
+const LANDING_CACHE_RADIUS_KM = 1.5
+let cachedLanding: { rawCoords: { lat: number; lng: number }; landingCoords: { lat: number; lng: number } } | null =
+  null
+
 function hasValidCoordinates(place: Place): boolean {
   return Number.isFinite(place.lat) && Number.isFinite(place.lng)
 }
@@ -59,7 +72,10 @@ export default function MapPage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const startTour = useTourStore((s) => s.start)
-  const { coords, locationLabel, requestLocation, isPrecise } = useCurrentLocation()
+  // 대화 중 요청 — "현재위치" 버튼 라벨을 이제 map-canvas.tsx가 항상 고정
+  // 텍스트로 표시해서(실제 GPS 성공/폴백 여부와 무관), 이 훅의 locationLabel은
+  // 더 이상 안 씀.
+  const { coords, requestLocation, isPrecise } = useCurrentLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const routerLocation = useLocation()
   const navigate = useNavigate()
@@ -216,7 +232,12 @@ export default function MapPage() {
   // searchCenter를 null로 되돌려 뷰가 GPS를 되찾아도 queryCenter는 전혀
   // 영향받지 않는다.
   const [queryCenter, setQueryCenter] = useState(effectiveCoords)
-  const queryCoords = focusPlaces[0] ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng } : queryCenter
+  // 대화 중 발견 — 여기도 effectiveCoords와 똑같이 viewIgnoresFocus를 봐야
+  // 했는데 빠져있었음. 그래서 SNS 분석기 핸드오프 중엔 "이 지역에서 검색"으로
+  // queryCenter를 바꿔도 /places 재조회가 계속 focusPlaces[0] 주변으로만
+  // 나가서 검색 자체가 안 먹히는 것처럼 보였음(대화 중 재현).
+  const queryCoords =
+    focusPlaces[0] && !viewIgnoresFocus ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng } : queryCenter
 
   // 4번(plan.md) — "지금 지도가 실제로 보여주는 위치"를 MapCanvas가 그대로
   // 올려준다(드래그 중/장소 선택 팬/확정된 center 변경 전부 포함). 상호명
@@ -231,21 +252,34 @@ export default function MapPage() {
   // center prop 자체를 절대 건드리지 않는다.
   const [realCameraCenter, setRealCameraCenter] = useState(effectiveCoords)
 
+  // 대화 중 요청 — 예전엔 이 버튼(왼쪽 상단)과 우측 하단의 "강제 현재위치"
+  // 버튼이 따로 있어서 "GPS만 갱신"/"focusPlaces 우선순위까지 해제하고 GPS로
+  // 강제 이동" 두 역할이 나뉘어 있었는데, 그게 얽혀 문제가 많아서(stale
+  // closure/bounds-fit 재실행) 우측 하단 버튼 자체를 없앴다. 이제 이 버튼
+  // 하나가 "언제나 현재위치로 표시되고, 누르면 항상 실제 GPS로 이동"하는
+  // 역할을 전담 — viewIgnoresFocus를 항상 켜서 effectiveCoords/queryCoords의
+  // focusPlaces 우선순위를 무조건 해제한다.
+  //
+  // 대화 중 발견한 버그 수정 — MapCanvas가 이 결과로 직접 panTo()할 수 있게
+  // requestLocation()의 Promise(실제로 받아온 좌표)를 그대로 돌려준다(예전엔
+  // fire-and-forget이라 MapCanvas가 아직 안 바뀐 center로 먼저 이동해버렸음).
   function handleRequestLocation() {
+    setViewIgnoresFocus(true)
     setSearchCenter(null)
     setKakaoSearchResults([])
     setAreaSearchLists(null)
     setHighlightedPlaceId(null)
-    requestLocation()
+    return requestLocation()
   }
 
-  // 우측 하단(검정) 버튼 전용 — focusPlaces 핸드오프 유무와 무관하게 항상
-  // 실제 GPS로 강제 이동해야 하므로, viewIgnoresFocus를 켜서 effectiveCoords/
-  // effectiveLocationLabel의 focusPlaces 우선순위 자체를 해제한 뒤 기존
-  // handleRequestLocation과 동일하게 처리한다.
-  function handleForceCurrentLocation() {
-    setViewIgnoresFocus(true)
-    handleRequestLocation()
+  // 대화 중 요청 — 우측 상단 "분석결과" 버튼 전용. 목록만 다시 여는 게 아니라
+  // 강제 현재위치로 넘어갔던 뷰도 처음 SNS 분석기에서 온 그 화면으로 되돌아가야
+  // 함 — viewIgnoresFocus를 다시 꺼서 effectiveCoords의 focusPlaces 우선순위를
+  // 복원한다(카메라 자체는 MapCanvas가 focusCenter/pendingCenter를 지우면서
+  // 기존 bounds-fit effect가 알아서 다시 맞춰줌 — 새 상태 추가 없음).
+  function handleShowAnalysisResult() {
+    setViewIgnoresFocus(false)
+    setActiveSection('analyzer')
   }
 
   // 팀 태스크보드 6번 — "동네검색". 기존 검색창(search)은 그대로 두고(이미 불러온
@@ -404,10 +438,19 @@ export default function MapPage() {
   // 자리에 스켈레톤을 보여주고 실측 위치 자체를 노출하지 않는다.
   const [isResolvingLanding, setIsResolvingLanding] = useState(!focusPlaces.length)
 
+  // 대화 중 요청 — GPS/지오코딩이 캐시된 권한 등으로 아주 빨리 끝나버리면
+  // 로딩 오버레이가 0.5초도 안 되고 사라져서 오히려 짧게 깜박이는 게 산만해
+  // 보일 수 있음. 최소 1.2초는 보장한다(실제로 더 오래 걸리면 그 시간 그대로).
+  const LANDING_OVERLAY_MIN_MS = 1200
+  // Date.now()는 렌더 중엔 못 부르는 impure 호출(react-hooks/purity)이라,
+  // 렌더 바디가 아니라 아래 effect 안에서만 채운다.
+  const landingStartRef = useRef<number | null>(null)
+
   const didRequestLocationRef = useRef(false)
   useEffect(() => {
     if (!focusPlaces.length && !didRequestLocationRef.current) {
       didRequestLocationRef.current = true
+      landingStartRef.current = Date.now()
       // 2026-09 — plan.md 6-1. 초기 랜딩은 실측 GPS(또는 마지막 위치 캐시/서울
       // 폴백)가 뭐로 정해지든, 그 좌표를 그대로 검색에 쓰지 않고 행정구역
       // 판별 후 관할 정부처 좌표로 변환해서만 지도 뷰·서버 검색에 반영한다
@@ -415,12 +458,41 @@ export default function MapPage() {
       // 그대로 재사용). 관할 정부처를 못 찾으면(SDK 미로드/지오코딩 실패 등)
       // 실측 GPS로 폴백하면 우회 자체가 무의미해지므로 **서울시청(SEOUL_CENTER)
       // 으로 디폴트 랜딩**한다.
+      // 최소 노출 시간(LANDING_OVERLAY_MIN_MS)은 실제로 무거운 조회를 했을 때
+      // 오버레이가 너무 짧게 깜박이지 않게 하려는 장치라, 캐시로 그 조회
+      // 자체를 생략한 경우엔 적용하지 않는다 — 안 그러면 캐시를 만든 의미가
+      // 없어짐(대화 중 지적).
+      function finishLandingFresh(landing: { lat: number; lng: number }) {
+        setSearchCenter(landing)
+        setQueryCenter(landing)
+        const elapsed = Date.now() - (landingStartRef.current ?? Date.now())
+        const remaining = LANDING_OVERLAY_MIN_MS - elapsed
+        if (remaining > 0) {
+          window.setTimeout(() => setIsResolvingLanding(false), remaining)
+        } else {
+          setIsResolvingLanding(false)
+        }
+      }
+
       requestLocation().then((resolved) => {
+        if (
+          cachedLanding &&
+          haversineKm(
+            resolved.lat,
+            resolved.lng,
+            cachedLanding.rawCoords.lat,
+            cachedLanding.rawCoords.lng,
+          ) <= LANDING_CACHE_RADIUS_KM
+        ) {
+          setSearchCenter(cachedLanding.landingCoords)
+          setQueryCenter(cachedLanding.landingCoords)
+          setIsResolvingLanding(false)
+          return
+        }
         resolveAdminOfficeCoords(resolved).then((office) => {
           const landing = office ?? SEOUL_CENTER
-          setSearchCenter(landing)
-          setQueryCenter(landing)
-          setIsResolvingLanding(false)
+          cachedLanding = { rawCoords: resolved, landingCoords: landing }
+          finishLandingFresh(landing)
         })
       })
     }
@@ -428,8 +500,10 @@ export default function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const isShowingAnalysisResult = focusPlaces.length > 0 && !viewIgnoresFocus
-  const effectiveLocationLabel = isShowingAnalysisResult ? t('map.analysis_result') : locationLabel
+  // 대화 중 요청 — "분석결과" 표시는 이제 LocationOverlay(좌측 상단)가 아니라
+  // 별도 AnalysisResultButton(우측 상단)이 전담. 강제 현재위치 여부와 무관하게
+  // SNS 분석기 핸드오프가 있는 동안은 항상 노출.
+  const hasAnalyzerFocus = focusPlaces.length > 0
 
   // 5-3(plan.md) — "주변 스팟" 목록의 타이틀. 페르소나별(스타별) 탭일 때는
   // "주변"이 아니라 "페르소나 방문 장소"가 더 정확한 설명이라 그 문구로 바꾼다.
@@ -482,7 +556,11 @@ export default function MapPage() {
     if (filterMode !== 'star') return []
     return personaPlaces.filter((p) => starFilter.length === 0 || p.tags?.some((tag) => starFilter.includes(tag)))
   }, [filterMode, starFilter, personaPlaces])
-  const fitPlaces = focusPlaces.length ? focusPlaces : personaFocusPlaces
+  // 대화 중 발견 — viewIgnoresFocus 없이 focusPlaces.length만 보면, "현재위치"
+  // 버튼이나 "이 지역에서 검색"으로 명시적으로 딴 곳을 보려 해도 bounds-fit
+  // effect(map-canvas.tsx)가 계속 focusPlaces 기준으로 다시 맞춰버려서 실제로
+  // 안 움직이는 것처럼 보였음(effectiveCoords/queryCoords와 동일한 가드 필요).
+  const fitPlaces = focusPlaces.length && !viewIgnoresFocus ? focusPlaces : personaFocusPlaces
   // 5-3/7번(plan.md) — fitPlaces가 페르소나별 bounds-fit용일 때만 true.
   // SNS 분석기(focusPlaces) 핸드오프일 땐 false로 내려가 기존처럼 GPS 안
   // 섞고 분석된 스팟만 기준으로 동작(위 map-canvas.tsx의 includeCameraInFit
@@ -596,9 +674,8 @@ export default function MapPage() {
           selectionSeq={selectionSeq}
           onSelectPlace={handleSelectPlace}
           onRequestLocation={handleRequestLocation}
-          onForceCurrentLocation={handleForceCurrentLocation}
-          locationLabel={effectiveLocationLabel}
-          isAnalysisResult={isShowingAnalysisResult}
+          hasAnalyzerFocus={hasAnalyzerFocus}
+          onShowAnalysisResult={handleShowAnalysisResult}
           onSearchArea={(coord) => {
             // 9번(plan.md) — 페르소나별 탭에서 지도를 드래그해 "이 지역에서
             // 검색"을 확정하면, center가 바뀌며 focusCenter가 리셋되고
@@ -610,6 +687,16 @@ export default function MapPage() {
             // 선택 상태)는 안 지워지고 기억되어, 나중에 페르소나별로 다시
             // 돌아가면 그대로 복원됨(기존 탭 전환 시 선택값 유지 원칙과 동일).
             setFilterMode('category')
+            // 대화 중 발견 — SNS 분석기 핸드오프 중엔 위 카테고리 전환만으론
+            // 안 됨(personaFocusPlaces와 달리 focusPlaces는 filterMode와
+            // 무관한 라우터 핸드오프 데이터라 그걸론 안 비워짐). "현재위치"
+            // 버튼과 동일한 viewIgnoresFocus로 focusPlaces 우선순위를 해제해야
+            // effectiveCoords/queryCoords/fitPlaces가 전부 이 새 좌표를 따름 —
+            // 안 그러면 검색 자체가(카메라도 /places 재조회도) 계속
+            // focusPlaces 기준으로 되돌아가 버림(대화 중 재현). 분석결과
+            // 버튼을 다시 누르면 그대로 복원됨(handleShowAnalysisResult).
+            setViewIgnoresFocus(true)
+            setActiveSection(null)
             setSearchCenter(coord)
             setQueryCenter(coord)
           }}
@@ -621,7 +708,12 @@ export default function MapPage() {
         {/* z-30 — 카카오 지도 SDK가 내부적으로 위치버튼/줌컨트롤/현재위치 핀에
             z-10~20을 쓰고 있어서, 그보다 확실히 위여야 실측 GPS 위치가 잠깐
             비쳐 보이는 일 없이 스켈레톤이 완전히 가린다(실사용 확인 후 조정). */}
-        {isResolvingLanding && <Skeleton className="absolute inset-0 z-30 h-full w-full rounded-none" />}
+        {isResolvingLanding && (
+          <>
+            <Skeleton className="absolute inset-0 z-30 h-full w-full rounded-none" />
+            <MapLandingOverlay />
+          </>
+        )}
       </div>
 
       {isResolvingLanding ? (

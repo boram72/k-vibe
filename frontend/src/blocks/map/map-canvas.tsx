@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LocateFixed, MapPin, ScanSearch } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
-import { Button } from '@/components/ui/button'
 import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
 import { cn } from '@/lib/utils'
 import { getPlaceCategoryMeta, type Place } from '@/types/place'
@@ -28,19 +27,31 @@ interface MapCanvasProps {
   // id가 같아도 "방금 또 선택했다"를 감지할 수 있게 한다.
   selectionSeq?: number
   onSelectPlace: (place: Place) => void
-  onRequestLocation: () => void
-  // 2026-09 대화 중 요청 — 왼쪽 상단 라벨 버튼(LocationOverlay, onRequestLocation)과
-  // 달리, 우측 하단 아이콘 버튼(MapActionButtons)은 SNS 분석기 등에서 넘어온
-  // focusPlaces 핸드오프와 무관하게 항상 실제 GPS로 뷰를 강제 이동시킨다.
-  // 별도 핸들러가 필요한 이유: onRequestLocation은 GPS를 새로 받아오기만 할
-  // 뿐 effectiveCoords의 focusPlaces 우선순위 자체를 못 이기므로, MapPage가
-  // 그 우선순위를 해제하는 로직까지 같이 실행해야 함.
-  onForceCurrentLocation: () => void
-  locationLabel: string
-  // locationLabel이 "분석결과"(SNS 분석기 핸드오프)를 보여주는 중인지 —
-  // LocationOverlay가 이때만 다른 아이콘(ScanSearch)으로 바꿔서 "이건 GPS가
-  // 아니라 분석결과 위치"임을 구분되게 표시한다.
-  isAnalysisResult?: boolean
+  // 대화 중 발견 — 예전엔 fire-and-forget이라, 호출 직후 바로(아직 갱신 안
+  // 된) center prop으로 panTo()해버려서 "한 번 눌러선 GPS로 안 움직이고
+  // 두 번째 눌러야 움직이는" 버그가 있었음(리액트 state 업데이트가 다음
+  // 렌더에야 반영되고, GPS 자체도 비동기라 이번 클릭 안에선 둘 다 아직
+  // 최신값이 아니었음). 실제로 받아온 좌표를 Promise로 돌려받아 그 값으로
+  // 직접 panTo()하도록 바꿔서 해결 — 아래 handleRequestLocation 참고.
+  //
+  // 대화 중 요청 — 예전엔 이 버튼(왼쪽 상단, GPS만 갱신)과 별도로 우측 하단에
+  // "강제 현재위치" 버튼이 하나 더 있어서 "focusPlaces 우선순위를 무시하고
+  // 무조건 실제 GPS로 이동"하는 역할을 나눠 맡았는데, 그 버튼이 stale
+  // closure/bounds-fit 재실행과 얽혀 문제가 많았음(대화 중 발견) — 버튼
+  // 자체를 없애고, 이 버튼 하나가 "언제나 현재위치로 표시되고, 눌렀을 때
+  // 항상 실제 GPS로 이동"하는 역할을 전담하도록 통합. 그래서 이 콜백은 이제
+  // MapPage에서 항상 focusPlaces 우선순위 해제(viewIgnoresFocus=true)까지
+  // 같이 수행한다.
+  onRequestLocation: () => Promise<Coordinates>
+  // 대화 중 요청 — 예전엔 LocationOverlay 하나가 "분석결과"/"현재위치" 두
+  // 역할을 아이콘·라벨만 바꿔가며 겸했는데, 그러다 라벨이 조용히 "현재위치"로
+  // 바뀌어버려서 "분석결과 버튼이 사라졌다"는 혼란으로 이어졌음. 아예 별도
+  // 버튼(AnalysisResultButton, 우측 상단)으로 분리 — SNS 분석기 핸드오프가
+  // 있는 동안(focusPlaces.length > 0)엔 항상 떠 있고, 누르면 분석결과 목록을
+  // 다시 연다(onShowAnalysisResult). LocationOverlay는 이제 상태에 따라
+  // 바뀌지 않는 순수 "현재위치" 버튼(라벨 고정, 아이콘 고정).
+  hasAnalyzerFocus?: boolean
+  onShowAnalysisResult?: () => void
   // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
   // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
   // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
@@ -147,53 +158,53 @@ function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[], includeCoord?
 // Tapping the badge itself recenters the map on the user's current location —
 // no need to also parse the raw lat/lng it used to show underneath.
 //
-// z-10 on this and MapActionButtons below (2026-09 태스크보드 4번 버그 수정):
+// z-10 on this and AnalysisResultButton below (2026-09 태스크보드 4번 버그 수정):
 // relying on plain DOM order for stacking over <KakaoMap> worked in the
 // percent-coordinate fallback, but the real Kakao Maps SDK renders its own
 // internal SVG layer that painted over these buttons once a real map key was
 // configured — confirmed on the deployed site via elementFromPoint() at the
 // button's own coordinates returning a kakao SVG node, not the button. Same
 // class of bug (and same fix) as route-mini-map.tsx's Directions button.
-function LocationOverlay({
-  locationLabel,
-  onRequestLocation,
-  isAnalysisResult,
-}: {
-  locationLabel: string
-  onRequestLocation: () => void
-  isAnalysisResult?: boolean
-}) {
+//
+// 대화 중 요청 — 우측 하단에 따로 있던 "강제 현재위치" 버튼을 없애고 이
+// 버튼 하나로 통합. data-tour="map-locate"도 그 버튼에서 이리로 옮김(온보딩
+// 투어 문구 "이 버튼을 누르면 내 위치 주변으로 지도가 이동해요"는 위치와
+// 무관하게 그대로 맞음). 라벨은 이제 항상 "현재위치" 고정 — 실제 GPS 성공
+// 여부/폴백 상태와 무관하게 "누르면 GPS로 이동하는 버튼"이라는 의미만 표시.
+function LocationOverlay({ onRequestLocation }: { onRequestLocation: () => void }) {
   const { t } = useTranslation()
-  const Icon = isAnalysisResult ? ScanSearch : LocateFixed
   return (
     <button
       type="button"
+      data-tour="map-locate"
       onClick={onRequestLocation}
       title={t('map.refresh_location')}
       className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
     >
-      <Icon className="h-3.5 w-3.5 text-primary" />
-      <span className="text-xs font-semibold text-popover-foreground">{locationLabel}</span>
+      <LocateFixed className="h-3.5 w-3.5 text-primary" />
+      <span className="text-xs font-semibold text-popover-foreground">{t('map.current_location')}</span>
     </button>
   )
 }
 
-// Standalone "open the analyzer" shortcut was removed — SNS 분석기 already has
-// its own bottom-nav/sidebar tab, so this was a redundant second entry point.
-function MapActionButtons({ onForceCurrentLocation }: { onForceCurrentLocation: () => void }) {
+// 대화 중 요청 — SNS 분석기에서 넘어온 동안(focusPlaces.length > 0) 항상 떠
+// 있는 별도 배지. LocationOverlay(좌측 상단, 순수 "현재위치")와 자리를 겹치지
+// 않게 우측 상단에 둬서 "이건 다른 종류의 버튼"임을 위치로도 구분한다 —
+// 현재위치 버튼을 눌러도 이건 안 사라짐. 누르면 닫혀있던 분석결과 목록만
+// 다시 연다(카메라/데이터는 그대로 메모리에 남아있어서 재조회 없이 즉시
+// 복원됨).
+function AnalysisResultButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation()
   return (
-    <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-2">
-      <Button
-        size="icon"
-        data-tour="map-locate"
-        onClick={onForceCurrentLocation}
-        title={t('map.refresh_location')}
-        aria-label={t('map.refresh_location')}
-      >
-        <LocateFixed className="h-4 w-4" />
-      </Button>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      title={t('map.analysis_result')}
+      className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
+    >
+      <ScanSearch className="h-3.5 w-3.5 text-primary" />
+      <span className="text-xs font-semibold text-popover-foreground">{t('map.analysis_result')}</span>
+    </button>
   )
 }
 
@@ -234,9 +245,8 @@ function PercentMapCanvas({
   selectedPlaceId,
   onSelectPlace,
   onRequestLocation,
-  onForceCurrentLocation,
-  locationLabel,
-  isAnalysisResult,
+  hasAnalyzerFocus,
+  onShowAnalysisResult,
   myLocation,
   compact,
   highlightIds,
@@ -291,14 +301,14 @@ function PercentMapCanvas({
         </div>
       )}
 
-      <LocationOverlay locationLabel={locationLabel} onRequestLocation={onRequestLocation} isAnalysisResult={isAnalysisResult} />
-      <MapActionButtons onForceCurrentLocation={onForceCurrentLocation} />
+      <LocationOverlay onRequestLocation={onRequestLocation} />
+      {hasAnalyzerFocus && onShowAnalysisResult && <AnalysisResultButton onClick={onShowAnalysisResult} />}
     </div>
   )
 }
 
 // 팀 태스크보드 5번 — 지도를 손으로 옮기면 뜨는 "이 지역에서 검색" 버튼.
-// LocationOverlay/MapActionButtons와 겹치지 않게 상단 중앙에 배치, 동일하게 z-10.
+// LocationOverlay/AnalysisResultButton과 겹치지 않게 상단 중앙에 배치, 동일하게 z-10.
 function SearchAreaButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation()
   return (
@@ -322,9 +332,8 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     selectionSeq,
     onSelectPlace,
     onRequestLocation,
-    onForceCurrentLocation,
-    locationLabel,
-    isAnalysisResult,
+    hasAnalyzerFocus,
+    onShowAnalysisResult,
     onSearchArea,
     onCameraCenterChange,
     myLocation,
@@ -458,26 +467,32 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   // (드래그는 카카오 지도 내부 상태만 바꾸고 React는 전혀 모름). 그래서 prop
   // 값 비교에 기대지 않고 버튼 클릭 시 map 인스턴스에 직접 panTo를 호출해
   // 값이 같아도 무조건 원위치로 돌아가게 한다.
+  // 대화 중 발견한 버그 수정 — 예전엔 여기서 바로 panTo(center)를 불렀는데,
+  // 그 center는 "이번 클릭 시점 렌더"에 박힌 값이라 onRequestLocation()이
+  // 트리거한 state 변경(다음 렌더에야 반영)도, requestLocation() 자체의 비동기
+  // GPS 응답도 둘 다 아직 못 따라잡은 옛날 값이었음 — 그래서 한 번 눌러선 GPS로
+  // 안 움직이고 두 번째 눌러야 움직였음. onRequestLocation이 실제로 받아온
+  // 좌표를 Promise로 돌려주게 하고, 그 값으로 직접 panTo — 다른 state는 그대로.
   function handleRequestLocation() {
-    onRequestLocation()
     setFocusCenter(null)
     setPendingCenter(null)
-    if (map && typeof kakao !== 'undefined' && kakao.maps) {
-      map.panTo(new kakao.maps.LatLng(center.lat, center.lng))
-    }
+    onRequestLocation().then((resolved) => {
+      if (map && typeof kakao !== 'undefined' && kakao.maps) {
+        map.panTo(new kakao.maps.LatLng(resolved.lat, resolved.lng))
+      }
+    })
   }
 
-  // 2026-09 대화 중 요청 — 우측 하단(검정) 버튼 전용. SNS 분석기 등에서
-  // 넘어온 focusPlaces 핸드오프와 무관하게 항상 실제 GPS로 강제 이동해야
-  // 하므로, MapPage의 onForceCurrentLocation(뷰의 focusPlaces 우선순위 자체를
-  // 해제)을 부른다 — 그 외 camera 재동기화 로직은 handleRequestLocation과 동일.
-  function handleForceCurrentLocation() {
-    onForceCurrentLocation()
+  // 대화 중 요청 — "분석결과" 버튼(우측 상단, AnalysisResultButton)은 목록만
+  // 다시 여는 게 아니라 처음 SNS 분석기에서 넘어왔을 때의 뷰로 돌아가야 함.
+  // 새 상태를 안 만들고 기존 것만 초기화 — focusCenter/pendingCenter를 지우면
+  // (이 아래 bounds-fit effect가 focusCenter가 있는 동안은 건너뛰므로) 부모가
+  // onShowAnalysisResult에서 focusPlaces 우선순위를 되돌리는 순간 그 effect가
+  // 다시 실행되어 원래 bounds-fit(또는 단일 장소 중심)로 자연스럽게 복귀한다.
+  function handleShowAnalysisResult() {
     setFocusCenter(null)
     setPendingCenter(null)
-    if (map && typeof kakao !== 'undefined' && kakao.maps) {
-      map.panTo(new kakao.maps.LatLng(center.lat, center.lng))
-    }
+    onShowAnalysisResult?.()
   }
 
   // 팀 태스크보드 5번 — 사용자가 지도를 손으로 드래그해서 놓은 순간의 중심좌표를
@@ -553,8 +568,8 @@ function KakaoMapCanvas(props: MapCanvasProps) {
         )}
       </KakaoMap>
 
-      <LocationOverlay locationLabel={locationLabel} onRequestLocation={handleRequestLocation} isAnalysisResult={isAnalysisResult} />
-      <MapActionButtons onForceCurrentLocation={handleForceCurrentLocation} />
+      <LocationOverlay onRequestLocation={handleRequestLocation} />
+      {hasAnalyzerFocus && onShowAnalysisResult && <AnalysisResultButton onClick={handleShowAnalysisResult} />}
       {onSearchArea && pendingCenter && <SearchAreaButton onClick={handleSearchArea} />}
     </div>
   )

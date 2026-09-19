@@ -74,6 +74,7 @@
     "last_known_location": "最后已知位置",
     "seoul_fallback": "首尔（默认）",
     "location_unavailable": "无法获取位置，显示首尔",
+    "locating_title": "正在为你准备附近的景点",
     "refresh_location": "刷新位置",
     "search_area_not_found": "找不到该地区",
     "search_this_area": "搜索此区域",

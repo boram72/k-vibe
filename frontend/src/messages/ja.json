@@ -74,6 +74,7 @@
     "last_known_location": "最後に確認された位置",
     "seoul_fallback": "ソウル（デフォルト）",
     "location_unavailable": "位置情報を取得できないためソウルを表示します",
+    "locating_title": "近くのスポットを準備しています",
     "refresh_location": "位置情報を更新",
     "search_this_area": "このエリアを検索",
     "search_area_not_found": "この地域が見つかりませんでした",

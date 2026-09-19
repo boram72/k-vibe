@@ -75,17 +75,22 @@ export function HelpButton() {
   if (tourKey && TOUR_REGISTRY[tourKey]) {
     return (
       <>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('tour.button_label')}
-          title={t('tour.button_label')}
-          data-tour="home-tour-button"
-          disabled={!tourReady}
-          onClick={handleTourClick}
-        >
-          <HelpCircle className="h-4 w-4" />
-        </Button>
+        {/* 잠긴(disabled) 버튼은 pointer-events가 꺼져서 자기 title 툴팁이 안 뜬다 — 바깥
+            span에 "왜 잠겼는지" 툴팁을 달아서 호버하면 이유를 보여준다(사용자 요청). 잠기지
+            않았을 땐 span에 title이 없어서 버튼 자기 title("K-Vibe 투어")이 그대로 뜬다. */}
+        <span title={tourReady ? undefined : t('tour.map_loading_hint')} className="inline-flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('tour.button_label')}
+            title={t('tour.button_label')}
+            data-tour="home-tour-button"
+            disabled={!tourReady}
+            onClick={handleTourClick}
+          >
+            <HelpCircle className="h-4 w-4" />
+          </Button>
+        </span>
         {tourKey === ROUTE_TOUR_KEY && <EmptyRouteNotice open={emptyRouteNoticeOpen} onOpenChange={setEmptyRouteNoticeOpen} />}
         <TourResetNotice open={resetNoticeOpen} onOpenChange={setResetNoticeOpen} onConfirm={handleResetAndStart} />
       </>

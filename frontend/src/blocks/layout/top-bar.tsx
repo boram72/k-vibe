@@ -36,6 +36,10 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
+        <Link to="." className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
+          <LogoIcon className="h-5 w-5 text-primary" />
+          K-Vibe
+        </Link>
         <Button
           variant="ghost"
           size="icon"
@@ -45,10 +49,6 @@ export function TopBar() {
         >
           <PanelLeft className="h-4 w-4" />
         </Button>
-        <Link to="." className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
-          <LogoIcon className="h-5 w-5 text-primary" />
-          K-Vibe
-        </Link>
       </div>
 
       <div className="flex items-center gap-2">

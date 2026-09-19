@@ -19,11 +19,20 @@ import personaGif from '@/assets/route-guide/route-guide-persona.gif'
 // 2026-09: 단계별 정지 캡처 3장을 SNS 분석기의 "이렇게 사용해요"와 같은
 // 형태(실제 클릭 액션이 담긴 GIF 1개 + 그 아래 번호 매긴 줄글 설명)로
 // 통일했다(사용자 요청) — GIF 자체가 각 단계에서 무엇을 눌러야 하는지
-// 빨간 하이라이트 링 + 커서 클릭 동작으로 보여주므로, 정지 이미지를 단계마다
-// 끼워 넣을 필요가 없어졌다. GIF 생성/재촬영 스크립트는
-// scripts/record_route_guide_gifs.js(저장소엔 없고 로컬 녹화용,
-// blocks/analyze/usage-tutorial.tsx의 record_gif.js와 동일한 하이라이트 링 +
-// 커서 스타일 재사용) 참고.
+// 하이라이트 링 + 커서 클릭 동작으로 보여주므로, 정지 이미지를 단계마다
+// 끼워 넣을 필요가 없어졌다.
+//
+// 2026-09: 3개 GIF(route-guide-*.gif)를 사용자가 직접 캡처한 화면으로 다시
+// 만들었다(가장자리 테두리 크롭, 420x928). 하이라이트 링/클릭 물결은 홈 배너와
+// 같은 핑크~주황 그라데이션(rose-500 -> pink-500 -> orange-400)의 "테두리만"
+// (채우기 없음)이다. 재생성 스크립트는 저장소에 없고 로컬 작업용이다.
+//
+// route-guide-analyze.gif의 예시 영상은 실제 유튜브 영상이 아니다 — 저작권
+// 우려로 주소의 영상 ID를 가짜(xxxxxxxxxxx)로 바꿨고(썸네일 왼쪽 아래 라벨은 앱이
+// 영상 ID를 보여주는 자리인데 어색해서 "youtube.com/shorts"로 표기), 썸네일은 한국관광공사
+// TourAPI의 "북촌한옥마을 감고당길"(contentId 2946075) 사진으로 교체했다.
+// 이 사진은 공공누리 제1유형(출처표시, 상업적 이용/변경 가능)이라 출처 표시
+// (출처: 한국관광공사)가 필요하다.
 //
 // 버튼 이름을 강조하는 방식(renderStepText)은 blocks/analyze/usage-tutorial.tsx의
 // "이렇게 사용해요" 안내와 동일 — 번역 문자열 안에서 버튼 이름을 따옴표/대괄호로
@@ -35,6 +44,9 @@ interface GuideTab {
   steps: string[]
   gif: string
   gifAlt: string
+  // 안내 카드 맨 아래 오른쪽에 작게 붙이는 한 줄 출처 표기 — GIF 안에 들어간 사진의
+  // 라이선스(공공누리 제1유형: 출처표시)가 요구하는 것. 사진이 없는 탭은 생략.
+  credit?: string
 }
 
 export function EmptyRouteGuide() {
@@ -57,6 +69,7 @@ export function EmptyRouteGuide() {
       steps: t('route.empty_guide_analyze_steps', { returnObjects: true }) as string[],
       gif: analyzeGif,
       gifAlt: t('route.empty_guide_analyze_label'),
+      credit: t('route.empty_guide_analyze_credit'),
     },
     {
       key: 'persona',
@@ -104,6 +117,11 @@ export function EmptyRouteGuide() {
             </li>
           ))}
         </ol>
+
+        {/* 사진 출처는 이미지 바로 밑이 아니라 안내 카드 맨 아래 오른쪽에 한 줄로만 둔다(사용자
+            요청 — 이미지 밑에 붙이면 지저분하다). 사진이 실제로 보이는 이 카드 안이라 사진과
+            같은 화면에서 출처가 보인다. */}
+        {active.credit && <p className="mt-2 text-right text-[11px] leading-4 text-muted-foreground">{active.credit}</p>}
       </div>
     </div>
   )

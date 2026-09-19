@@ -320,10 +320,22 @@ export default function MapPage() {
         setQueryCenter(result.center)
         setKakaoSearchResults([])
       } else if (result.relevance.length > 0) {
-        const target = { lat: result.relevance[0].lat, lng: result.relevance[0].lng }
+        const primary = result.relevance[0]
+        const target = { lat: primary.lat, lng: primary.lng }
         setSearchCenter(target)
         setQueryCenter(target)
         setKakaoSearchResults(result.relevance)
+        // 12번(plan.md) — 여기까지는 지도 핀 강조(빨간 핀)만 되고 아무것도
+        // "선택"되지 않아서 상세시트가 안 열렸음(대화 중 발견). 목록 클릭은
+        // 이미 사용자가 특정 장소를 고른 행위라 대표 결과(정확도 1순위)를
+        // 선택 상태로 만들어 상세시트가 자동으로 열리게 한다 — 나머지 매치는
+        // 기존처럼 빨간 핀 강조만 유지. handleSelectPlace를 그대로 쓰지 않는
+        // 이유: 그 함수 내부의 "이전 검색결과 그룹 정리" 로직이 클로저로 옛
+        // kakaoSearchResults를 참조해서, 방금 위에서 새로 채운 값을 같은
+        // 실행 안에서 곧바로 지워버릴 수 있음 — 여기선 선택 상태만 직접 세팅.
+        setSelectedPlace(primary)
+        setHighlightedPlaceId(primary.id)
+        setSelectionSeq((n) => n + 1)
       }
     },
   })
@@ -540,9 +552,13 @@ export default function MapPage() {
     if (activeSection === 'analyzer') return focusPlaces
     if (activeSection === 'searchResults') return areaSearchListPlaces
     if (activeSection === 'saved') return savedPlaces
-    if (activeSection === 'attractions') return []
+    // 12번(plan.md) — 관광지 추천 항목 자체는 좌표가 없어 핀으로 보여줄 게
+    // 없지만("빈 배열"이 기본), 항목을 클릭해서 카카오 검색으로 실제 좌표를
+    // 찾은 뒤(kakaoSearchResults)는 그 결과를 핀으로 보여줘야 함 — 안 그러면
+    // 상세시트는 열려도 지도에 핀이 하나도 안 뜨는 어긋남이 생김(대화 중 발견).
+    if (activeSection === 'attractions') return kakaoSearchResults
     return nearbySpotListPlaces
-  }, [activeSection, focusPlaces, areaSearchListPlaces, savedPlaces, nearbySpotListPlaces])
+  }, [activeSection, focusPlaces, areaSearchListPlaces, savedPlaces, kakaoSearchResults, nearbySpotListPlaces])
 
   // SNS 분석기 섹션이 활성화된 동안엔 그 스팟 전부가 "이 지역에서 검색"
   // 결과와 동일하게 빨간 핀으로 강조된다(대화 중 요청) — 닫으면(activeSection

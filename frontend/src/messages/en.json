@@ -93,7 +93,9 @@
     "area_search_distance": "Nearest",
     "close_search_results": "Close search results",
     "sns_analyzer_title": "SNS Analyzer",
-    "persona_visited_places_title": "Persona Visited Places"
+    "persona_visited_places_title": "Persona Visited Places",
+    "close_analyzer_results": "Close SNS analyzer results",
+    "from_my_route_tag": "My Route"
   },
   "placeDetail": {
     "add_to_route": "Add to Route",

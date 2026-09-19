@@ -93,7 +93,9 @@
     "area_search_distance": "按距离",
     "close_search_results": "关闭搜索结果",
     "sns_analyzer_title": "SNS分析器",
-    "persona_visited_places_title": "角色到访地点"
+    "persona_visited_places_title": "角色到访地点",
+    "close_analyzer_results": "关闭SNS分析结果",
+    "from_my_route_tag": "我的路线"
   },
   "placeDetail": {
     "add_to_route": "添加到路线",

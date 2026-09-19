@@ -93,7 +93,9 @@
     "area_search_distance": "거리순",
     "close_search_results": "검색 결과 닫기",
     "sns_analyzer_title": "SNS 분석기",
-    "persona_visited_places_title": "페르소나 방문 장소"
+    "persona_visited_places_title": "페르소나 방문 장소",
+    "close_analyzer_results": "SNS 분석 결과 닫기",
+    "from_my_route_tag": "내 루트"
   },
   "placeDetail": {
     "add_to_route": "루트에 추가",

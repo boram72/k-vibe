@@ -315,6 +315,9 @@
     "helper": "スポットをドラッグして順番を変更できます。",
     "empty_title": "まだルートがありません",
     "empty_desc": "地図、SNS分析、ペルソナからスポットを追加してルートを始めましょう。",
+    "empty_notice_title": "まずマイルートに場所を追加してみましょう",
+    "empty_notice_body": "K-Vibeマップ、SNS分析、ペルソナから場所を追加できます。",
+    "empty_notice_confirm": "OK",
     "empty_guide_title": "こうやって追加してみましょう",
     "empty_guide_map_label": "地図から追加する",
     "empty_guide_map_steps": [

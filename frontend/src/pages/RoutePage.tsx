@@ -17,8 +17,13 @@ import { encodeRouteForShare, decodeRouteFromShare } from '@/lib/route-share'
 import { haversineKm } from '@/lib/haversine'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { useRouteProgressStore } from '@/store/route-progress-store'
-import { useTourStore, canAutoStartTour } from '@/store/tour-store'
+import { useTourStore, canAutoStartTour, markTourSeen } from '@/store/tour-store'
 import { ROUTE_TOUR_KEY, ROUTE_TOUR_STEPS } from '@/blocks/tour/tour-steps'
+import { EmptyRouteNotice } from '@/blocks/route/empty-route-notice'
+
+// 비어있는 내 루트 첫 진입 안내 팝업의 "이미 봤는지" 플래그 이름 — 투어와 같은
+// 저장소(tour-store의 seen 플래그)를 재사용한다.
+const ROUTE_EMPTY_NOTICE_KEY = 'route-empty'
 import type { MapFocusState } from './MapPage'
 import type { RoutePlan } from '@/lib/route-timing'
 
@@ -77,6 +82,11 @@ export default function RoutePage() {
   const removeStopProgress = useRouteProgressStore((s) => s.removeStop)
   const clearProgress = useRouteProgressStore((s) => s.clear)
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+  // 비어있는 내 루트에 "처음" 들어왔을 때만 처음부터 열린 채로 시작(아래 이펙트 참고).
+  // 렌더 중에는 저장소를 읽기만 하고(canAutoStartTour), "봤다"는 표시는 이펙트에서 쓴다.
+  const [emptyNoticeOpen, setEmptyNoticeOpen] = useState(
+    () => initialRoute.stops.length === 0 && canAutoStartTour(ROUTE_EMPTY_NOTICE_KEY),
+  )
   const [personaPlan, setPersonaPlan] = useState<RoutePlan | null>(() => readPersonaRoutePlan())
   const [docentOpen, setDocentOpen] = useState(false)
   // 2026-09 — "현재 거리" 확인(RouteLocationCheck) 결과를 미니맵의 "내 위치"
@@ -100,6 +110,15 @@ export default function RoutePage() {
   useEffect(() => {
     if (stops.length > 0 && canAutoStartTour(ROUTE_TOUR_KEY)) startTour(ROUTE_TOUR_KEY)
   }, [stops.length, startTour])
+
+  // 비어있는 내 루트에 처음 들어왔을 때는 투어 대신 "장소를 먼저 추가해 보세요"
+  // 안내 팝업을 한 번만 띄운다(사용자 요청). 처음 진입 시점에 이미 비어있던
+  // 경우만 해당 — 나중에 직접 장소를 다 지워서 비게 된 경우엔 띄우지 않는다.
+  // "?" 버튼(help-button.tsx)으로 다시 여는 경우는 별개(항상 뜸). 팝업이 열린
+  // 채로 시작했다면 그 순간 "봤다"고 표시해서 다음 진입부터는 안 뜨게 한다.
+  useEffect(() => {
+    if (emptyNoticeOpen) markTourSeen(ROUTE_EMPTY_NOTICE_KEY)
+  }, [emptyNoticeOpen])
 
   useEffect(() => {
     if (initialRoute.shareStatus === 'loaded') {
@@ -206,6 +225,7 @@ export default function RoutePage() {
         <p className="text-sm font-semibold text-foreground">{t('route.empty_title')}</p>
         <p className="text-xs text-muted-foreground">{t('route.empty_desc')}</p>
         <EmptyRouteGuide />
+        <EmptyRouteNotice open={emptyNoticeOpen} onOpenChange={setEmptyNoticeOpen} />
       </div>
     )
   }

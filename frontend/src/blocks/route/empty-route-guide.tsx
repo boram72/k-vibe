@@ -28,7 +28,8 @@ import personaGif from '@/assets/route-guide/route-guide-persona.gif'
 // (채우기 없음)이다. 재생성 스크립트는 저장소에 없고 로컬 작업용이다.
 //
 // route-guide-analyze.gif의 예시 영상은 실제 유튜브 영상이 아니다 — 저작권
-// 우려로 주소의 영상 ID를 가짜(xxxxxxxxxxx)로 바꿨고, 썸네일은 한국관광공사
+// 우려로 주소의 영상 ID를 가짜(xxxxxxxxxxx)로 바꿨고(썸네일 왼쪽 아래 라벨은 앱이
+// 영상 ID를 보여주는 자리인데 어색해서 "youtube.com/shorts"로 표기), 썸네일은 한국관광공사
 // TourAPI의 "북촌한옥마을 감고당길"(contentId 2946075) 사진으로 교체했다.
 // 이 사진은 공공누리 제1유형(출처표시, 상업적 이용/변경 가능)이라 출처 표시
 // (출처: 한국관광공사)가 필요하다.

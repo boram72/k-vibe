@@ -146,6 +146,7 @@
     "error_reason_korea_only": "The SNS analyzer currently only supports locations in Korea.",
     "error_toast_action": "Analyze again",
     "retry": "Retry",
+    "reset": "Reset",
     "found_spots": "Found {{count}} candidate spots",
     "empty_title": "No clear places found",
     "empty_body": "Try a travel vlog or an MV location clip instead.",

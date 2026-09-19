@@ -58,6 +58,7 @@ export default function MapPage() {
   const { t, i18n } = useTranslation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const setTourReady = usePageHelpStore((s) => s.setTourReady)
   const startTour = useTourStore((s) => s.start)
   const { coords, locationLabel, requestLocation, isPrecise } = useCurrentLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -386,14 +387,6 @@ export default function MapPage() {
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
 
-  // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
-  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
-  // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
-  // 이 페이지가 처음이어도 뜨지 않는다.
-  useEffect(() => {
-    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
-  }, [startTour])
-
   // Guards against StrictMode's dev-only double-invoke of mount effects —
   // without this, requestLocation() fires twice on a denied/unavailable
   // geolocation request, producing two identical toasts. The ref persists
@@ -403,6 +396,23 @@ export default function MapPage() {
   // 피드백 — focus 핸드오프가 없을 때만 켜서, 랜딩이 정해질 때까지 지도
   // 자리에 스켈레톤을 보여주고 실측 위치 자체를 노출하지 않는다.
   const [isResolvingLanding, setIsResolvingLanding] = useState(!focusPlaces.length)
+
+  // 지도 랜딩이 끝나기 전(스켈레톤이 떠 있는 동안)에는 튜토리얼이 가리킬 요소(검색창,
+  // 목록 등)가 아직 없어서, "?"를 눌러도 어두운 배경 위에 말풍선만 덩그러니 떴다(사용자
+  // 지적). 그동안은 헤더 "?" 버튼을 잠갔다가 랜딩이 확정되면 풀어준다.
+  useEffect(() => {
+    setTourReady(!isResolvingLanding)
+    return () => setTourReady(true)
+  }, [isResolvingLanding, setTourReady])
+
+  // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
+  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
+  // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
+  // 이 페이지가 처음이어도 뜨지 않는다. 자동 시작도 랜딩이 끝난 뒤에 한다 — 스켈레톤
+  // 위에서 시작하면 첫 단계(검색창)를 못 찾아서 화면 한가운데에 말풍선만 뜬다.
+  useEffect(() => {
+    if (!isResolvingLanding && canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
+  }, [isResolvingLanding, startTour])
 
   const didRequestLocationRef = useRef(false)
   useEffect(() => {

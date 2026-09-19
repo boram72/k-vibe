@@ -15,6 +15,12 @@ export interface TourStep {
   // 아니라 다른 신호로 완료를 판단해야 하는 단계(예: 순서 바꾸기)는 false로
   // 두고, 그 화면이 직접 useTourStore().next(...)를 호출해서 넘긴다.
   advanceOnClick?: boolean
+  // true면 말풍선의 "다음" 버튼이 하이라이트된 요소를 대신 눌러준다 — 다음 단계가 그
+  // 클릭으로 바뀌는 화면에서만 존재하는 요소를 가리킬 때 쓴다(예: 페르소나 카드를 눌러야만
+  // 결과 화면이 뜨고 2단계 대상이 생김). 안 그러면 카드를 안 누르고 "다음"만 눌렀을 때 카드
+  // 목록 화면 위에 대상 없는 말풍선만 떴다. 클릭이 성공하면 요소의 클릭 리스너가 다음
+  // 단계로 넘기므로 "다음"이 직접 넘기지는 않는다.
+  nextPressesTarget?: boolean
   // 드래그 손잡이 옆에 위아래로 까딱이는 화살표 힌트를 보여준다 — "드래그를
   // 어떻게 하는지 모르겠다"는 피드백(사용자 요청)에 대응. 이 투어 단계에서만
   // 보이는 시각적 힌트일 뿐, 실제 편집 화면(투어 밖)에는 영향 없다.
@@ -46,7 +52,7 @@ export const MAP_TOUR_STEPS: TourStep[] = [
 ]
 
 export const PERSONA_TOUR_STEPS: TourStep[] = [
-  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true },
+  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true, nextPressesTarget: true },
   { target: 'persona-exclude', titleKey: 'tour.persona_exclude_title', bodyKey: 'tour.persona_exclude_body', clickThrough: true },
 ]
 

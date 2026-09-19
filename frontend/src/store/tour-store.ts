@@ -7,6 +7,10 @@ interface TourState {
   // 않기"를 숨긴다(다시 보고 싶어서 누른 건데 "다시 보지 않기"가 있을 이유가
   // 없다는 사용자 의견). 페이지 첫 진입 시 자동으로 뜬 투어는 false.
   replay: boolean
+  // 투어가 시작된 페이지(locale 뺀 경로) — 사용자가 튜토리얼을 켜 둔 채 사이드바/하단
+  // 내비로 다른 메뉴로 넘어가면 이 값과 달라져서 투어를 자동으로 끈다(tour-overlay.tsx).
+  // 안 끄면 다른 화면 위에 이전 페이지 말풍선이 그대로 떠 있다(사용자 지적).
+  startPage: string | null
   start: (key: string, options?: { replay?: boolean }) => void
   next: (totalSteps: number) => void
   close: () => void
@@ -88,18 +92,31 @@ export function canAutoStartTour(key: string): boolean {
   return !isOptedOut() && !wasVisitResolvedAtLoad && !hasSeenTour(key)
 }
 
+// URL 경로에서 locale 세그먼트('/ko')를 뗀 나머지('' = 홈, 'map', 'analyze' ...) —
+// 언어만 바꾸는 이동(/ko/map -> /en/map)은 같은 페이지로 취급하려고 locale은 뺀다.
+export function tourPageOf(pathname: string): string {
+  return pathname.split('/').filter(Boolean).slice(1).join('/')
+}
+
 export const useTourStore = create<TourState>((set, get) => ({
   activeTourKey: null,
   stepIndex: 0,
   replay: false,
-  start: (key, options) => set({ activeTourKey: key, stepIndex: 0, replay: options?.replay ?? false }),
+  startPage: null,
+  start: (key, options) =>
+    set({
+      activeTourKey: key,
+      stepIndex: 0,
+      replay: options?.replay ?? false,
+      startPage: tourPageOf(window.location.pathname),
+    }),
   next: (totalSteps) => {
     const { stepIndex, activeTourKey } = get()
     const nextIndex = stepIndex + 1
     if (nextIndex >= totalSteps) {
       if (activeTourKey) markTourSeen(activeTourKey)
       resolveVisit()
-      set({ activeTourKey: null, stepIndex: 0, replay: false })
+      set({ activeTourKey: null, stepIndex: 0, replay: false, startPage: null })
     } else {
       set({ stepIndex: nextIndex })
     }
@@ -110,7 +127,7 @@ export const useTourStore = create<TourState>((set, get) => ({
     const { activeTourKey } = get()
     if (activeTourKey) markTourSeen(activeTourKey)
     resolveVisit()
-    set({ activeTourKey: null, stepIndex: 0, replay: false })
+    set({ activeTourKey: null, stepIndex: 0, replay: false, startPage: null })
   },
   // "다시 보지 않기" — 이번 방문 중 남은 다른 메뉴 투어도 즉시 다 끄고,
   // 다음 접속부터도 영구히 안 뜨게 한다.
@@ -118,6 +135,6 @@ export const useTourStore = create<TourState>((set, get) => ({
     const { activeTourKey } = get()
     if (activeTourKey) markTourSeen(activeTourKey)
     optOutOfTours()
-    set({ activeTourKey: null, stepIndex: 0, replay: false })
+    set({ activeTourKey: null, stepIndex: 0, replay: false, startPage: null })
   },
 }))

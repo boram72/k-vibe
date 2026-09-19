@@ -43,8 +43,8 @@ interface GuideTab {
   steps: string[]
   gif: string
   gifAlt: string
-  // GIF 아래에 작게 붙이는 한 줄 출처 표기 — GIF 안에 들어간 사진의 라이선스(공공누리
-  // 제1유형: 출처표시)가 요구하는 것. 사진이 없는 탭은 생략.
+  // 안내 카드 맨 아래 오른쪽에 작게 붙이는 한 줄 출처 표기 — GIF 안에 들어간 사진의
+  // 라이선스(공공누리 제1유형: 출처표시)가 요구하는 것. 사진이 없는 탭은 생략.
   credit?: string
 }
 
@@ -107,7 +107,6 @@ export function EmptyRouteGuide() {
         <div className="mx-auto max-w-[240px] overflow-hidden rounded-lg border border-border shadow-sm">
           <img key={active.key} src={active.gif} alt={active.gifAlt} className="w-full" />
         </div>
-        {active.credit && <p className="mt-1.5 text-center text-[10px] leading-3.5 text-muted-foreground/80">{active.credit}</p>}
 
         <ol className="mt-3 space-y-1.5">
           {active.steps.map((step, idx) => (
@@ -117,6 +116,11 @@ export function EmptyRouteGuide() {
             </li>
           ))}
         </ol>
+
+        {/* 사진 출처는 이미지 바로 밑이 아니라 안내 카드 맨 아래 오른쪽에 한 줄로만 둔다(사용자
+            요청 — 이미지 밑에 붙이면 지저분하다). 사진이 실제로 보이는 이 카드 안이라 사진과
+            같은 화면에서 출처가 보인다. */}
+        {active.credit && <p className="mt-2 text-right text-[11px] leading-4 text-muted-foreground">{active.credit}</p>}
       </div>
     </div>
   )

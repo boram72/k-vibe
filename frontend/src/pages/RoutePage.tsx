@@ -157,8 +157,12 @@ export default function RoutePage() {
   }
 
   function viewStopOnMap(stop: RouteStop) {
+    // stop.id는 "루트 안의 이 스팟 한 장"을 가리키는 인스턴스 id라 PersonaPage에서
+    // 반복 추가 시 타임스탬프가 붙는다(`${s.id}-${ts}`) — 리뷰/평점/상세정보는 전부
+    // 실제 장소 식별자인 stop.placeId 기준으로 조회되므로, 지도로 넘길 Place.id는
+    // stop.id가 아니라 stop.placeId(없으면 stop.id로 폴백)를 써야 한다.
     const state: MapFocusState = {
-      focusPlaces: [{ id: stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags }],
+      focusPlaces: [{ id: stop.placeId ?? stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags }],
       openDetail: true,
       returnToRoute: true,
     }

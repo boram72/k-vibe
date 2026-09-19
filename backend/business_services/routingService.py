@@ -93,10 +93,16 @@ def build_persona_route(persona_id: str, persona: dict, locations: list[dict], s
         # 한다. 하드코딩 카탈로그 폴백(place_id 없음)만 기존 합성 id를 유지한다.
         place_id = location.get("placeId")
         stop_id = place_id or f"{persona_id}-{_pick(location['label'], 'ko')}"
-        # 마찬가지로 실제 address가 있으면 그대로 쓰고(향후 route-draft 저장 시 location.address를
-        # 표시용 문자열로 덮어쓰지 않게 됨), 없는 폴백 카탈로그만 기존 표시용 문자열을 만든다.
-        real_address = location.get("address")
-        address = real_address or f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}"
+        # address도 id와 동일하게 place_id 유무로 분기해야 한다 — "address 값 유무"로만 갈랐더니
+        # 실제 DB 장소인데 location.address 컬럼만 비어있는 경우, place_id는 진짜인데 표시용
+        # "⭐" 문자열이 address에 섞여서 "내 루트" 저장 시(upsert_place) 그 진짜 행의 address를
+        # 오염시키는 2차 버그가 있었다(place_id가 실존해 persona FK가 걸려있어 삭제도 안 되는 상태로
+        # 발견됨). place_id가 있는 실제 DB 경로는 address가 비어 있어도 표시용 문자열을 만들지
+        # 않고 그대로(빈 문자열) 둔다 — 하드코딩 카탈로그 폴백(place_id 없음)만 표시용 문자열을 만든다.
+        if place_id:
+            address = location.get("address") or ""
+        else:
+            address = f"{location['town']} · ⭐{location['rating']:.1f} · {location['openingHour']}"
 
         stop = {
             "id": stop_id,

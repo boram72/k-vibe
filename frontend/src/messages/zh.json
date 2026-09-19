@@ -152,6 +152,7 @@
     "source_gemini": "Gemini AI",
     "source_openai": "OpenAI",
     "source_mock": "基础分析",
+    "source_popular": "人气景点",
     "ai_disclaimer": "此路线由AI分析生成，可能不完全准确。",
     "select_action": "选择",
     "added_label": "已添加",

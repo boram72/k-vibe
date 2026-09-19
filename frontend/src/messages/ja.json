@@ -152,6 +152,7 @@
     "source_gemini": "Gemini AI",
     "source_openai": "OpenAI",
     "source_mock": "基本分析",
+    "source_popular": "人気スポット",
     "ai_disclaimer": "AIが分析したルートのため、正確でない場合があります。",
     "select_action": "選択",
     "added_label": "追加済み",

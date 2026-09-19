@@ -28,6 +28,7 @@ const SOURCE_LABEL_KEYS: Record<string, string> = {
   gemini: 'analyze.source_gemini',
   openai: 'analyze.source_openai',
   mock: 'analyze.source_mock',
+  popular: 'analyze.source_popular',
 }
 
 // Note: bulk "View All on Map" / "Add All to Route" actions live in AnalyzePage as a

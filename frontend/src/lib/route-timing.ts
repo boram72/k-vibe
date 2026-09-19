@@ -22,6 +22,11 @@ export interface RouteStop {
   // 레이아웃이 깨지지 않게 렌더링한다 — 아직 이미지 생성 파이프라인이 없어 현재
   // PERSONA_FALLBACKS(api/personas.ts)의 모든 위치는 이 값이 비어 있다.
   characterImageUrl?: string
+  // 실제 장소 사진(location.image_url, personaRouteService._normalize_db_location).
+  // characterImageUrl이 비어있을 때(현재 항상 그렇다) RouteResult가 대신 보여줄 수 있는
+  // 실사진 — DB 경로(실제 place_id에 매핑된 스팟)에서만 채워지고, 하드코딩 카탈로그
+  // 폴백(PERSONA_FALLBACKS)은 이 값도 비어 있다.
+  imageUrl?: string
 }
 
 export interface ScheduledRoute {

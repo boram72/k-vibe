@@ -38,6 +38,24 @@ def test_build_persona_route_omits_character_image_url_when_absent():
     assert "characterImageUrl" not in result["stops"][0]
 
 
+def test_build_persona_route_includes_image_url_when_present():
+    """location.image_url(실제 장소 사진)이 있으면 AI 캐릭터 이미지가 없어도 대체로 쓸 수 있게 내려줘야 한다."""
+    locations = [_location(imageUrl="https://example.com/real-photo.jpg")]
+
+    result = routingService.build_persona_route("BTS뷔", _PERSONA, locations, "10:00", "ko")
+
+    assert result["stops"][0]["imageUrl"] == "https://example.com/real-photo.jpg"
+
+
+def test_build_persona_route_omits_image_url_when_absent():
+    """하드코딩 카탈로그 경로는 image_url이 없으므로 응답에도 없어야 한다."""
+    locations = [_location()]
+
+    result = routingService.build_persona_route("BTS뷔", _PERSONA, locations, "10:00", "ko")
+
+    assert "imageUrl" not in result["stops"][0]
+
+
 def test_build_persona_route_uses_real_place_id_and_address_when_present():
     """DB 경로로 매핑된 스팟(place_id/address 있음)은 그 값을 그대로 써야 한다 — 합성 id나
     '동네 · ⭐평점 · 영업시간' 표시용 문자열을 만들면 안 된다(이걸 만들면 프론트가 "내 루트"에

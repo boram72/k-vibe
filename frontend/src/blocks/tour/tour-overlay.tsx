@@ -40,11 +40,7 @@ function clamp(value: number, min: number, max: number) {
 // 말풍선이 하이라이트 자체와 겹쳐버린다(사용자 피드백: "말풍선이 메뉴를
 // 가려서 안 보여") — 아래→위→오른쪽→왼쪽 순서로 실제로 들어갈 공간이 있는
 // 방향을 찾고, 그마저 없으면 화면 안쪽으로 clamp한 "아래"를 최후 수단으로 쓴다.
-function computeTooltipPosition(box: Box | null, tooltipW: number, tooltipH: number, viewportW: number, viewportH: number) {
-  if (!box) {
-    return { top: viewportH / 2 - tooltipH / 2, left: (viewportW - tooltipW) / 2 }
-  }
-
+function computeTooltipPosition(box: Box, tooltipW: number, tooltipH: number, viewportW: number, viewportH: number) {
   const horizontalCenter = clamp(box.left + box.width / 2 - tooltipW / 2, VIEWPORT_MARGIN, viewportW - VIEWPORT_MARGIN - tooltipW)
   const verticalCenter = clamp(box.top + box.height / 2 - tooltipH / 2, VIEWPORT_MARGIN, viewportH - VIEWPORT_MARGIN - tooltipH)
 
@@ -87,15 +83,16 @@ export function TourOverlay() {
   // sonner 토스트가 자체 CSS로 z-index를 최상단 고정해둬서(index.css의
   // body[data-tour-active] 규칙 참고), 투어와 무관한 알림이 어둡게 깔린
   // 배경 위에 그대로 떠 튜토리얼 내용처럼 도드라져 보였다(사용자 피드백).
-  // 투어가 떠 있는 동안만 body에 표시를 남겨서 토스트도 같이 어두워지게
-  // 하고, 투어가 끝나면 바로 원래대로 되돌린다.
+  // 투어가 실제로 화면에 떠 있는 동안만 body에 표시를 남겨서 토스트도 같이 어두워지게
+  // 하고, 투어가 끝나거나 대상을 기다리느라 숨겨진 동안엔 바로 원래대로 되돌린다.
+  const hasTarget = rect !== null
   useEffect(() => {
-    if (!step) return
+    if (!step || !hasTarget) return
     document.body.setAttribute('data-tour-active', '')
     return () => {
       document.body.removeAttribute('data-tour-active')
     }
-  }, [step])
+  }, [step, hasTarget])
 
   // 튜토리얼이 켜진 채로 다른 메뉴(사이드바/하단 내비)로 넘어가면 투어를 끈다 —
   // clickThrough 단계(페르소나 카드, 루트 드래그 손잡이)는 어둡게 깔린 배경이 클릭을
@@ -204,14 +201,19 @@ export function TourOverlay() {
     next(steps!.length)
   }
 
-  const box = rect
-    ? {
-        top: rect.top - SPOTLIGHT_PADDING,
-        left: rect.left - SPOTLIGHT_PADDING,
-        width: rect.width + SPOTLIGHT_PADDING * 2,
-        height: rect.height + SPOTLIGHT_PADDING * 2,
-      }
-    : null
+  // 이 단계가 가리킬 요소가 아직 화면에 없으면(예: 페르소나 카드를 누른 뒤 결과가 만들어지는
+  // 동안 — 2단계 대상인 X 버튼은 결과가 나와야 생긴다) 화면을 어둡게 덮지도, 말풍선을 띄우지도
+  // 않고 그대로 기다린다. 위 이펙트의 200ms 폴링이 요소를 찾는 순간 하이라이트와 말풍선이
+  // 같이 뜬다(사용자 요청). 예전엔 대상이 없어도 화면 전체를 어둡게 하고 말풍선만 가운데에
+  // 띄워서 로딩 스피너가 가려지고 오류처럼 보였다.
+  if (!rect) return null
+
+  const box = {
+    top: rect.top - SPOTLIGHT_PADDING,
+    left: rect.left - SPOTLIGHT_PADDING,
+    width: rect.width + SPOTLIGHT_PADDING * 2,
+    height: rect.height + SPOTLIGHT_PADDING * 2,
+  }
 
   const viewportH = window.innerHeight
   const viewportW = window.innerWidth
@@ -224,14 +226,10 @@ export function TourOverlay() {
   // (pointer-events는 상속되는 속성이라 부모에서 꺼지면 자식도 같이 꺼짐).
   return createPortal(
     <div className={cn('fixed inset-0 z-200', step.clickThrough && 'pointer-events-none')}>
-      {box ? (
-        <div
-          className="absolute rounded-2xl border-2 border-primary transition-all duration-300"
-          style={{ top: box.top, left: box.left, width: box.width, height: box.height, boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-black/60" />
-      )}
+      <div
+        className="absolute rounded-2xl border-2 border-primary transition-all duration-300"
+        style={{ top: box.top, left: box.left, width: box.width, height: box.height, boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)' }}
+      />
 
       {/* 드래그 손잡이를 "어떻게" 드래그해야 하는지 모르겠다는 피드백 대응
           (사용자 요청) — 손잡이 옆에 까딱이는 아래 화살표를 보여줘서 드래그
@@ -240,7 +238,7 @@ export function TourOverlay() {
           단계에서만 보이고 실제 편집 화면에는 영향 없다. 말풍선이 놓인
           반대쪽(아래에 말풍선이 있으면 위, 아니면 아래)에 둬서 서로 겹치지
           않게 한다. */}
-      {box && step.dragHint && (
+      {step.dragHint && (
         <ArrowDown
           className="pointer-events-none absolute h-5 w-5 animate-bounce text-primary"
           style={{

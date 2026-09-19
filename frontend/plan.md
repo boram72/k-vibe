@@ -11,8 +11,6 @@
 - [ ] **지도 — 검색 안정성 왔다갔다함** (`"왔다갔다함"` 검색) — 카카오 SDK 로딩 완료 전에 검색하면 조용히 실패하는 문제. 코드 수정은 이미 해둔 게 있으나 **PR이 안 올라간 채 로컬 브랜치(`fix/map-search-loading-state`, 커밋 `3b8e563`)에 남아있음** — PR부터 올려야 함.
 - [ ] **지도 리뷰 — 라이브 검증 미실시** (`"장소 리뷰 수정/삭제"` 섹션) — 코드는 완료, 백엔드 PATCH도 반영됐지만 실제 화면에서 삭제/수정 흐름을 직접 확인한 적은 아직 없음.
 - [ ] **지도 — 페르소나별 탭 목록이 위치 무관 고정 카탈로그 (5-3 finding 2)** (`"5-3\."` 검색) — 페르소나별 탭 적용 중엔 검색/이동해도 목록이 안 바뀜(카메라·`/places` 재조회 자체는 정상, 목록 소스가 위치와 무관해서). 이번 라운드에서 수정 안 함, 향후 재설계 검토 대상.
-- [ ] **지도 — 이 지역 연관 관광지 추천 클릭 시 상세팝업 안 뜸 (12)** (`"12\. "이 지역"` 검색) — 원인 확인 완료(선택 상태를 안 만듦), 미착수.
-- [ ] **지도 — 이 지역 연관 관광지 추천 vs 주변 스팟 차이 정리 (13)** (`"13\. "이 지역"` 검색) — 조사 완료(반경검색 vs TourAPI 추천, 좌표 유무가 핵심 차이).
 
 ---
 
@@ -1131,11 +1129,13 @@ Step15 진행과 별개로 UX 개선 요청 5개(Req 1~5) + 미니맵 버그 2�
   - **구현**: `spot-list-panel.tsx`의 `searchAndFilter`(데스크탑)/모바일 렌더 블록에서 `filterTabs`를 `activeSection === null`일 때만 렌더링하도록 변경. `savedTitle`에 X 버튼 추가(`onToggleSavedList` 그대로 재사용, 새 핸들러 불필요). 이 지역 관광지 추천은 `RelatedAttractionsList`가 타이틀을 자체 렌더링하던 구조라 검색결과/찜처럼 고정이 안 됐었음 — **범위 확정(대화로 확인)**: 개수 뱃지는 넣지 않기로 함(넣으려면 `useQuery`를 페이지 레벨로 끌어올려야 해서 범위가 커짐, 대비 닫기 버튼+타이틀 고정만 필요하다는 요청 범위에 안 맞음) — `related-attractions-list.tsx`에서 내부 타이틀 렌더링(로딩/데이터 두 분기 다)만 제거하고, `spot-list-panel.tsx`에 `attractionsTitle`(제목+닫기 버튼, `onToggleAttractions` 재사용)을 새로 만들어 스크롤 밖에 고정.
   - **검증**: Playwright로 ① 찜/관광지 추천 활성화 시 필터 탭(By Category/By Persona)이 안 보이고, 닫으면 다시 보임 확인 ② 찜/관광지 추천 둘 다 닫기(X) 버튼 클릭으로 정상적으로 꺼짐 확인 ③ 관광지 추천 목록을 스크롤해도 닫기 버튼 좌표가 스크롤 전/후 완전히 동일함(고정 확인). `npx tsc --noEmit -p tsconfig.app.json`/`npx eslint src` 클린.
 
-- [ ] **12. "이 지역 연관 관광지 추천"에서 항목 클릭 시 지도 핀 강조는 되는데 상세 팝업이 안 뜸 (2026-09-19, 대화 중 발견) — 원인 확인 완료, 미착수**
+- [x] **12. (완료) "이 지역 연관 관광지 추천"에서 항목 클릭 시 지도 핀 강조는 되는데 상세 팝업이 안 뜸 (2026-09-19, 대화 중 발견)**
   - **원인(소스 확인)**: `MapPage.tsx`의 `attractionSearchMutation.onSuccess`가 카카오 검색 결과로 `setSearchCenter`/`setKakaoSearchResults`만 호출하고, `setSelectedPlace`/`setHighlightedPlaceId`는 전혀 안 부름 — 그래서 지도가 그 위치로 이동하고 매칭된 장소들이 빨간 핀(`kakaoSearchResultIds` 강조)으로는 뜨지만, 그중 무엇도 "선택됨" 상태가 아니라서 `PlaceDetailSheet`가 자동으로 안 열림.
-  - **다음 단계**: 매칭 결과 중 대표 장소(정확도 1순위, `result.relevance[0]`)를 `handleSelectPlace`처럼 선택 상태로 만들어(상세시트 자동 오픈 포함) 주는 방향으로 수정 예정 — 아직 미착수, 순차적으로 착수.
+  - **구현**: `attractionSearchMutation.onSuccess`에서 매칭 결과 중 대표 장소(정확도 1순위, `result.relevance[0]`)를 `setSelectedPlace`/`setHighlightedPlaceId`/`setSelectionSeq((n) => n + 1)`로 직접 선택 상태로 세팅 — 나머지 매치는 기존처럼 빨간 핀 강조만 유지. `handleSelectPlace`를 그대로 호출하지 않은 이유: 그 함수 내부의 "이전 검색결과 그룹 정리" 로직이 클로저로 옛 `kakaoSearchResults`를 참조해서, 같은 실행 안에서 방금 위에서 새로 채운 값을 곧바로 지워버릴 수 있음(closure staleness) — 그래서 필요한 3개 setter만 직접 인라인으로 호출.
+  - **구현 중 발견한 회귀(완료 표기 시도 후 사용자가 "핀안뜨는데"로 반려, 재조사 후 수정)**: 위 수정만으로는 상세시트는 열리지만 지도에 핀이 하나도 안 뜸 — 원인은 5-2에서 만든 `mapPlaces`(activeSection별로 어떤 장소들을 지도에 그릴지 고르는 계산)가 `activeSection === 'attractions'`일 때 항상 `[]`(빈 배열)을 반환하도록 되어 있었음. 5-2 시점엔 "관광지 추천 항목 자체는 좌표가 없다"는 이유로 타당했지만, 이번 12번 수정으로 클릭 시 카카오 검색을 거쳐 실제 좌표(`kakaoSearchResults`)를 얻게 되면서 그 전제가 깨졌는데 `mapPlaces`는 갱신되지 않은 상태였음. `if (activeSection === 'attractions') return kakaoSearchResults`로 수정 — `mapHighlightIds`는 이미 `activeSection !== 'analyzer'`일 때 `kakaoSearchResultIds`로 떨어지는 구조라 추가 수정 불필요.
+  - **검증**: Playwright로 이 지역 관광지 추천 목록에서 "1강강술래/청담점" 클릭 → 상세시트 정상 오픈(제목/주소 확인) + 빨간 강조 핀 1개 이상 렌더링 확인(수정 전엔 0개). `npx tsc --noEmit -p tsconfig.app.json`(캐시 삭제 후)/`npx eslint src` 클린(shadcn 3건 제외).
 
-- [ ] **13. "이 지역 연관 관광지 추천"과 "주변 스팟"의 차이 정리 (2026-09-19, 대화 중 요청) — 조사 완료**
+- [x] **13. (완료) "이 지역 연관 관광지 추천"과 "주변 스팟"의 차이 정리 (2026-09-19, 대화 중 요청) — 조사만으로 완료(코드 수정 없음)
   - **핵심 차이(소스 대조 완료)**:
     - **주변 스팟**(`fetchMapPlaces`, `/places`): 사용자 위치/검색 중심 기준 **반경 검색** 결과. 처음부터 정확한 좌표(`lat`/`lng`)를 가진 완전한 `Place` 객체 — 그래서 클릭 시 바로 선택/상세팝업이 자연스럽게 동작함.
     - **이 지역 연관 관광지 추천**(`fetchRelatedAttractions`, TourAPI `TarRlteTarService1`): 반경 검색이 아니라 **그 지역의 대표 관광지 하나(예: "남산서울타워")를 기준으로 한 연관 추천 목록** — TourAPI 자체의 추천 알고리즘 결과라 거리순이 아님. **좌표 필드가 아예 없음**(`RelatedAttraction` 타입에 `lat`/`lng` 없음, 이름/지역명만 제공) — 그래서 클릭 시 카카오 검색(`attractionSearchMutation`)으로 이름→좌표를 뒤늦게 찾아야 지도에 표시 가능. 이 "좌표가 원래 없다"는 구조적 차이가 12번 버그(선택 상태가 안 만들어짐)의 근본 배경이기도 함.

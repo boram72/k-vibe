@@ -19,13 +19,12 @@ export interface TourStep {
   // 어떻게 하는지 모르겠다"는 피드백(사용자 요청)에 대응. 이 투어 단계에서만
   // 보이는 시각적 힌트일 뿐, 실제 편집 화면(투어 밖)에는 영향 없다.
   dragHint?: boolean
-  // 실제 타겟 DOM 요소에 반복 애니메이션 클래스를 직접 건다(index.css의
-  // animate-tap-bounce/animate-drag-bob) — "눌러야 할지 애매해서 그냥
-  // 넘어간다"는 페르소나 카드 피드백과 "드래그를 어느 방향으로 하는지
-  // 모르겠다"는 손잡이 피드백에 대응(둘 다 사용자 요청으로 애니메이션
-  // 시안을 먼저 보여주고 고른 것). tour-overlay.tsx가 이 단계인 동안만
-  // 클래스를 붙이고, 스텝이 바뀌거나 투어가 끝나면 바로 뗀다.
-  hintEffect?: 'pulse' | 'drag-bob'
+  // 하이라이트된 요소 위에 "손가락으로 누르는" 그림(누르는 손 + 물결)을 반복해서
+  // 보여준다 — "눌러야 할지 애매해서 그냥 넘어간다"는 페르소나 카드 피드백에
+  // 대응. 예전에 실제 카드/손잡이 DOM에 직접 걸던 반복 효과(카드 맥박 scale,
+  // 손잡이 위아래 흔들림)는 사용자 요청으로 뺐다 — 이 그림은 오버레이 위에만
+  // 그려져서 실제 요소/클릭에는 영향이 없다.
+  tapHint?: boolean
 }
 
 export const HOME_TOUR_KEY = 'home'
@@ -53,7 +52,7 @@ export const MAP_TOUR_STEPS: TourStep[] = [
 ]
 
 export const PERSONA_TOUR_STEPS: TourStep[] = [
-  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true, hintEffect: 'pulse' },
+  { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true, tapHint: true },
   { target: 'persona-exclude', titleKey: 'tour.persona_exclude_title', bodyKey: 'tour.persona_exclude_body', clickThrough: true },
 ]
 
@@ -63,7 +62,7 @@ export const PERSONA_TOUR_STEPS: TourStep[] = [
 // pointer-events는 clickThrough:true로 계속 실제 손잡이에 전달되므로 진짜
 // 드래그 자체는 그대로 동작한다.
 export const ROUTE_TOUR_STEPS: TourStep[] = [
-  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false, dragHint: true, hintEffect: 'drag-bob' },
+  { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false, dragHint: true },
   { target: 'route-complete', titleKey: 'tour.route_complete_title', bodyKey: 'tour.route_complete_body', clickThrough: true },
   { target: 'route-location-check', titleKey: 'tour.route_location_title', bodyKey: 'tour.route_location_body' },
   { target: 'route-actions', titleKey: 'tour.route_actions_title', bodyKey: 'tour.route_actions_body' },

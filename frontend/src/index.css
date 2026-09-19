@@ -165,36 +165,42 @@ body {
   animation: kv-marquee 15s linear infinite;
 }
 
-/* 투어에서 "이 카드를 눌러보세요"/"손잡이를 드래그해보세요" 단계가 실제
-   타겟 요소에 거는 반복 애니메이션 힌트(tour-overlay.tsx 참고) — 눌러야
-   할지 애매해서 그냥 넘어간다는 피드백에, "맥박처럼 커졌다 작아지는" 느낌과
-   "위아래로 살짝 흔들리는" 느낌을 직접 보여주면 좋겠다는 요청으로 추가.
-   투어가 그 단계를 보여주는 동안에만 실제 DOM에 클래스가 붙고, 스텝이
-   바뀌거나 투어가 끝나면 바로 제거된다. */
-@keyframes kv-card-pulse {
+/* 투어의 "눌러보세요" 단계(tapHint)에서 오버레이 위에 그리는 손가락 그림 —
+   손이 아래로 살짝 눌렸다 올라오고(press), 눌리는 순간 그 자리에서 물결이
+   퍼졌다 사라진다(ripple). 두 애니메이션이 같은 주기(1.4s)라 항상 같이 돈다. */
+@keyframes kv-tap-press {
   0%,
   100% {
-    transform: scale(1);
+    transform: translate(0, 0) scale(1);
   }
-  50% {
-    transform: scale(1.05);
+  35% {
+    transform: translate(2px, 5px) scale(0.92);
+  }
+  55% {
+    transform: translate(0, 0) scale(1);
   }
 }
-.animate-card-pulse {
-  animation: kv-card-pulse 1.2s ease-in-out infinite;
+.animate-tap-press {
+  animation: kv-tap-press 1.4s ease-in-out infinite;
 }
 
-@keyframes kv-drag-bob {
+@keyframes kv-tap-ripple {
   0%,
-  100% {
-    transform: translateY(0);
+  30% {
+    transform: scale(0.3);
+    opacity: 0;
   }
-  50% {
-    transform: translateY(6px);
+  36% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
   }
 }
-.animate-drag-bob {
-  animation: kv-drag-bob 1s ease-in-out infinite;
+.animate-tap-ripple {
+  animation: kv-tap-ripple 1.4s ease-out infinite;
 }
 
 /* Softens the hard right-edge cutoff on horizontally-scrollable rows whose

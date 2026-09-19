@@ -12,10 +12,13 @@ interface AnalysisResultListProps {
   // 테두리 두께가 아니라 색으로만 구분하는 이유는 다크모드에서도 잘 보이고,
   // 두께 변화로 인한 레이아웃 흔들림이 없어서.
   //
-  // violet-500(Tailwind 기본 팔레트, 이 프로젝트의 디자인 토큰엔 없음)을 쓴
+  // pink-500(Tailwind 기본 팔레트, 이 프로젝트의 디자인 토큰엔 없음)을 쓴
   // 이유: 이 테마의 `primary`는 실제로는 흑백(그레이스케일)이라 "추가됨" 표시로
   // 구분이 잘 안 됐고, `crowd-low`(초록)는 혼잡도 표시에 이미 쓰이는 의미가
-  // 있어서 헷갈릴 수 있었음 — 사용자가 파란색/보라색 중 보라색으로 확정.
+  // 있어서 헷갈릴 수 있었음. 처음엔 보라색(violet-500)이었는데, 홈 배너/튜토리얼
+  // 하이라이트와 같은 핑크로 통일했다(사용자 요청, 2026-09) — 카드 배경은 같은 핑크의
+  // 아주 옅은 톤(6%), 배지는 진한 핑크 단색이다. 핑크→주황 그라데이션 배지도
+  // 봤지만 화면 전체 분위기에 비해 너무 화려해서 단색으로 확정.
   addedPlaceIds: Set<string>
 }
 
@@ -88,7 +91,7 @@ export function AnalysisResultList({ result, onSelectPlace, addedPlaceIds }: Ana
             onClick={() => onSelectPlace(place)}
             className={cn(
               'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors',
-              isAdded ? 'border-violet-500 bg-violet-500/10' : 'border-border bg-muted hover:border-primary/35',
+              isAdded ? 'border-pink-500 bg-pink-500/[0.06]' : 'border-border bg-muted hover:border-primary/35',
             )}
           >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
@@ -109,7 +112,7 @@ export function AnalysisResultList({ result, onSelectPlace, addedPlaceIds }: Ana
             <span
               className={cn(
                 'flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold',
-                isAdded ? 'bg-violet-500 text-white' : 'bg-border text-foreground',
+                isAdded ? 'bg-pink-500 text-white' : 'bg-border text-foreground',
               )}
             >
               {isAdded && <Check className="h-3 w-3" />}

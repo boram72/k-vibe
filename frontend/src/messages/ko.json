@@ -146,6 +146,7 @@
     "error_reason_korea_only": "현재 SNS 분석기는 한국 장소만 지원해요.",
     "error_toast_action": "다시 분석하러 가기",
     "retry": "다시 시도",
+    "reset": "초기화",
     "found_spots": "후보 스팟 {{count}}개를 찾았어요",
     "empty_title": "뚜렷한 장소를 찾지 못했어요",
     "empty_body": "여행 브이로그나 MV 촬영지 영상으로 다시 시도해보세요.",

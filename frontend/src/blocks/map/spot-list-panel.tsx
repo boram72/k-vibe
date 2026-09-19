@@ -245,6 +245,7 @@ export function SpotListPanel({
 
   const savedToggleButton = (
     <Button
+      data-tour="map-saved"
       size="icon"
       variant={showSavedList ? 'default' : 'outline'}
       onClick={onToggleSavedList}
@@ -260,6 +261,7 @@ export function SpotListPanel({
   // 것을 토글로 전환.
   const attractionsToggleButton = (
     <Button
+      data-tour="map-attractions"
       size="icon"
       variant={showAttractions ? 'default' : 'outline'}
       onClick={onToggleAttractions}
@@ -295,23 +297,29 @@ export function SpotListPanel({
   // 모바일 최소화면(minimized)에서는 검색창 줄만 남기고 필터 탭은 숨겨야 해서
   // 두 조각으로 분리 — 데스크탑/기본·전체화면 모바일은 여전히 같이 렌더링.
   const searchRow = (
-    <div data-tour="map-search" className="flex items-center gap-2 px-4 pb-2">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-          placeholder={t('map.search_placeholder')}
-          // 2026-09 QA 9번 — 모바일 검색 시 화면 비율이 안 유지되던 원인:
-          // iOS Safari는 포커스한 input의 글자 크기가 16px보다 작으면 화면을
-          // 자동으로 확대(줌인)해버려서, 그 상태로 지도/하단 메뉴 일부가
-          // 화면 밖으로 밀려나 보였다. 모바일에서만 16px(text-base) 이상으로,
-          // 데스크탑은 기존 14px(text-sm) 그대로 유지.
-          className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 md:text-sm"
-        />
+    <div className="flex items-center gap-2 px-4 pb-2">
+      {/* 튜토리얼(map-search)이 검색창과 돋보기 버튼을 한 덩어리로 하이라이트
+          하도록 감쌌다 — 하트/별 버튼은 각자 자기 단계(map-saved,
+          map-attractions)에서 따로 하이라이트. 레이아웃은 그대로(flex-1이
+          이 래퍼로 옮겨왔을 뿐). */}
+      <div data-tour="map-search" className="flex flex-1 items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder={t('map.search_placeholder')}
+            // 2026-09 QA 9번 — 모바일 검색 시 화면 비율이 안 유지되던 원인:
+            // iOS Safari는 포커스한 input의 글자 크기가 16px보다 작으면 화면을
+            // 자동으로 확대(줌인)해버려서, 그 상태로 지도/하단 메뉴 일부가
+            // 화면 밖으로 밀려나 보였다. 모바일에서만 16px(text-base) 이상으로,
+            // 데스크탑은 기존 14px(text-sm) 그대로 유지.
+            className="w-full rounded-xl border border-border bg-muted py-2 pl-8 pr-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 md:text-sm"
+          />
+        </div>
+        {areaSearchButton}
       </div>
-      {areaSearchButton}
       {savedToggleButton}
       {attractionsToggleButton}
     </div>

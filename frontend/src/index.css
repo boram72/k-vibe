@@ -150,38 +150,6 @@ body {
   animation: kv-slide-in-right 400ms ease-out;
 }
 
-/* 투어에서 "이 카드를 눌러보세요"/"손잡이를 드래그해보세요" 단계가 실제
-   타겟 요소에 거는 반복 애니메이션 힌트(tour-overlay.tsx 참고) — 눌러야
-   할지 애매해서 그냥 넘어간다는 피드백에, "맥박처럼 커졌다 작아지는" 느낌과
-   "위아래로 살짝 흔들리는" 느낌을 직접 보여주면 좋겠다는 요청으로 추가.
-   투어가 그 단계를 보여주는 동안에만 실제 DOM에 클래스가 붙고, 스텝이
-   바뀌거나 투어가 끝나면 바로 제거된다. */
-@keyframes kv-card-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-.animate-card-pulse {
-  animation: kv-card-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes kv-drag-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
-}
-.animate-drag-bob {
-  animation: kv-drag-bob 1s ease-in-out infinite;
-}
-
 /* Softens the hard right-edge cutoff on horizontally-scrollable rows whose
    content actually overflows (e.g. home feed's place cards) — fades the
    last partially-visible item instead of cropping it abruptly. */

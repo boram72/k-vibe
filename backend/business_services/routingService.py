@@ -121,6 +121,11 @@ def build_persona_route(persona_id: str, persona: dict, locations: list[dict], s
         # 타입의 characterImageUrl?와 대응. 하드코딩 카탈로그 경로는 이 값이 없다.
         if location.get("characterImageUrl"):
             stop["characterImageUrl"] = location["characterImageUrl"]
+        # location.image_url(실제 장소 사진) — DB 경로에서만 채워지고 하드코딩 카탈로그
+        # 폴백은 이 값이 없다. characterImageUrl(아직 없는 AI 캐릭터 이미지)의 대체로
+        # 프론트가 사용한다.
+        if location.get("imageUrl"):
+            stop["imageUrl"] = location["imageUrl"]
         stops.append(stop)
         cursor += location["stayMinutes"]
 

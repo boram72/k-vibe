@@ -161,8 +161,11 @@ export default function RoutePage() {
     // 반복 추가 시 타임스탬프가 붙는다(`${s.id}-${ts}`) — 리뷰/평점/상세정보는 전부
     // 실제 장소 식별자인 stop.placeId 기준으로 조회되므로, 지도로 넘길 Place.id는
     // stop.id가 아니라 stop.placeId(없으면 stop.id로 폴백)를 써야 한다.
+    // place-detail-sheet.tsx의 사진은 GET /places/{id}가 아니라 이 Place.imageUrl을
+    // 그대로 쓰므로, 여기서 안 넘기면 phone/hours/리뷰는 정상인데 사진만 항상 빈
+    // 플레이스홀더로 보이는 버그가 있었다.
     const state: MapFocusState = {
-      focusPlaces: [{ id: stop.placeId ?? stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags }],
+      focusPlaces: [{ id: stop.placeId ?? stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags, imageUrl: stop.imageUrl }],
       openDetail: true,
       returnToRoute: true,
     }

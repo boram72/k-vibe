@@ -53,14 +53,17 @@ interface RouteResultProps {
 // 플레이스홀더로 항상 표시하도록 변경(2026-09, 사용자 요청). 이미지가 있을 때는
 // 64px로 작게 보여서 잘 안 보이므로 ZoomableImage로 감싸 클릭 시 팝업으로 크게
 // 볼 수 있게 한다(PR #23).
+// characterImageUrl이 비어있는 동안은(현재 전부 비어있음) stop.imageUrl(location
+// 테이블의 실제 장소 사진)을 대신 보여준다 — 캐릭터 이미지가 채워지면 그쪽이 우선.
 function StopCharacterImage({ stop }: { stop: RouteStop }) {
   const { t } = useTranslation()
   const [imageFailed, setImageFailed] = useState(false)
+  const src = stop.characterImageUrl || stop.imageUrl
 
-  if (stop.characterImageUrl && !imageFailed) {
+  if (src && !imageFailed) {
     return (
       <ZoomableImage
-        src={stop.characterImageUrl}
+        src={src}
         alt={stop.name}
         onError={() => setImageFailed(true)}
         className="h-16 w-16 shrink-0 rounded-lg object-cover"

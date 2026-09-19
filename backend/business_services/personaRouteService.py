@@ -33,6 +33,11 @@ def _normalize_db_location(row: dict, fallback_name: str) -> dict | None:
         # 값의 유무로 두 경로를 구분해 id/address를 결정한다.
         "placeId": source.get("place_id"),
         "address": source.get("address") or "",
+        # 실제 장소 사진(TourAPI firstimage, location 테이블 원본 값). get_persona_places()는
+        # 이미 이 값을 내려주고 있었는데 여기(내 루트에 들어가는 경로)만 빠져 있어서, 아직
+        # 없는 AI 캐릭터 이미지(characterImageUrl) 자리에 항상 빈 플레이스홀더만 보이던 버그가
+        # 있었다 — 실제 사진이 있으면 그걸로 대체할 수 있도록 같이 내려준다.
+        "imageUrl": source.get("image_url"),
     }
 
 

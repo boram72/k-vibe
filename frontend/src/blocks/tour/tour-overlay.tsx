@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, Pointer, X } from 'lucide-react'
+import { ArrowDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useTourStore } from '@/store/tour-store'
@@ -218,21 +218,6 @@ export function TourOverlay() {
             left: box.left + box.width / 2 - 10,
           }}
         />
-      )}
-
-      {/* "눌러야 할지 애매하다"는 피드백 대응(사용자 요청) — 하이라이트된 카드 위에
-          손가락으로 누르는 그림(손이 살짝 눌렸다 떨어지고, 그 자리에서 물결이
-          퍼짐)을 반복해서 보여준다. 손가락 끝(lucide Pointer 아이콘의 검지 끝,
-          24px 기준 (8, 2))이 누르는 지점에 오도록 아이콘을 어긋나게 놓는다.
-          pointer-events-none이라 아래 실제 카드 클릭은 그대로 전달된다. */}
-      {box && step.tapHint && (
-        <div className="pointer-events-none absolute" style={{ top: box.top + box.height * 0.44, left: box.left + box.width / 2 }}>
-          <span className="absolute -left-7 -top-7 h-14 w-14 animate-tap-ripple rounded-full border-2 border-white bg-white/40" />
-          <Pointer
-            className="absolute -left-[13px] -top-[3px] h-10 w-10 animate-tap-press fill-white text-neutral-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]"
-            strokeWidth={1.75}
-          />
-        </div>
       )}
 
       <div

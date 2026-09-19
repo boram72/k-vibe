@@ -1,6 +1,7 @@
 import axios from "axios";
 import { create } from "zustand";
 import { fetchAnalysis, type AnalysisResult } from "@/api/analyze";
+import { getCannedAnalysis } from "@/blocks/analyze/popular-videos.data";
 import type { Locale } from "@/i18n";
 
 export type AnalyzeStatus = "idle" | "running" | "success" | "error";
@@ -25,6 +26,13 @@ interface AnalyzeState {
   // 어느 화면에 있든 진행률·완료 배너가 반영된다(사용자 요청: "다른 탭이나
   // 홈을 볼 수 있게").
   startAnalysis: (targetUrl: string, locale: Locale) => void;
+  // "이 유튜브를 많이 검색해요" 카드(popular-videos.tsx) 6개 전용 — 무료 AI
+  // 토큰을 아끼려고 실제 /analyze를 호출하지 않고 popular-videos.data.ts에
+  // 저장된 데이터를 반환한다. 다만 바로 뜨면 저장된 데이터 티가 나서(사용자
+  // 지적) startAnalysis와 동일한 체감 진행률 애니메이션을 몇 초 보여준 뒤
+  // 완료 처리한다. videoId가 canned 목록에 없으면 아무 것도 하지 않음 —
+  // 호출부(AnalyzePage)가 미리 isCannedAnalysisVideo로 걸러준다.
+  startCannedAnalysis: (videoId: string, locale: Locale) => void;
   acknowledgeCompletion: () => void;
 }
 
@@ -44,6 +52,15 @@ function stopProgressTimer() {
 // 재사용하되, 타임아웃이 90초 -> 120초로 늘어난 만큼 반감기도 맞춰 늘렸다.
 const PROGRESS_CAP = 92;
 const PROGRESS_HALF_LIFE_MS = 25000;
+
+// canned(popular-videos) 경로 전용 — 실제 응답을 기다리는 게 아니라 정해진
+// 시간(CANNED_DELAY_MS) 뒤에 무조건 완료 처리한다. 실제 분석이 약 14초 걸렸던
+// 것과 다르게, 여기선 0%에서 100%까지 8초 동안 선형으로 채운다(사용자 요청:
+// "8초안에 0부터 100까지 프로그래스바 올라가도록"). startAnalysis의 점근
+// 곡선(절대 100%에 안 닿는 방식)과 달리 정확한 완료 시점이 정해져 있어
+// 선형이 더 자연스럽다.
+const CANNED_DELAY_MS = 8000;
+const CANNED_PROGRESS_TICK_MS = 100;
 
 function isTimeoutError(err: unknown): boolean {
   return axios.isAxiosError(err) && err.code === "ECONNABORTED";
@@ -87,6 +104,32 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
           completionSeen: false,
         });
       });
+  },
+
+  startCannedAnalysis: (videoId, locale) => {
+    if (get().status === "running") return;
+    const canned = getCannedAnalysis(videoId, locale);
+    if (!canned) return;
+    stopProgressTimer();
+
+    const startedAt = Date.now();
+    set({ status: "running", progress: 2, errorKind: null, completionSeen: true });
+
+    progressTimer = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const next = Math.min(99, (elapsed / CANNED_DELAY_MS) * 100);
+      set({ progress: Math.round(next) });
+    }, CANNED_PROGRESS_TICK_MS);
+
+    setTimeout(() => {
+      stopProgressTimer();
+      set({
+        status: "success",
+        progress: 100,
+        result: { videoId, source: "popular", ...canned },
+        completionSeen: false,
+      });
+    }, CANNED_DELAY_MS);
   },
 
   acknowledgeCompletion: () => set({ completionSeen: true }),

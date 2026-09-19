@@ -152,6 +152,7 @@
     "source_gemini": "Gemini AI",
     "source_openai": "OpenAI",
     "source_mock": "Basic analysis",
+    "source_popular": "Popular spot",
     "ai_disclaimer": "This route was analyzed by AI, so it may not be fully accurate.",
     "select_action": "Select",
     "added_label": "Added",

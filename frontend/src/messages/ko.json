@@ -152,6 +152,7 @@
     "source_gemini": "Gemini AI",
     "source_openai": "OpenAI",
     "source_mock": "기본 분석",
+    "source_popular": "인기 스팟",
     "ai_disclaimer": "AI로 분석한 루트이기 때문에 정확하지 않을 수 있습니다.",
     "select_action": "선택",
     "added_label": "추가됨",

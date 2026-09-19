@@ -6,6 +6,7 @@ import { Compass, MapPin, PlayCircle, Plus } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
 import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
 import { PopularVideos } from '@/blocks/analyze/popular-videos'
+import { isCannedAnalysisVideo } from '@/blocks/analyze/popular-videos.data'
 import { AnalysisProgress } from '@/blocks/analyze/analysis-progress'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
@@ -27,7 +28,8 @@ export default function AnalyzePage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const startTour = useTourStore((s) => s.start)
-  const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis } = useAnalyzeStore()
+  const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis, startCannedAnalysis } =
+    useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   // 카드에 "추가됨" 표시를 하기 위한 상태 — 마운트 시점에 한 번 localStorage를
@@ -58,6 +60,12 @@ export default function AnalyzePage() {
   function runAnalysis(targetUrl: string) {
     const videoId = extractVideoId(targetUrl)
     if (detectSnsPlatform(targetUrl) !== 'youtube' || !videoId) return
+    // "이 유튜브를 많이 검색해요" 6개 카드에서 고른 URL만 canned 경로(실제
+    // /analyze 미호출, 무료 AI 토큰 절약) — 직접 붙여넣은 URL은 그대로 실제 분석
+    if (isCannedAnalysisVideo(videoId)) {
+      startCannedAnalysis(videoId, i18n.language as Locale)
+      return
+    }
     startAnalysis(targetUrl, i18n.language as Locale)
   }
 

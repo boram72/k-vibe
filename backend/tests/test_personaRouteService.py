@@ -20,6 +20,7 @@ def test_normalize_db_location_reads_real_schema_columns():
         "tags": ["궁궐", "한복"],
         "place_id": "3354946",
         "address": "서울 종로구 사직로 161",
+        "image_url": "https://example.com/real-photo.jpg",
     }
 
     result = personaRouteService._normalize_db_location(row, "경복궁")
@@ -31,6 +32,7 @@ def test_normalize_db_location_reads_real_schema_columns():
     assert result["openingHour"] == "09:00~18:00"
     assert result["placeId"] == "3354946"
     assert result["address"] == "서울 종로구 사직로 161"
+    assert result["imageUrl"] == "https://example.com/real-photo.jpg"
 
 
 def test_normalize_db_location_defaults_place_id_and_address_when_absent():

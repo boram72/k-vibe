@@ -7,7 +7,7 @@ import { useThemeStore } from '@/store/theme-store'
 import { useSidebarStore } from '@/store/sidebar-store'
 import { useAuth } from '@/lib/use-auth'
 import { PROFILE_POPUP_REOPEN_KEY } from '@/lib/auth'
-import { LogoIcon } from '@/assets/logo-icon'
+import { LogoWordmark } from '@/assets/logo-wordmark'
 import { ProfileDialog } from '@/blocks/profile/profile-dialog'
 import { HelpButton } from './help-button'
 import { LanguageDropdown } from './language-dropdown'
@@ -35,20 +35,27 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
-      <div className="flex items-center gap-2">
-        <Link to="." className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
-          <LogoIcon className="h-5 w-5 text-primary" />
-          K-Vibe
-        </Link>
+      <div className="flex items-center gap-1">
+        {/* md:-ml-2 — 헤더 자체 좌측 패딩(px-6=24px)을 상쇄해서 버튼(size-8=32px)
+            좌측 끝이 16px에 오게 만들고, 그러면 아이콘 중심이 정확히 32px가 되어
+            SidebarNav 접힌 상태 아이콘 중심(대화 중 Playwright 실측 32px)과
+            세로로 한 줄 정렬된다(대화로 요청). 폭을 늘리지 않고 원래
+            size-8 그대로 써서 로고와의 간격도 좁아짐(대화 후속 요청).
+            gap-1(4px) 뒤 로고가 시작하는 지점(48+4=52px)은 SidebarNav 펼침
+            상태의 텍스트 시작 지점(p-2 8px + px-3 12px + 아이콘 20px + gap-3
+            12px = 52px)과 정확히 일치하도록 맞춤. */}
         <Button
           variant="ghost"
           size="icon"
-          className="hidden md:inline-flex"
+          className="hidden md:-ml-2 md:inline-flex"
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
         >
           <PanelLeft className="h-4 w-4" />
         </Button>
+        <Link to="." className="flex items-center text-foreground">
+          <LogoWordmark className="h-9" />
+        </Link>
       </div>
 
       <div className="flex items-center gap-2">

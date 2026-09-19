@@ -315,6 +315,9 @@
     "helper": "拖动站点即可调整顺序。",
     "empty_title": "还没有路线",
     "empty_desc": "从地图、SNS分析或角色生成器添加地点，开始你的路线。",
+    "empty_notice_title": "请先向我的路线添加地点",
+    "empty_notice_body": "可以从 K-Vibe 地图、SNS 分析、角色中添加地点。",
+    "empty_notice_confirm": "知道了",
     "empty_guide_title": "试试这样添加地点",
     "empty_guide_map_label": "从地图添加",
     "empty_guide_map_steps": [

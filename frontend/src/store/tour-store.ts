@@ -3,7 +3,11 @@ import { create } from 'zustand'
 interface TourState {
   activeTourKey: string | null
   stepIndex: number
-  start: (key: string) => void
+  // "?" 버튼으로 사용자가 직접 다시 연 투어인지 — true면 말풍선에서 "다시 보지
+  // 않기"를 숨긴다(다시 보고 싶어서 누른 건데 "다시 보지 않기"가 있을 이유가
+  // 없다는 사용자 의견). 페이지 첫 진입 시 자동으로 뜬 투어는 false.
+  replay: boolean
+  start: (key: string, options?: { replay?: boolean }) => void
   next: (totalSteps: number) => void
   close: () => void
   optOut: () => void
@@ -87,14 +91,15 @@ export function canAutoStartTour(key: string): boolean {
 export const useTourStore = create<TourState>((set, get) => ({
   activeTourKey: null,
   stepIndex: 0,
-  start: (key) => set({ activeTourKey: key, stepIndex: 0 }),
+  replay: false,
+  start: (key, options) => set({ activeTourKey: key, stepIndex: 0, replay: options?.replay ?? false }),
   next: (totalSteps) => {
     const { stepIndex, activeTourKey } = get()
     const nextIndex = stepIndex + 1
     if (nextIndex >= totalSteps) {
       if (activeTourKey) markTourSeen(activeTourKey)
       resolveVisit()
-      set({ activeTourKey: null, stepIndex: 0 })
+      set({ activeTourKey: null, stepIndex: 0, replay: false })
     } else {
       set({ stepIndex: nextIndex })
     }
@@ -105,7 +110,7 @@ export const useTourStore = create<TourState>((set, get) => ({
     const { activeTourKey } = get()
     if (activeTourKey) markTourSeen(activeTourKey)
     resolveVisit()
-    set({ activeTourKey: null, stepIndex: 0 })
+    set({ activeTourKey: null, stepIndex: 0, replay: false })
   },
   // "다시 보지 않기" — 이번 방문 중 남은 다른 메뉴 투어도 즉시 다 끄고,
   // 다음 접속부터도 영구히 안 뜨게 한다.
@@ -113,6 +118,6 @@ export const useTourStore = create<TourState>((set, get) => ({
     const { activeTourKey } = get()
     if (activeTourKey) markTourSeen(activeTourKey)
     optOutOfTours()
-    set({ activeTourKey: null, stepIndex: 0 })
+    set({ activeTourKey: null, stepIndex: 0, replay: false })
   },
 }))

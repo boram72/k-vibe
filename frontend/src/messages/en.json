@@ -315,6 +315,9 @@
     "helper": "Drag stops to reorder them.",
     "empty_title": "No route yet",
     "empty_desc": "Add spots from the map, SNS analysis, or persona builder to start your route.",
+    "empty_notice_title": "Add a place to your route first",
+    "empty_notice_body": "You can add places from the K-Vibe Map, the SNS Analyzer, or Persona.",
+    "empty_notice_confirm": "Got it",
     "empty_guide_title": "Here's how to add places",
     "empty_guide_map_label": "Add from the Map",
     "empty_guide_map_steps": [

@@ -75,6 +75,7 @@ export function TourOverlay() {
   const next = useTourStore((s) => s.next)
   const close = useTourStore((s) => s.close)
   const optOut = useTourStore((s) => s.optOut)
+  const replay = useTourStore((s) => s.replay)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [tooltipHeight, setTooltipHeight] = useState(TOOLTIP_HEIGHT_ESTIMATE)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
@@ -240,10 +241,15 @@ export function TourOverlay() {
         </div>
         <p className="text-base font-bold text-foreground">{t(step.titleKey)}</p>
         <p className="mt-1 text-sm leading-[22px] text-muted-foreground">{t(step.bodyKey)}</p>
-        <div className="mt-3 flex items-center justify-between">
-          <button type="button" onClick={optOut} className="text-[13px] font-medium text-muted-foreground underline">
-            {t('tour.skip')}
-          </button>
+        {/* "?" 버튼으로 직접 다시 연 투어(replay)에서는 "다시 보지 않기"를 숨긴다 —
+            다시 보고 싶어서 연 건데 "다시 보지 않기"가 있을 이유가 없다는 의견
+            (사용자 요청). 이때는 "다음"만 남으므로 오른쪽 정렬. */}
+        <div className={cn('mt-3 flex items-center', replay ? 'justify-end' : 'justify-between')}>
+          {!replay && (
+            <button type="button" onClick={optOut} className="text-[13px] font-medium text-muted-foreground underline">
+              {t('tour.skip')}
+            </button>
+          )}
           <Button size="sm" className="h-10 px-5 text-sm" onClick={() => next(steps.length)}>
             {stepIndex + 1 === steps.length ? t('tour.done') : t('tour.next')}
           </Button>

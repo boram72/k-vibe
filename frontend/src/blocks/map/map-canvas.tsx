@@ -16,7 +16,17 @@ interface MapCanvasProps {
   center: Coordinates
   places: Place[]
   fitPlaces?: Place[]
+  // 5-3/7번(plan.md) — fitPlaces가 페르소나별 bounds-fit용일 때만 true로
+  // 내려줌(SNS 분석기 핸드오프 땐 false/미지정). true면 bounds 계산에 현재
+  // 카메라 위치(center)도 같이 포함시켜 "점프"가 아니라 "확대"가 되게 한다.
+  includeCameraInFit?: boolean
   selectedPlaceId?: string
+  // 10번(plan.md) — 같은 장소를 다시 클릭해도 selectedPlaceId 값 자체는 안
+  // 바뀌므로(부모가 동일 값 setState를 하면 리렌더 없이 무시됨) 이 컴포넌트가
+  // "선택이 안 바뀌었다"고 오판해 focusCenter를 다시 안 세팅하던 문제가
+  // 있었음. 클릭할 때마다(같은 장소여도) 무조건 증가하는 값을 같이 받아서,
+  // id가 같아도 "방금 또 선택했다"를 감지할 수 있게 한다.
+  selectionSeq?: number
   onSelectPlace: (place: Place) => void
   onRequestLocation: () => void
   // 2026-09 대화 중 요청 — 왼쪽 상단 라벨 버튼(LocationOverlay, onRequestLocation)과
@@ -112,10 +122,17 @@ function buildPlaceBounds(places: Place[]) {
   )
 }
 
-function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[]) {
+// 5-3/7번(plan.md) — includeCoord가 있으면(페르소나별 bounds-fit 전용) 그
+// 좌표(사용자의 현재 카메라 위치)도 같이 담아서 bounds를 계산한다 — "그
+// 스팟들이 있는 곳으로 점프"가 아니라 "지금 위치 포함해서 확대"가 되도록.
+// SNS 분석기(focusPlaces) 쪽은 이 인자를 안 넘겨서 기존처럼 분석된 스팟만
+// 기준으로 동작(GPS 섞으면 오히려 "분석된 곳으로 바로 보여주기" 목적과 어긋남).
+// includeCoord가 있으면 장소가 1개뿐이어도 항상 bounds 경로를 써야
+// 그 좌표와 장소를 같이 담을 수 있다.
+function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[], includeCoord?: Coordinates) {
   if (typeof kakao === 'undefined' || !kakao.maps || places.length === 0) return
 
-  if (places.length === 1) {
+  if (places.length === 1 && !includeCoord) {
     map.setCenter(new kakao.maps.LatLng(places[0].lat, places[0].lng))
     map.setLevel(4)
     return
@@ -123,6 +140,7 @@ function fitKakaoMapToPlaces(map: kakao.maps.Map, places: Place[]) {
 
   const bounds = new kakao.maps.LatLngBounds()
   places.forEach((place) => bounds.extend(new kakao.maps.LatLng(place.lat, place.lng)))
+  if (includeCoord) bounds.extend(new kakao.maps.LatLng(includeCoord.lat, includeCoord.lng))
   map.setBounds(bounds, 48, 48, 48, 48)
 }
 
@@ -299,7 +317,9 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     center,
     places,
     fitPlaces = [],
+    includeCameraInFit,
     selectedPlaceId,
+    selectionSeq,
     onSelectPlace,
     onRequestLocation,
     onForceCurrentLocation,
@@ -347,6 +367,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
   const [prevCenter, setPrevCenter] = useState(center)
   const [prevBoundsKey, setPrevBoundsKey] = useState(boundsKey)
   const [prevSelectedPlaceId, setPrevSelectedPlaceId] = useState(selectedPlaceId)
+  const [prevSelectionSeq, setPrevSelectionSeq] = useState(selectionSeq)
   // 팀 태스크보드 5번 — 드래그로 옮긴 뒤 아직 "이 지역에서 검색"을 누르기 전인
   // 좌표. 실제 검색 중심(center prop)이 바뀌면(= 검색이 확정되면) 같이 비운다.
   const [pendingCenter, setPendingCenter] = useState<Coordinates | null>(null)
@@ -360,8 +381,9 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     setPrevBoundsKey(boundsKey)
     setFocusCenter(null)
   }
-  if (selectedPlaceId !== prevSelectedPlaceId) {
+  if (selectedPlaceId !== prevSelectedPlaceId || selectionSeq !== prevSelectionSeq) {
     setPrevSelectedPlaceId(selectedPlaceId)
+    setPrevSelectionSeq(selectionSeq)
     const place = places.find((p) => p.id === selectedPlaceId)
     if (place) setFocusCenter({ lat: place.lat, lng: place.lng })
   }
@@ -377,8 +399,29 @@ function KakaoMapCanvas(props: MapCanvasProps) {
 
   useEffect(() => {
     if (!map || focusCenter || boundedPlaces.length === 0) return
-    fitKakaoMapToPlaces(map, boundedPlaces)
-  }, [boundedPlaces, boundsKey, focusCenter, map])
+    fitKakaoMapToPlaces(map, boundedPlaces, includeCameraInFit ? center : undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundedPlaces, boundsKey, focusCenter, map, includeCameraInFit, center.lat, center.lng])
+
+  // 6번(plan.md) — <KakaoMap level={4}>는 매 렌더 항상 같은 리터럴 값이라,
+  // react-kakao-maps-sdk가 마운트 이후엔 "안 바뀌었다"고 보고 setLevel()을
+  // 다시 안 부름. 그런데 fitKakaoMapToPlaces()(여러 장소 담기)는 map.setBounds()
+  // 로 줌 레벨을 React 밖에서 직접 바꿔버리므로, 그 후 특정 장소 하나를
+  // 선택(focusCenter 세팅)해도 카메라 위치만 옮겨갈 뿐 줌은 이전 bounds-fit이
+  // 남긴 값 그대로 남아 "줌인이 안 된 것"처럼 보이는 문제가 있었음(실측
+  // 확인 — 페르소나 전체 진입으로 level 9까지 줌아웃된 뒤 특정 스팟을
+  // 클릭해도 center만 옮겨가고 level은 계속 9). 장소 하나를 포커스할 때마다
+  // 명시적으로 setLevel(4)를 호출해 항상 확실히 줌인되도록 통일 — 사용자가
+  // 장소를 선택하는 이산적 이벤트에서만 1번 실행되는 가벼운 호출.
+  // 실측 중 발견: setLevel()만 부르면 <KakaoMap center> prop 변경이 트리거한
+  // isPanto 애니메이션이 중간에 끊겨서 줌만 4로 바뀌고 카메라는 그 자리에
+  // 멈춰버림(bounds-fit 위치에 남아있음) — panTo도 같이 명시적으로 호출해
+  // 두 상태를 한 번에 확정한다(handleRequestLocation과 동일한 방어 패턴).
+  useEffect(() => {
+    if (!map || !focusCenter || typeof kakao === 'undefined' || !kakao.maps) return
+    map.setLevel(4)
+    map.panTo(new kakao.maps.LatLng(focusCenter.lat, focusCenter.lng))
+  }, [focusCenter, map])
 
   // 버그 수정 — 지도 컨테이너 크기가 CSS로 바뀔 때(모바일 패널 "전체화면"
   // 전환뿐 아니라, 데스크탑 사이드바 접기/펴기처럼 이 컴포넌트가 전혀 모르는

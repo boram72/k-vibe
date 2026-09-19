@@ -106,9 +106,22 @@ export default function MapPage() {
   // 유지되고 "다른 장소를 새로 선택할 때만" 옮겨가야 해서 별도 state로 분리.
   const [highlightedPlaceId, setHighlightedPlaceId] = useState<string | null>(() => selectedPlace?.id ?? null)
 
+  // 10번(plan.md) — 같은 장소를 다시 클릭해도 highlightedPlaceId 값 자체는
+  // 안 바뀌어서(React가 동일 값 setState를 무시) map-canvas.tsx가 "선택이
+  // 안 바뀌었다"고 보고 다시 줌인을 안 시켜주는 문제가 있었음(페르소나
+  // 탭에서 장소 선택→다른 탭 이동→복귀→같은 장소 재클릭 시 재현). 클릭할
+  // 때마다(같은 장소여도) 무조건 증가하는 카운터를 같이 내려서, id는 안
+  // 바뀌어도 "방금 또 선택했다"는 신호를 map-canvas.tsx가 알 수 있게 한다.
+  // 이 값은 이 브라우저 탭의 React 메모리에만 존재 — 서버 전송/DB 저장
+  // 없고, 페이지 이탈 시 자동 소멸(재마운트 시 0부터 재시작이라 별도 리셋
+  // 로직 불필요), 매번 숫자 하나만 교체되므로 클릭 횟수·사용자 수와 무관하게
+  // 항상 O(1).
+  const [selectionSeq, setSelectionSeq] = useState(0)
+
   function handleSelectPlace(place: Place) {
     setSelectedPlace(place)
     setHighlightedPlaceId(place.id)
+    setSelectionSeq((n) => n + 1)
     // 버그 수정 — 지역검색/관광지추천으로 얻은 kakaoSearchResults는 highlightIds로
     // "선택 여부와 무관하게" 항상 빨간 핀 유지되는데(map-canvas.tsx 참고),
     // 그 결과 하나를 본 다음 완전히 무관한 다른 장소(예: 주변 스팟 목록)를
@@ -458,6 +471,11 @@ export default function MapPage() {
     return personaPlaces.filter((p) => starFilter.length === 0 || p.tags?.some((tag) => starFilter.includes(tag)))
   }, [filterMode, starFilter, personaPlaces])
   const fitPlaces = focusPlaces.length ? focusPlaces : personaFocusPlaces
+  // 5-3/7번(plan.md) — fitPlaces가 페르소나별 bounds-fit용일 때만 true.
+  // SNS 분석기(focusPlaces) 핸드오프일 땐 false로 내려가 기존처럼 GPS 안
+  // 섞고 분석된 스팟만 기준으로 동작(위 map-canvas.tsx의 includeCameraInFit
+  // 주석 참고).
+  const fitPlacesIncludeCamera = !focusPlaces.length && personaFocusPlaces.length > 0
 
   const filtered = useMemo(() => {
     // 지역검색 직후 검색창에 남겨둔 텍스트 그대로인 동안은 방금 받아온 결과를
@@ -547,13 +565,25 @@ export default function MapPage() {
           center={effectiveCoords}
           places={mapPlaces}
           fitPlaces={fitPlaces}
+          includeCameraInFit={fitPlacesIncludeCamera}
           selectedPlaceId={highlightedPlaceId ?? undefined}
+          selectionSeq={selectionSeq}
           onSelectPlace={handleSelectPlace}
           onRequestLocation={handleRequestLocation}
           onForceCurrentLocation={handleForceCurrentLocation}
           locationLabel={effectiveLocationLabel}
           isAnalysisResult={isShowingAnalysisResult}
           onSearchArea={(coord) => {
+            // 9번(plan.md) — 페르소나별 탭에서 지도를 드래그해 "이 지역에서
+            // 검색"을 확정하면, center가 바뀌며 focusCenter가 리셋되고
+            // boundsKey(페르소나 카탈로그, 안 바뀜)로 인해 bounds-fit이
+            // 재실행되어 다시 전체 페르소나 목록으로 줌아웃돼버림 — 정작
+            // 사용자가 원한 "이 지역 주변 검색 결과"는 카탈로그에 파묻혀 안
+            // 보였음(대화 중 발견). 카테고리별로 전환하면 그 지역의 실제
+            // 위치 기반 검색 결과가 정상적으로 보임 — starFilter(예: IU
+            // 선택 상태)는 안 지워지고 기억되어, 나중에 페르소나별로 다시
+            // 돌아가면 그대로 복원됨(기존 탭 전환 시 선택값 유지 원칙과 동일).
+            setFilterMode('category')
             setSearchCenter(coord)
             setQueryCenter(coord)
           }}

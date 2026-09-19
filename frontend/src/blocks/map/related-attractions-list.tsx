@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRelatedAttractions } from '@/api/attractions'
 import { LoadingSkeleton } from '@/blocks/common/loading-skeleton'
@@ -16,7 +15,6 @@ interface RelatedAttractionsListProps {
 // this block only needs the current center coordinate, so it queries independently
 // instead of MapPage owning yet another piece of fetched state.
 export function RelatedAttractionsList({ lat, lng, onSelect }: RelatedAttractionsListProps) {
-  const { t } = useTranslation()
   const { data: attractions = [], isLoading } = useQuery({
     queryKey: ['related-attractions', lat, lng],
     queryFn: () => fetchRelatedAttractions({ lat, lng }),
@@ -34,8 +32,7 @@ export function RelatedAttractionsList({ lat, lng, onSelect }: RelatedAttraction
 
   if (isLoading) {
     return (
-      <div className="space-y-3 border-t border-border px-4 pt-4">
-        <p className="text-sm font-bold text-foreground">{t('map.related_attractions_title')}</p>
+      <div className="space-y-3 px-4 pt-4">
         <LoadingSkeleton variant="list" count={3} />
       </div>
     )
@@ -46,8 +43,7 @@ export function RelatedAttractionsList({ lat, lng, onSelect }: RelatedAttraction
   }
 
   return (
-    <div className="space-y-4 border-t border-border px-4 pt-4">
-      <p className="text-sm font-bold text-foreground">{t('map.related_attractions_title')}</p>
+    <div className="space-y-4 px-4 pt-4">
       {groups.map(([attractionName, items]) => (
         <div key={attractionName} className="space-y-1.5">
           <p className="text-xs font-semibold text-muted-foreground">{attractionName}</p>

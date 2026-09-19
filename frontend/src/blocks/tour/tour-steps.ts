@@ -45,6 +45,8 @@ export const HOME_TOUR_STEPS: TourStep[] = [
 
 export const MAP_TOUR_STEPS: TourStep[] = [
   { target: 'map-search', titleKey: 'tour.map_search_title', bodyKey: 'tour.map_search_body' },
+  { target: 'map-saved', titleKey: 'tour.map_saved_title', bodyKey: 'tour.map_saved_body' },
+  { target: 'map-attractions', titleKey: 'tour.map_attractions_title', bodyKey: 'tour.map_attractions_body' },
   { target: 'map-filter', titleKey: 'tour.map_filter_title', bodyKey: 'tour.map_filter_body' },
   { target: 'map-locate', titleKey: 'tour.map_locate_title', bodyKey: 'tour.map_locate_body' },
   { target: 'map-list', titleKey: 'tour.map_list_title', bodyKey: 'tour.map_list_body' },

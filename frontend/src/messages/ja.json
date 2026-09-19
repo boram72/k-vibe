@@ -146,6 +146,7 @@
     "error_reason_korea_only": "現在、SNS分析機能は韓国国内の場所のみ対応しています。",
     "error_toast_action": "もう一度分析する",
     "retry": "再試行",
+    "reset": "リセット",
     "found_spots": "候補スポットを{{count}}件見つけました",
     "empty_title": "明確なスポットが見つかりませんでした",
     "empty_body": "旅行VlogやMVロケ地動画で再試行してください。",

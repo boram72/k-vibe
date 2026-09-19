@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Compass, MapPin, PlayCircle, Plus } from 'lucide-react'
+import { Compass, MapPin, PlayCircle, Plus, RotateCcw } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
 import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
 import { PopularVideos } from '@/blocks/analyze/popular-videos'
@@ -28,7 +28,7 @@ export default function AnalyzePage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const startTour = useTourStore((s) => s.start)
-  const { url, result, status, progress, errorKind, setUrl, clearResult, startAnalysis, startCannedAnalysis } =
+  const { url, result, status, progress, errorKind, setUrl, clearResult, reset, startAnalysis, startCannedAnalysis } =
     useAnalyzeStore()
   const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
   const [tutorialOpen, setTutorialOpen] = useState(false)
@@ -129,12 +129,37 @@ export default function AnalyzePage() {
 
   const showActionBar = !isAnalyzing && displayResult && displayResult.places.length > 0
 
+  // 되돌릴 게 있을 때만(URL이 채워졌거나 분석이 시작된 뒤) 초기화 버튼을 보인다
+  // — 처음 화면에서는 눌러도 아무 일도 안 일어나는 버튼이라 숨긴다.
+  const canReset = url !== '' || status !== 'idle'
+
+  function handleReset() {
+    setChoicePlace(null)
+    reset()
+  }
+
   return (
     <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-2xl">
       <div className="flex-1 space-y-4 py-4">
-        <div>
-          <h2 className="flex items-center gap-2 text-base font-bold text-foreground">{t('analyze.title')}</h2>
-          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.subtitle')}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="flex items-center gap-2 text-base font-bold text-foreground">{t('analyze.title')}</h2>
+            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t('analyze.subtitle')}</p>
+          </div>
+          {/* 페르소나 결과 화면(blocks/persona/route-result.tsx)의 "다른 루트
+              만들기" 버튼과 같은 역할(처음으로 되돌리기)이라 같은 버튼 모양/
+              같은 자리(제목 오른쪽)로 맞췄다(사용자 요청). */}
+          {canReset && (
+            <button
+              type="button"
+              onClick={handleReset}
+              aria-label={t('analyze.reset')}
+              title={t('analyze.reset')}
+              className="shrink-0 rounded-xl bg-muted p-2 text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <ErrorBoundary>

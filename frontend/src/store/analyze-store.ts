@@ -20,6 +20,11 @@ interface AnalyzeState {
   completionSeen: boolean;
   setUrl: (url: string) => void;
   clearResult: () => void;
+  // URL까지 전부 지우고 처음(idle) 화면으로 되돌리는 "초기화" 버튼용 — 분석
+  // 상태가 이 store에 있어서 라우트를 이동해도 유지되기 때문에(아래 startAnalysis
+  // 주석), 뒤로가기/메뉴 재탭만으로는 결과 화면에서 못 빠져나와 추가했다(사용자
+  // 요청). 분석이 도는 중이었다면 그 결과는 버린다(currentRunId 참고).
+  reset: () => void;
   // 2026-09: 분석을 컴포넌트에 묶인 react-query useMutation 대신 이 store의
   // 액션으로 옮겼다 — 여기서 시작한 fetch Promise는 AnalyzePage가 언마운트
   // (다른 탭/홈으로 이동)돼도 계속 진행되고, 끝나면 store 상태만 갱신하므로
@@ -62,6 +67,12 @@ const PROGRESS_HALF_LIFE_MS = 25000;
 const CANNED_DELAY_MS = 8000;
 const CANNED_PROGRESS_TICK_MS = 100;
 
+// startAnalysis/startCannedAnalysis가 시작될 때마다, 그리고 reset()에서도
+// 올린다 — 각 실행이 끝나는 시점에 자기 번호가 아직 현재 번호인지 확인해서,
+// 초기화된 뒤에 뒤늦게 도착한 옛 분석 결과가 방금 비운 화면을 다시 채우지
+// 못하게(그리고 그 사이 새로 시작한 분석의 타이머를 끄지 못하게) 한다.
+let currentRunId = 0;
+
 function isTimeoutError(err: unknown): boolean {
   return axios.isAxiosError(err) && err.code === "ECONNABORTED";
 }
@@ -76,10 +87,23 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
   setUrl: (url) => set({ url }),
   clearResult: () =>
     set({ result: null, status: "idle", progress: 0, errorKind: null }),
+  reset: () => {
+    currentRunId++;
+    stopProgressTimer();
+    set({
+      url: "",
+      result: null,
+      status: "idle",
+      progress: 0,
+      errorKind: null,
+      completionSeen: true,
+    });
+  },
 
   startAnalysis: (targetUrl, locale) => {
     if (get().status === "running") return; // 이미 하나 도는 중이면 중복 실행 방지
     stopProgressTimer();
+    const runId = ++currentRunId;
 
     const startedAt = Date.now();
     set({ status: "running", progress: 2, errorKind: null, completionSeen: true });
@@ -92,10 +116,12 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
 
     fetchAnalysis(targetUrl, locale)
       .then((data) => {
+        if (runId !== currentRunId) return; // 그 사이 초기화됨 — 옛 결과는 버린다
         stopProgressTimer();
         set({ status: "success", progress: 100, result: data, completionSeen: false });
       })
       .catch((err) => {
+        if (runId !== currentRunId) return;
         stopProgressTimer();
         set({
           status: "error",
@@ -111,6 +137,7 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
     const canned = getCannedAnalysis(videoId, locale);
     if (!canned) return;
     stopProgressTimer();
+    const runId = ++currentRunId;
 
     const startedAt = Date.now();
     set({ status: "running", progress: 2, errorKind: null, completionSeen: true });
@@ -122,6 +149,7 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
     }, CANNED_PROGRESS_TICK_MS);
 
     setTimeout(() => {
+      if (runId !== currentRunId) return;
       stopProgressTimer();
       set({
         status: "success",

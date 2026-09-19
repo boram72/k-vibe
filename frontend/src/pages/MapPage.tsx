@@ -477,6 +477,16 @@ export default function MapPage() {
   // 주석 참고).
   const fitPlacesIncludeCamera = !focusPlaces.length && personaFocusPlaces.length > 0
 
+  // 8번(plan.md) — `tags` 필드가 두 가지 다른 용도로 같이 쓰여서(일반
+  // 카테고리 장소의 설명용 태그 예: 경복궁의 ['한복','궁궐','역사'] vs
+  // 페르소나 장소의 소속 식별용 태그 예: ['IU']), 아래 matchStar의 "전체"
+  // 분기가 "태그가 하나라도 있으면 페르소나 소속"이라고 잘못 판단해서 설명용
+  // 태그만 가진 일반 장소까지 페르소나별 전체 목록에 계속 남아있던 문제.
+  // 실제 페르소나 라벨 집합을 만들어 "그 태그가 진짜 스타 이름인지"로
+  // 판단 기준을 좁힌다. personaPlaces가 이미 각 항목의 소속 라벨만 tags로
+  // 갖고 있어서(fetchPersonaPlaces 참고) 추가 API 호출 없이 계산 가능.
+  const personaLabels = useMemo(() => new Set(personaPlaces.flatMap((p) => p.tags ?? [])), [personaPlaces])
+
   const filtered = useMemo(() => {
     // 지역검색 직후 검색창에 남겨둔 텍스트 그대로인 동안은 방금 받아온 결과를
     // 다시 텍스트로 거르지 않는다(위 areaSearchMutation.onSuccess 참고).
@@ -496,7 +506,7 @@ export default function MapPage() {
         filterMode !== 'star' ||
         (starFilter.length > 0
           ? place.tags?.some((tag) => starFilter.includes(tag))
-          : (place.tags?.length ?? 0) > 0)
+          : place.tags?.some((tag) => personaLabels.has(tag)))
       const matchSearch =
         !q ||
         place.name.toLowerCase().includes(q) ||
@@ -504,7 +514,7 @@ export default function MapPage() {
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
       return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
+  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds, personaLabels])
 
   // 5-1/5-2(plan.md) — "주변 스팟" 목록에는 SNS 분석기 섹션이 지금 활성화된
   // 동안만 그 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로

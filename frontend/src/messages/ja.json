@@ -95,7 +95,9 @@
     "sns_analyzer_title": "SNS分析ツール",
     "persona_visited_places_title": "ペルソナの訪問スポット",
     "close_analyzer_results": "SNS分析結果を閉じる",
-    "from_my_route_tag": "マイルート"
+    "from_my_route_tag": "マイルート",
+    "close_saved_list": "お気に入りリストを閉じる",
+    "close_attractions": "おすすめ観光地を閉じる"
   },
   "placeDetail": {
     "add_to_route": "ルートに追加",
@@ -208,7 +210,7 @@
     "subtitle": "Kコンテンツのペルソナを選ぶだけで、1日ルートをすぐに作れます。",
     "k_content_eyebrow": "Kコンテンツ1日ルート",
     "k_content_title": "Kコンテンツのペルソナを選択",
-    "k_content_subtitle": "好きなアーティストやテーマを選ぶと、すぐに1日ルートを作成します。",
+    "k_content_subtitle": "好きなアーティストを選んで、自分だけのルートを作ってみましょう",
     "view_more": "もっと見る",
     "stops_suffix": "件",
     "start_time": "開始時間",

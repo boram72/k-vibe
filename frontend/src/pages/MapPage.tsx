@@ -320,10 +320,22 @@ export default function MapPage() {
         setQueryCenter(result.center)
         setKakaoSearchResults([])
       } else if (result.relevance.length > 0) {
-        const target = { lat: result.relevance[0].lat, lng: result.relevance[0].lng }
+        const primary = result.relevance[0]
+        const target = { lat: primary.lat, lng: primary.lng }
         setSearchCenter(target)
         setQueryCenter(target)
         setKakaoSearchResults(result.relevance)
+        // 12번(plan.md) — 여기까지는 지도 핀 강조(빨간 핀)만 되고 아무것도
+        // "선택"되지 않아서 상세시트가 안 열렸음(대화 중 발견). 목록 클릭은
+        // 이미 사용자가 특정 장소를 고른 행위라 대표 결과(정확도 1순위)를
+        // 선택 상태로 만들어 상세시트가 자동으로 열리게 한다 — 나머지 매치는
+        // 기존처럼 빨간 핀 강조만 유지. handleSelectPlace를 그대로 쓰지 않는
+        // 이유: 그 함수 내부의 "이전 검색결과 그룹 정리" 로직이 클로저로 옛
+        // kakaoSearchResults를 참조해서, 방금 위에서 새로 채운 값을 같은
+        // 실행 안에서 곧바로 지워버릴 수 있음 — 여기선 선택 상태만 직접 세팅.
+        setSelectedPlace(primary)
+        setHighlightedPlaceId(primary.id)
+        setSelectionSeq((n) => n + 1)
       }
     },
   })
@@ -477,6 +489,16 @@ export default function MapPage() {
   // 주석 참고).
   const fitPlacesIncludeCamera = !focusPlaces.length && personaFocusPlaces.length > 0
 
+  // 8번(plan.md) — `tags` 필드가 두 가지 다른 용도로 같이 쓰여서(일반
+  // 카테고리 장소의 설명용 태그 예: 경복궁의 ['한복','궁궐','역사'] vs
+  // 페르소나 장소의 소속 식별용 태그 예: ['IU']), 아래 matchStar의 "전체"
+  // 분기가 "태그가 하나라도 있으면 페르소나 소속"이라고 잘못 판단해서 설명용
+  // 태그만 가진 일반 장소까지 페르소나별 전체 목록에 계속 남아있던 문제.
+  // 실제 페르소나 라벨 집합을 만들어 "그 태그가 진짜 스타 이름인지"로
+  // 판단 기준을 좁힌다. personaPlaces가 이미 각 항목의 소속 라벨만 tags로
+  // 갖고 있어서(fetchPersonaPlaces 참고) 추가 API 호출 없이 계산 가능.
+  const personaLabels = useMemo(() => new Set(personaPlaces.flatMap((p) => p.tags ?? [])), [personaPlaces])
+
   const filtered = useMemo(() => {
     // 지역검색 직후 검색창에 남겨둔 텍스트 그대로인 동안은 방금 받아온 결과를
     // 다시 텍스트로 거르지 않는다(위 areaSearchMutation.onSuccess 참고).
@@ -496,7 +518,7 @@ export default function MapPage() {
         filterMode !== 'star' ||
         (starFilter.length > 0
           ? place.tags?.some((tag) => starFilter.includes(tag))
-          : (place.tags?.length ?? 0) > 0)
+          : place.tags?.some((tag) => personaLabels.has(tag)))
       const matchSearch =
         !q ||
         place.name.toLowerCase().includes(q) ||
@@ -504,7 +526,7 @@ export default function MapPage() {
         place.tags?.some((tag) => tag.toLowerCase().includes(q))
       return matchCategory && matchStar && matchSearch
     })
-  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
+  }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds, personaLabels])
 
   // 5-1/5-2(plan.md) — "주변 스팟" 목록에는 SNS 분석기 섹션이 지금 활성화된
   // 동안만 그 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로
@@ -530,9 +552,13 @@ export default function MapPage() {
     if (activeSection === 'analyzer') return focusPlaces
     if (activeSection === 'searchResults') return areaSearchListPlaces
     if (activeSection === 'saved') return savedPlaces
-    if (activeSection === 'attractions') return []
+    // 12번(plan.md) — 관광지 추천 항목 자체는 좌표가 없어 핀으로 보여줄 게
+    // 없지만("빈 배열"이 기본), 항목을 클릭해서 카카오 검색으로 실제 좌표를
+    // 찾은 뒤(kakaoSearchResults)는 그 결과를 핀으로 보여줘야 함 — 안 그러면
+    // 상세시트는 열려도 지도에 핀이 하나도 안 뜨는 어긋남이 생김(대화 중 발견).
+    if (activeSection === 'attractions') return kakaoSearchResults
     return nearbySpotListPlaces
-  }, [activeSection, focusPlaces, areaSearchListPlaces, savedPlaces, nearbySpotListPlaces])
+  }, [activeSection, focusPlaces, areaSearchListPlaces, savedPlaces, kakaoSearchResults, nearbySpotListPlaces])
 
   // SNS 분석기 섹션이 활성화된 동안엔 그 스팟 전부가 "이 지역에서 검색"
   // 결과와 동일하게 빨간 핀으로 강조된다(대화 중 요청) — 닫으면(activeSection

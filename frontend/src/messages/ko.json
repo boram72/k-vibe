@@ -95,7 +95,9 @@
     "sns_analyzer_title": "SNS 분석기",
     "persona_visited_places_title": "페르소나 방문 장소",
     "close_analyzer_results": "SNS 분석 결과 닫기",
-    "from_my_route_tag": "내 루트"
+    "from_my_route_tag": "내 루트",
+    "close_saved_list": "찜 목록 닫기",
+    "close_attractions": "관광지 추천 닫기"
   },
   "placeDetail": {
     "add_to_route": "루트에 추가",
@@ -208,7 +210,7 @@
     "subtitle": "좋아하는 K-콘텐츠 페르소나를 고르면 바로 하루 루트가 만들어져요.",
     "k_content_eyebrow": "K-콘텐츠 하루 루트",
     "k_content_title": "K-콘텐츠 페르소나 선택",
-    "k_content_subtitle": "좋아하는 아티스트나 테마를 고르면 바로 하루 루트가 만들어져요.",
+    "k_content_subtitle": "좋아하는 아티스트를 골라 나만의 루트를 만들어보세요",
     "view_more": "더보기",
     "stops_suffix": "곳",
     "start_time": "시작 시간",

@@ -95,7 +95,9 @@
     "sns_analyzer_title": "SNS分析器",
     "persona_visited_places_title": "角色到访地点",
     "close_analyzer_results": "关闭SNS分析结果",
-    "from_my_route_tag": "我的路线"
+    "from_my_route_tag": "我的路线",
+    "close_saved_list": "关闭收藏列表",
+    "close_attractions": "关闭景点推荐"
   },
   "placeDetail": {
     "add_to_route": "添加到路线",
@@ -208,7 +210,7 @@
     "subtitle": "选择一个K-content角色，就能立即生成一日路线。",
     "k_content_eyebrow": "K-content一日路线",
     "k_content_title": "选择K-content角色",
-    "k_content_subtitle": "选择喜欢的艺人或主题角色，即可立即生成一日路线。",
+    "k_content_subtitle": "选择喜欢的艺人，打造属于你自己的专属路线",
     "view_more": "查看更多",
     "stops_suffix": "处",
     "start_time": "开始时间",

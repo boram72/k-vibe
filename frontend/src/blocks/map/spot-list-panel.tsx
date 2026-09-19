@@ -346,10 +346,16 @@ export function SpotListPanel({
     </div>
   )
 
+  // 11번(plan.md, 대화 중 요청) — 찜/검색결과/이 지역 관광지 추천/SNS분석기가
+  // 활성화된 동안(activeSection !== null)엔 카테고리별/페르소나별 필터를
+  // 눌러도 그 섹션 자체는 자기만의 고정 데이터를 보여줄 뿐이라 필터에
+  // 반응하지 않음("어차피 필터 안 먹음") — 그동안엔 필터 탭 자체를 숨긴다.
+  // categories/starFilter 값 자체는 안 건드리므로 기본 화면(activeSection
+  // null)으로 돌아오면 그대로 복원된다.
   const searchAndFilter = (
     <div className="space-y-2 pb-2">
       {searchRow}
-      {filterTabs}
+      {activeSection === null && filterTabs}
     </div>
   )
 
@@ -434,12 +440,26 @@ export function SpotListPanel({
     <div className="min-h-0 flex-1 overflow-y-auto pb-4">{analyzerPlaces.map(renderPlaceRow)}</div>
   )
 
+  // 11번(plan.md, 대화 중 요청) — 찜 토글 버튼을 다시 눌러야 닫힌다는 걸
+  // 모를 수 있으니(대비 차원) 검색결과/SNS분석기와 동일하게 명시적 닫기(X)
+  // 버튼도 추가 — onToggleSavedList를 그대로 재사용(이미 켜진 상태에서
+  // 다시 부르면 activeSection이 null로 꺼지는 토글 로직 그대로 재사용).
   const savedTitle = (
     <div className="flex items-center justify-between px-4 pb-2 pt-1">
       <p className="text-sm font-bold text-foreground">{t('map.saved_list_title')}</p>
-      <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-        {savedPlaces.length}
-      </span>
+      <div className="flex items-center gap-1.5">
+        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+          {savedPlaces.length}
+        </span>
+        <button
+          type="button"
+          onClick={onToggleSavedList}
+          aria-label={t('map.close_saved_list')}
+          className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   )
   const savedList =
@@ -449,10 +469,26 @@ export function SpotListPanel({
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">{savedPlaces.map(renderPlaceRow)}</div>
     )
 
-  // RelatedAttractionsList가 타이틀을 자체적으로 렌더링하는 컴포넌트라(내부
-  // 구조를 안 건드리고 그대로 재사용) 다른 섹션들처럼 타이틀을 밖으로 못
-  // 뺌 — 이 섹션만 activeTitle 없이 activeList 하나로 처리(기존과 동일한
-  // "타이틀도 같이 스크롤" 동작 유지, 이번 변경 범위 밖).
+  // 11번(plan.md, 대화 중 요청) — 검색결과/찜과 동일하게 타이틀을 스크롤
+  // 밖으로 고정 + 닫기(X) 버튼 추가. RelatedAttractionsList 내부의 타이틀
+  // 렌더링은 제거하고(그 컴포넌트는 이제 목록 내용물만 반환) 여기서 타이틀을
+  // 그린다. 개수 뱃지는 일부러 안 넣음 — 그 데이터(groups.length)를 밖에서도
+  // 쓰려면 RelatedAttractionsList의 useQuery 자체를 페이지 레벨로 끌어올려야
+  // 해서 이번 요청 범위(닫기 버튼+타이틀 고정)를 넘어서는 작업이라 제외
+  // (대화로 확정).
+  const attractionsTitle = (
+    <div className="flex items-center justify-between px-4 pb-2 pt-1">
+      <p className="text-sm font-bold text-foreground">{t('map.related_attractions_title')}</p>
+      <button
+        type="button"
+        onClick={onToggleAttractions}
+        aria-label={t('map.close_attractions')}
+        className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
   const attractionsList = (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <RelatedAttractionsList lat={center.lat} lng={center.lng} onSelect={onSelectAttraction} />
@@ -480,7 +516,7 @@ export function SpotListPanel({
     activeTitle = savedTitle
     activeList = savedList
   } else if (activeSection === 'attractions') {
-    activeTitle = null
+    activeTitle = attractionsTitle
     activeList = attractionsList
   }
 
@@ -540,7 +576,7 @@ export function SpotListPanel({
                 전부 숨김(대화로 확정) — 기존 "접힘"은 필터까지 같이 보였음. */}
             {mobilePanelState !== "minimized" && (
               <>
-                {filterTabs}
+                {activeSection === null && filterTabs}
                 {activeTitle}
               </>
             )}

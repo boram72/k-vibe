@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -6,15 +6,14 @@ import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
 import { RouteResult } from '@/blocks/persona/route-result'
 import { Button } from '@/components/ui/button'
-import { ZoomableImage } from '@/blocks/common/zoomable-image'
-import { MarqueeText } from '@/blocks/common/marquee-text'
+import { PersonaCard } from '@/blocks/persona/persona-card'
+import { usePersonaCardImages } from '@/lib/use-persona-card-images'
 import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona } from '@/api/personas'
 import { type RoutePlan } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
-import { useTourStore, canAutoStartTour } from '@/store/tour-store'
+import { canAutoStartTour, useTourStore } from '@/store/tour-store'
 import { PERSONA_TOUR_KEY } from '@/blocks/tour/tour-steps'
-import { cn } from '@/lib/utils'
 import type { Locale } from '@/i18n'
 
 const START_TIME = '10:00'
@@ -26,34 +25,6 @@ function buildRouteTitle(persona: KContentPersona, locale: string): string {
   return `${persona.label} One-Day Route`
 }
 
-// 2026-09 태스크보드 2번: 홈(persona-picker.tsx)의 PersonaCardImage와 동일한
-// 정사각 카드 사진 룩으로 통일 — 카드 클릭 시 선택은 그대로 동작하되, 사진
-// 자체는 클릭하면(ZoomableImage) 확대 팝업이 뜨도록 기존 PersonaAvatar와
-// 같은 인터랙션 유지.
-function PersonaCardImage({ persona, disableZoom }: { persona: KContentPersona; disableZoom?: boolean }) {
-  const [imageFailed, setImageFailed] = useState(false)
-
-  if (persona.profileImg && !imageFailed) {
-    return (
-      <ZoomableImage
-        fill
-        src={persona.profileImg}
-        alt={`${persona.label} profile`}
-        referrerPolicy="no-referrer"
-        onError={() => setImageFailed(true)}
-        className="h-full w-full object-cover"
-        disableZoom={disableZoom}
-      />
-    )
-  }
-
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-primary/15 text-2xl font-bold text-primary">
-      {persona.badge}
-    </div>
-  )
-}
-
 export default function PersonaPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -61,16 +32,9 @@ export default function PersonaPage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const startTour = useTourStore((s) => s.start)
-  const activeTourKey = useTourStore((s) => s.activeTourKey)
-  const tourStepIndex = useTourStore((s) => s.stepIndex)
-  // 페르소나 투어 1단계(카드 하이라이트, PERSONA_TOUR_STEPS[0])가 첫 번째
-  // 카드를 가리키는 동안만 그 카드 사진의 확대 팝업을 끈다 — 사진(카드에서
-  // 가장 크고 누르기 쉬운 영역)을 눌렀을 때 확대 팝업이 아니라 실제
-  // "선택"이 일어나야 한다는 사용자 피드백 대응. 투어가 끝나면 평소처럼
-  // 사진을 눌러 확대해볼 수 있다.
-  const firstCardZoomDisabled = activeTourKey === PERSONA_TOUR_KEY && tourStepIndex === 0
 
   const locale = i18n.language as Locale
+  const imagesByLabel = usePersonaCardImages(locale)
 
   // 2026-09 QA 5번 — "뒤로가기 시 내 루트로 잘못 이동"의 실제 원인은 목적지가
   // 아니라 이 화면의 step1(카드 선택)→step2(생성 결과) 전환이 실제 브라우저
@@ -222,38 +186,18 @@ export default function PersonaPage() {
 
             {!personasQuery.isPending &&
               (personasQuery.data ?? []).map((persona, index) => (
-                <button
+                <PersonaCard
                   key={persona.id}
-                  type="button"
+                  persona={persona}
+                  images={imagesByLabel.get(persona.label) ?? []}
+                  onSelect={selectPersona}
                   // 투어 1단계는 카드 전체가 아니라 첫 번째 카드만 하이라이트한다
                   // — 그리드 전체를 누를 수 있게 두면 어디를 눌러야 할지 애매해서
                   // 안 눌러보고 넘어간다는 피드백(사용자 요청). 이름 대신
                   // "첫 번째로 렌더링되는 카드"로 타겟팅해서 정렬 순서가 바뀌어도
                   // 안전하다.
-                  data-tour={index === 0 ? 'persona-grid' : undefined}
-                  onClick={() => selectPersona(persona)}
-                  className={cn(
-                    "overflow-hidden rounded-xl border text-left transition-all md:rounded-2xl",
-                    "border-border bg-background hover:border-primary/60 hover:bg-primary/10",
-                  )}
-                >
-                  <div className="aspect-square w-full bg-muted">
-                    <PersonaCardImage persona={persona} disableZoom={index === 0 && firstCardZoomDisabled} />
-                  </div>
-                  <div className="space-y-0.5 p-2 md:space-y-1 md:p-3">
-                    <p className="truncate text-xs font-semibold text-foreground md:text-sm">
-                      {persona.label}
-                    </p>
-                    <span className="inline-block rounded-full bg-muted px-1.5 py-0.5 text-[9px] text-muted-foreground md:px-2 md:text-[10px]">
-                      {persona.routeCnt}
-                      {t("persona.stops_suffix")}
-                    </span>
-                    <MarqueeText
-                      text={persona.description}
-                      className="text-[10px] leading-4 text-muted-foreground md:text-xs md:leading-5"
-                    />
-                  </div>
-                </button>
+                  dataTour={index === 0 ? 'persona-grid' : undefined}
+                />
               ))}
           </div>
         </div>

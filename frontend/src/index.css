@@ -150,21 +150,6 @@ body {
   animation: kv-slide-in-right 400ms ease-out;
 }
 
-/* 2026-09 태스크보드 2번 — MarqueeText(blocks/common/marquee-text.tsx) 전용.
-   텍스트를 두 벌 이어붙인 뒤 -50%까지 옮기면 첫 벌이 화면 밖으로 나가는
-   순간 두 번째 벌이 정확히 그 자리를 이어받아 끊김 없이 반복된다. */
-@keyframes kv-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.animate-marquee {
-  animation: kv-marquee 15s linear infinite;
-}
-
 /* Softens the hard right-edge cutoff on horizontally-scrollable rows whose
    content actually overflows (e.g. home feed's place cards) — fades the
    last partially-visible item instead of cropping it abruptly. */

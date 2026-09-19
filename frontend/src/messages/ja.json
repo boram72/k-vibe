@@ -93,7 +93,9 @@
     "area_search_distance": "距離順",
     "close_search_results": "検索結果を閉じる",
     "sns_analyzer_title": "SNS分析ツール",
-    "persona_visited_places_title": "ペルソナの訪問スポット"
+    "persona_visited_places_title": "ペルソナの訪問スポット",
+    "close_analyzer_results": "SNS分析結果を閉じる",
+    "from_my_route_tag": "マイルート"
   },
   "placeDetail": {
     "add_to_route": "ルートに追加",

@@ -35,6 +35,11 @@ export interface MapFocusState {
   returnToRoute?: boolean
 }
 
+// 5-2(plan.md) — 검색결과/찜/연관관광지/SNS분석기/주변 스팟(또는 페르소나
+// 방문 장소) 중 "지금 화면에 보여줄 딱 하나"를 가리키는 값. SpotListPanel도
+// 이 타입을 그대로 써야 해서 모듈 스코프로 export.
+export type ActiveSection = 'saved' | 'attractions' | 'searchResults' | 'analyzer' | null
+
 function hasValidCoordinates(place: Place): boolean {
   return Number.isFinite(place.lat) && Number.isFinite(place.lng)
 }
@@ -116,13 +121,38 @@ export default function MapPage() {
       setKakaoSearchResults([])
     }
   }
-  // 2026-09: 하트 버튼이 "찜한 것만 필터"에서 "찜 목록 섹션 토글"로 역할이
-  // 바뀜 — 더 이상 places를 필터링하지 않고, SpotListPanel이 이 값으로 위쪽에
-  // 찜 목록 섹션을 보여줄지만 결정한다.
-  const [showSavedList, setShowSavedList] = useState(false)
-  // 2026-09 QA 6번 — "이 지역 연관 관광지 추천"을 항상 노출하던 것을 토글로
-  // 전환(대화로 확정, 기본은 꺼짐).
-  const [showAttractions, setShowAttractions] = useState(false)
+  // 5-2(plan.md, 대화로 설계 확정) — 검색결과/찜/연관관광지/SNS분석기 섹션이
+  // 예전엔 각자 독립된 boolean이라 여러 개가 동시에 켜지면 서로 영역을
+  // 침범해서 "주변 스팟"이 화면 밖으로 밀려나는 문제가 있었음(Playwright로
+  // 재현: 3개 동시 노출 시 "Nearby Spots" 타이틀이 뷰포트 밖으로 완전히 밀림).
+  // "지금 보여줄 화면 하나"만 가리키는 단일 상태로 바꿔서 항상 최대 하나만
+  // 노출되게 한다 — null이면 기본값인 주변 스팟(또는 페르소나 방문 장소).
+  // 우선순위 원칙은 "방금 한 행동이 우선"(recency): 찜/연관관광지 토글,
+  // 상호명 검색 성공, SNS 분석기 핸드오프 각각이 이 값을 자기 걸로 덮어쓰고,
+  // 닫기(X) 버튼이나 이미 켜진 토글을 다시 누르면 null(기본)로 돌아간다.
+  // "내 루트"에서 온 핸드오프(returnToRoute, 항상 단일 장소)는 SNS 분석기와
+  // 달리 자기만의 섹션을 안 만듦 — 초기값 계산에서 제외(대화로 확정, 아래
+  // routeOriginPlaceId 참고 — 그 장소는 주변 스팟 목록에 태그만 붙여 표시).
+  const [activeSection, setActiveSection] = useState<ActiveSection>(() =>
+    focusPlaces.length && !focusState?.returnToRoute ? 'analyzer' : null,
+  )
+
+  // 찜/연관관광지 토글 버튼 — 예전엔 각자 독립된 boolean이라 둘 다 동시에 켜는
+  // 중복 클릭이 가능했음(대화 중 발견) — activeSection 하나로 흡수해서
+  // 하나를 켜면 다른 하나는 자동으로 꺼지도록(동시 노출 자체가 불가능하게) 수정.
+  // 이미 켜진 걸 다시 누르면 껐던 것과 동일하게 null(기본 목록)로 복귀.
+  function toggleSavedSection() {
+    setActiveSection((prev) => (prev === 'saved' ? null : 'saved'))
+  }
+  function toggleAttractionsSection() {
+    setActiveSection((prev) => (prev === 'attractions' ? null : 'attractions'))
+  }
+  // 검색결과(5-4)/SNS분석기 섹션 공용 닫기 핸들러 — 둘 다 "그 섹션을 지금
+  // 화면에서 보여주는 상태"만 끄고 원본 데이터(areaSearchLists/focusPlaces)는
+  // 안 건드린다. 닫으면 기본값(주변 스팟/페르소나 방문 장소)으로 복귀.
+  function closeActiveSection() {
+    setActiveSection(null)
+  }
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
   // 팀 태스크보드 — 모바일 전용 3단계 스와이프(데스크탑의 isPanelCollapsed
   // 접기/펴기와는 별개 상태). 기본(default, 지금까지의 "펼침"과 동일) 상태에서
@@ -228,15 +258,20 @@ export default function MapPage() {
       }
       if (result.type === 'address') {
         // 행정구역 매칭 — 예전처럼 그 위치로 바로 이동, 후보 목록은 없음.
+        // 보여줄 목록 섹션 자체가 없으므로 기본값(주변 스팟)으로 복귀.
         setSearchCenter(result.center)
         setQueryCenter(result.center)
         setKakaoSearchResults([])
         setAreaSearchLists(null)
+        setActiveSection(null)
       } else {
         // 랜드마크/상호명 매칭 — 자동 이동하지 않고 정확도순/거리순 목록만
         // 노출. 지도 이동·강조는 사용자가 목록에서 직접 골랐을 때만.
+        // 5-2(plan.md) — "방금 한 행동이 우선" 원칙: 검색 성공 시 검색결과
+        // 섹션으로 전환(찜/연관관광지 등 켜져 있던 다른 섹션은 자동으로 닫힘).
         setKakaoSearchResults([])
         setAreaSearchLists({ relevance: result.relevance, distance: result.distance })
+        setActiveSection('searchResults')
       }
       // 검색어를 지우지 않고 남겨서 뭘 검색했는지 보이게 함(대화 중 요청) —
       // areaSearchedQuery를 같이 기록해서, 이 텍스트가 그대로인 동안은 방금
@@ -377,13 +412,6 @@ export default function MapPage() {
   // 참고, 자기만의 독립된 섹션으로 분리됨.)
   const spotListTitle = filterMode === 'star' ? t('map.persona_visited_places_title') : t('map.nearby_spots')
 
-  // 5-4(plan.md) — 검색결과 목록을 닫는 버튼용. 검색창 텍스트/areaSearchedQuery는
-  // 그대로 둔다(뭘 검색했는지 보이게 하는 기존 동작과 무관 — 위 areaSearchMutation
-  // 주석 참고).
-  function handleCloseAreaSearchResults() {
-    setAreaSearchLists(null)
-  }
-
   // 스타별 탭일 때만 personaPlaces를 섞는다 — 위치/반경과 무관한 전국구 목록이라
   // 카테고리 탭의 "전체"(현재 위치 주변 전부)에 섞이면 먼 지역 핀까지 끼어들어
   // 그 의미가 깨진다(대화로 확정, plan.md 12번 참고).
@@ -460,14 +488,42 @@ export default function MapPage() {
     })
   }, [candidates, categories, filterMode, starFilter, search, areaSearchedQuery, kakaoSearchResultIds, areaSearchListIds])
 
-  // 5-1(plan.md, 대화 중 요청) — "주변 스팟" 목록에는 SNS 분석기에서 넘어온
-  // 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로 보여줌 —
-  // SpotListPanel의 analyzerPlaces 참고). 지도 핀은 그대로 filtered 전체를
-  // 쓰고(focusPlaces도 계속 핀으로 보임), 목록 패널에 내려주는 것만 제외.
+  // 5-1/5-2(plan.md) — "주변 스팟" 목록에는 SNS 분석기 섹션이 지금 활성화된
+  // 동안만 그 항목(focusPlaces)이 안 섞여야 함(자기만의 독립 섹션으로 따로
+  // 보여줌). SNS 분석기 섹션을 닫으면(activeSection이 'analyzer'가 아니게
+  // 되면) 그 항목들이 다시 "주변 스팟"에 합쳐져 보여야 하므로 activeSection도
+  // 같이 체크.
   const nearbySpotListPlaces = useMemo(
-    () => (focusPlaces.length ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered),
-    [filtered, focusPlaces],
+    () =>
+      activeSection === 'analyzer' ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered,
+    [filtered, focusPlaces, activeSection],
   )
+
+  // 5-2(plan.md, 대화 중 요청) — 지도에 표시되는 핀은 항상 "지금 화면에 보이는
+  // 목록"과 정확히 일치해야 한다(찜/연관관광지/SNS분석기/검색결과/주변 스팟
+  // 전부 동일 원칙) — 목록에 없는 장소는 지도에도 안 보임. SNS 분석기를
+  // 닫으면 지도 뷰(카메라)는 그대로 두고 그 장소들만 지도에서 사라지되, 그
+  // 장소가 마침 "주변 스팟"에도 포함되는 경우(반경 내 실제 장소)엔 계속
+  // 보인다 — activeSection이 바뀌면서 자연히 nearbySpotListPlaces로 전환되고,
+  // 거기 포함 여부에 따라 저절로 남거나 빠지는 방식이라 별도 처리 불필요.
+  // 연관 관광지 추천(attractions)은 항목 자체에 좌표가 없어(클릭해야 카카오
+  // 검색으로 위치를 찾음) 핀으로 보여줄 게 없음 — 빈 배열.
+  const mapPlaces = useMemo(() => {
+    if (activeSection === 'analyzer') return focusPlaces
+    if (activeSection === 'searchResults') return areaSearchListPlaces
+    if (activeSection === 'saved') return savedPlaces
+    if (activeSection === 'attractions') return []
+    return nearbySpotListPlaces
+  }, [activeSection, focusPlaces, areaSearchListPlaces, savedPlaces, nearbySpotListPlaces])
+
+  // SNS 분석기 섹션이 활성화된 동안엔 그 스팟 전부가 "이 지역에서 검색"
+  // 결과와 동일하게 빨간 핀으로 강조된다(대화 중 요청) — 닫으면(activeSection
+  // 이 바뀌면) mapPlaces 자체가 달라지므로 강조도 자연히 사라짐.
+  const mapHighlightIds = useMemo(() => {
+    if (activeSection === 'analyzer') return new Set(focusPlaces.map((p) => p.id))
+    return kakaoSearchResultIds
+  }, [activeSection, focusPlaces, kakaoSearchResultIds])
+
 
   function toggleSave(id: string) {
     const place = candidates.find((p) => p.id === id)
@@ -489,7 +545,7 @@ export default function MapPage() {
             그 위에 겹쳐서 SDK가 백그라운드에서 계속 로드되게 한다. */}
         <MapCanvas
           center={effectiveCoords}
-          places={filtered}
+          places={mapPlaces}
           fitPlaces={fitPlaces}
           selectedPlaceId={highlightedPlaceId ?? undefined}
           onSelectPlace={handleSelectPlace}
@@ -503,7 +559,7 @@ export default function MapPage() {
           }}
           onCameraCenterChange={setRealCameraCenter}
           myLocation={isPrecise ? coords : null}
-          highlightIds={kakaoSearchResultIds}
+          highlightIds={mapHighlightIds}
           compact={!isDesktop && mobilePanelState === 'full'}
         />
         {/* z-30 — 카카오 지도 SDK가 내부적으로 위치버튼/줌컨트롤/현재위치 핀에
@@ -542,14 +598,17 @@ export default function MapPage() {
           onSubmitAreaSearch={handleSearchArea}
           isSearchingArea={areaSearchMutation.isPending}
           canSearchArea={canSearchArea}
-          showSavedList={showSavedList}
-          onShowSavedListChange={setShowSavedList}
-          showAttractions={showAttractions}
-          onShowAttractionsChange={setShowAttractions}
+          activeSection={activeSection}
+          showSavedList={activeSection === 'saved'}
+          onToggleSavedList={toggleSavedSection}
+          showAttractions={activeSection === 'attractions'}
+          onToggleAttractions={toggleAttractionsSection}
           onSelectAttraction={handleSelectAttraction}
           areaSearchLists={areaSearchLists}
-          onCloseAreaSearchResults={handleCloseAreaSearchResults}
+          onCloseAreaSearchResults={closeActiveSection}
           analyzerPlaces={focusPlaces}
+          onCloseAnalyzerSection={closeActiveSection}
+          routeOriginPlaceId={routeOriginPlaceId}
           savedPlaces={savedPlaces}
           places={nearbySpotListPlaces}
           isLoading={isLoading}

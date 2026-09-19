@@ -27,6 +27,12 @@ def _normalize_db_location(row: dict, fallback_name: str) -> dict | None:
         "stayMinutes": int(source.get("stayminutes") or source.get("stayMinutes") or 60),
         "description": {"ko": description, "en": description},
         "tags": source.get("tags") or [],
+        # 실제 TourAPI place_id/address (location 테이블 원본 값). DB 경로(페르소나 스팟이
+        # persona.locationname으로 실제 location 행에 매핑된 경우)에서만 채워지고, 하드코딩
+        # 카탈로그 폴백(personaCatalogInfo.LOCATIONS)은 이 값이 없다 — routingService가 이
+        # 값의 유무로 두 경로를 구분해 id/address를 결정한다.
+        "placeId": source.get("place_id"),
+        "address": source.get("address") or "",
     }
 
 

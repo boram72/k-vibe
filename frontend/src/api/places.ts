@@ -170,9 +170,19 @@ const MOCK_PLACE_DETAIL: PlaceDetail = {
   overview: '설명 정보가 준비 중입니다.',
 }
 
-export async function fetchPlaceDetail(contentId: string): Promise<PlaceDetail> {
+// lat/lng/name은 optional — content_id가 TourAPI에 없는 synthetic id(SNS영상분석
+// 스팟, 예: "analysis-{videoId}-{장소명}")일 때 백엔드가 이름 기반 키워드
+// 검색(+좌표 근접도 필터)으로 실제 TourAPI 장소를 찾아 상세정보를 채워준다.
+// 지도/찜한장소처럼 이미 real TourAPI contentId를 가진 place는 이 값들 없이도
+// 기존과 동일하게 동작한다(백엔드가 그 경우 이 폴백 자체를 안 탐).
+export async function fetchPlaceDetail(
+  contentId: string,
+  lat?: number,
+  lng?: number,
+  name?: string,
+): Promise<PlaceDetail> {
   return withFallback(
-    async () => (await apiClient.get<PlaceDetail>(`/places/${contentId}`)).data,
+    async () => (await apiClient.get<PlaceDetail>(`/places/${contentId}`, { params: { lat, lng, name } })).data,
     () => MOCK_PLACE_DETAIL,
   )
 }

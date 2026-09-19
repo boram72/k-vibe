@@ -31,19 +31,31 @@ def find_nearby_places(
 
 
 @router.get("/{content_id}")
-def get_place_detail(content_id: str):
+def get_place_detail(content_id: str, lat: float | None = None, lng: float | None = None, name: str | None = None):
     """장소 상세시트 온디맨드 조회(전화번호/영업시간/카테고리 태그). 클릭 시에만 호출됨.
 
     TourAPI+카카오 라이브 조회는 왕복이 누적돼 느리므로(실측 2.7초, tourAPI.get_place_detail
     참고), 한 번 조회에 성공한 결과는 location 테이블에 캐싱해 재조회 시 즉시 응답한다
     (locationinfo.DETAIL_CACHE_TTL 이내). TourAPI detailCommon2가 실패하거나 영업시간을
     못 주는 경우, location 테이블에 캐싱된 name/address로 구글 Places를 폴백 조회한다.
+
+    content_id가 TourAPI가 모르는 값(SNS영상분석에서 만든 synthetic id, 예:
+    "analysis-{videoId}-{장소명}")이면 detailCommon2가 항상 실패한다. 프론트가
+    lat/lng/name을 같이 보내주면 tourAPI.search_keyword()로 실제 contentId를
+    찾아 재조회한다 - 찾은 결과는 (location.place_id를 바꾸지 않고) 원래
+    content_id 그대로 캐싱한다. 셋 중 하나라도 없으면 이 폴백은 건너뛴다.
     """
     cached = locationinfo.get_cached_place_detail(content_id)
     if cached is not None:
         return cached
 
     detail = tourAPI.get_place_detail(content_id)
+
+    if detail is None and name and lat is not None and lng is not None:
+        resolved_content_id = tourAPI.search_keyword(name, latitude=lat, longitude=lng)
+        if resolved_content_id:
+            detail = tourAPI.get_place_detail(resolved_content_id)
+
     should_cache = detail is not None  # TourAPI 완전 실패(contentId 못 찾음)는 캐싱하지 않는다.
 
     location = None

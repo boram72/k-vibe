@@ -2,9 +2,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowDown, X } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useTourStore } from '@/store/tour-store'
+import { tourPageOf, useTourStore } from '@/store/tour-store'
 import { TOUR_REGISTRY } from './tour-steps'
 
 const SPOTLIGHT_PADDING = 8
@@ -96,6 +97,21 @@ export function TourOverlay() {
     }
   }, [step])
 
+  // 튜토리얼이 켜진 채로 다른 메뉴(사이드바/하단 내비)로 넘어가면 투어를 끈다 —
+  // clickThrough 단계(페르소나 카드, 루트 드래그 손잡이)는 어둡게 깔린 배경이 클릭을
+  // 통과시켜서 내비를 누를 수 있는데, 그러면 이전 페이지 말풍선이 다른 화면 위에
+  // 그대로 남아 있었다(사용자 지적). 언어만 바꾸는 이동은 같은 페이지로 본다.
+  //
+  // 상태는 렌더 시점 값이 아니라 getState()로 지금 값을 읽는다: 새 페이지의 첫 진입
+  // 투어 자동 시작 이펙트(자식)가 이 이펙트(형제, 나중 실행)보다 먼저 돌아서 이미 새
+  // 투어(startPage=새 페이지)로 바꿔놨을 수 있는데, 렌더 시점의 옛 값으로 비교하면
+  // 방금 시작한 새 투어를 잘못 꺼버린다.
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const { activeTourKey: liveKey, startPage, close: closeTour } = useTourStore.getState()
+    if (liveKey && startPage !== null && startPage !== tourPageOf(pathname)) closeTour()
+  }, [pathname])
+
   useLayoutEffect(() => {
     if (!step) return
 
@@ -175,6 +191,19 @@ export function TourOverlay() {
 
   if (!step || !steps) return null
 
+  // "다음" — nextPressesTarget 단계는 하이라이트된 요소를 대신 눌러서(그 요소의 클릭 리스너가
+  // 다음 단계로 넘긴다) 다음 단계가 가리킬 화면까지 같이 가게 한다. 요소를 못 찾으면 그냥 넘긴다.
+  function handleNext() {
+    if (step?.nextPressesTarget) {
+      const target = findVisibleTarget(step.target)
+      if (target) {
+        target.click()
+        return
+      }
+    }
+    next(steps!.length)
+  }
+
   const box = rect
     ? {
         top: rect.top - SPOTLIGHT_PADDING,
@@ -250,7 +279,7 @@ export function TourOverlay() {
               {t('tour.skip')}
             </button>
           )}
-          <Button size="sm" className="h-10 px-5 text-sm" onClick={() => next(steps.length)}>
+          <Button size="sm" className="h-10 px-5 text-sm" onClick={handleNext}>
             {stepIndex + 1 === steps.length ? t('tour.done') : t('tour.next')}
           </Button>
         </div>

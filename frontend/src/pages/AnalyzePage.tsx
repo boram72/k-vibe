@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -27,6 +27,7 @@ export default function AnalyzePage() {
   const navigate = useNavigate()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const setTourResetAction = usePageHelpStore((s) => s.setTourResetAction)
   const startTour = useTourStore((s) => s.start)
   const { url, result, status, progress, errorKind, setUrl, clearResult, reset, startAnalysis, startCannedAnalysis } =
     useAnalyzeStore()
@@ -133,10 +134,20 @@ export default function AnalyzePage() {
   // — 처음 화면에서는 눌러도 아무 일도 안 일어나는 버튼이라 숨긴다.
   const canReset = url !== '' || status !== 'idle'
 
-  function handleReset() {
+  const handleReset = useCallback(() => {
     setChoicePlace(null)
     reset()
-  }
+  }, [reset])
+
+  // 분석 중/결과/오류 화면에서는 투어가 가리킬 요소(인기 영상 목록, "이렇게 사용해요"
+  // 버튼)가 화면에 없어서, "?"를 눌러도 어두운 배경 위에 말풍선만 떠서 오류처럼 보였다
+  // (사용자 지적). 이 상태에서는 헤더 "?"가 "초기화 후 진행할까요?"를 먼저 묻고, 확인하면
+  // 위 초기화 버튼과 같은 동작(처음 화면으로 되돌리기)을 한 뒤 투어를 시작한다.
+  const needsTourReset = status !== 'idle'
+  useEffect(() => {
+    setTourResetAction(needsTourReset ? handleReset : null)
+    return () => setTourResetAction(null)
+  }, [needsTourReset, handleReset, setTourResetAction])
 
   return (
     <div className="mx-auto flex min-h-full w-full flex-col px-4 md:max-w-2xl">

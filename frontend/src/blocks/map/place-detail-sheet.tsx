@@ -1,4 +1,4 @@
-import { Clock, Heart, MapPin, Phone, Plus } from 'lucide-react'
+import { Clock, Heart, MapPin, Phone, Route } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -144,7 +144,7 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         {saved ? t('common.unsave') : t('common.save')}
       </Button>
       <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>
-        <Plus />
+        <Route />
         {t('placeDetail.add_to_route')}
       </Button>
     </>

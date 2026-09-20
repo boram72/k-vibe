@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Compass, ImageOff, MapPin, Plus, RotateCcw, Star, X } from 'lucide-react'
+import { ImageOff, MapPin, Plus, RotateCcw, Route, Star, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -262,7 +262,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
           {t('persona.view_all_on_map')}
         </Button>
         <Button onClick={handleAddToRoute} disabled={includedStops.length === 0}>
-          <Compass className="h-3.5 w-3.5" />
+          <Route className="h-3.5 w-3.5" />
           {excludedIds.size > 0 ? t('persona.add_selected_to_route') : t('persona.add_all_to_route')}
         </Button>
       </div>

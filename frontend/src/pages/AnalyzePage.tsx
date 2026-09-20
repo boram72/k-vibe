@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Compass, MapPin, PlayCircle, Plus, RotateCcw } from 'lucide-react'
+import { MapPin, PlayCircle, Plus, RotateCcw, Route } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
 import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
 import { PopularVideos } from '@/blocks/analyze/popular-videos'
@@ -247,7 +247,7 @@ export default function AnalyzePage() {
             {t('analyze.view_all_on_map')}
           </Button>
           <Button onClick={addAllToRoute}>
-            <Compass className="h-3.5 w-3.5" />
+            <Route className="h-3.5 w-3.5" />
             {t('analyze.build_route')}
           </Button>
         </div>

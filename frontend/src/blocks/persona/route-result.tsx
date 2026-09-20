@@ -210,14 +210,19 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
                   </div>
                 </div>
                 <div className="flex shrink-0 items-start gap-1 self-start">
-                  {/* 대화 중 요청 — RouteStopCard(내 루트)의 지도 아이콘
-                      버튼과 동일한 자리/룩(MapPin, rounded-lg p-1.5). */}
+                  {/* 대화 중 요청 — 지도버튼(정사각 아이콘, p-1.5로 세로
+                      28px)과 선택버튼(px-2 py-1 + 아이콘, 모바일에선 텍스트가
+                      빠져 세로가 더 짧음)의 높이가 서로 달라서 나란히 두면
+                      상단은 맞아도 하단이 어긋나 삐뚤어 보였다 — 둘 다 h-7로
+                      높이를 고정하고 아이콘/텍스트를 세로 중앙 정렬해서
+                      맞춘다. RouteStopCard(내 루트)의 지도 아이콘 버튼과
+                      동일한 자리/룩(MapPin). */}
                   <button
                     type="button"
                     onClick={() => onViewOnMap(stop)}
                     aria-label={t('persona.view_stop_on_map', { name: stop.name })}
                     title={t('persona.view_stop_on_map', { name: stop.name })}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent"
                   >
                     <MapPin className="h-4 w-4" />
                   </button>
@@ -231,7 +236,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
                     type="button"
                     data-tour="persona-exclude"
                     className={cn(
-                      'flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors',
+                      'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[10px] font-semibold transition-colors',
                       isExcluded ? 'bg-crowd-low text-white' : 'bg-border text-foreground',
                     )}
                     onClick={() => toggleStop(stop.id)}
@@ -239,7 +244,9 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
                     title={isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
                   >
                     {isExcluded ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                    {isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
+                    {/* 대화 중 요청 — 모바일에서는 아이콘만, 텍스트는 데스크탑에서만
+                        노출(룩은 그대로, 좁은 화면에서 라벨 텍스트만 생략). */}
+                    <span className="hidden md:inline">{isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}</span>
                   </button>
                 </div>
               </div>
@@ -249,13 +256,13 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
       </div>
 
       {/* 대화 중 요청 — SNS 분석기 하단 액션바(grid-cols-2: "지도에서 모두
-          보기" outline + "루트에 모두 추가" 채움)와 동일한 배치/아이콘/문구로
-          통일. "지도에서 모두 보기"는 PersonaPage.viewAllOnMap이 이미 있는
+          보기" outline + "루트에 추가" 채움)와 동일한 배치/아이콘으로 통일.
+          "지도에서 모두 보기"는 PersonaPage.viewAllOnMap이 이미 있는
           "페르소나별 탭"(filterMode: 'star')을 이 페르소나 라벨로 열어준다
-          (새 핸드오프 없음). 제외된 스팟이 하나라도 있으면(전체가 아니라
-          일부만 담기는 상태) "루트에 모두 추가"쪽 문구만 "선택 항목만
-          루트에 추가"로 바뀐다 — excludedIds는 이미 있는 state라 새로
-          만들 것 없이 그 크기만 참조. */}
+          (새 핸드오프 없음). 문구는 제외 여부와 무관하게 항상 "루트에
+          추가" 고정 — 실제로 담기는 대상(includedStops, excludedIds로 걸러진
+          결과)은 그대로 동작하고, 버튼 문구만 상태에 따라 바뀌지 않는다
+          (대화 중 요청). */}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" onClick={onViewAllOnMap}>
           <MapPin className="h-3.5 w-3.5" />
@@ -263,7 +270,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
         </Button>
         <Button onClick={handleAddToRoute} disabled={includedStops.length === 0}>
           <Route className="h-3.5 w-3.5" />
-          {excludedIds.size > 0 ? t('persona.add_selected_to_route') : t('persona.add_all_to_route')}
+          {t('persona.add_to_route')}
         </Button>
       </div>
     </div>

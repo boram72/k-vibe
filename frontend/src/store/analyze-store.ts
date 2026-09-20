@@ -3,6 +3,14 @@ import { create } from "zustand";
 import { fetchAnalysis, type AnalysisResult } from "@/api/analyze";
 import { getCannedAnalysis } from "@/blocks/analyze/popular-videos.data";
 import type { Locale } from "@/i18n";
+import { useExclusionStore } from "@/store/exclusion-store";
+
+// 결과 화면에서 "선택해제"한 장소 목록은 exclusion-store에 이 scope로 보관한다. 분석 결과가
+// 바뀌거나 지워지는 모든 시점(아래 clearResult/reset/startAnalysis/startCannedAnalysis)에서
+// 같이 비워서, 새 결과는 항상 전부 선택된 상태로 시작한다.
+const ANALYZE_EXCLUSION_PREFIX = "analyze:";
+export const analyzeExclusionScope = (videoId: string) => `${ANALYZE_EXCLUSION_PREFIX}${videoId}`;
+const clearAnalyzeExclusions = () => useExclusionStore.getState().clearPrefix(ANALYZE_EXCLUSION_PREFIX);
 
 export type AnalyzeStatus = "idle" | "running" | "success" | "error";
 export type AnalyzeErrorKind = "timeout" | "generic";
@@ -85,11 +93,14 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
   errorKind: null,
   completionSeen: true,
   setUrl: (url) => set({ url }),
-  clearResult: () =>
-    set({ result: null, status: "idle", progress: 0, errorKind: null }),
+  clearResult: () => {
+    clearAnalyzeExclusions();
+    set({ result: null, status: "idle", progress: 0, errorKind: null });
+  },
   reset: () => {
     currentRunId++;
     stopProgressTimer();
+    clearAnalyzeExclusions();
     set({
       url: "",
       result: null,
@@ -103,6 +114,7 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
   startAnalysis: (targetUrl, locale) => {
     if (get().status === "running") return; // 이미 하나 도는 중이면 중복 실행 방지
     stopProgressTimer();
+    clearAnalyzeExclusions();
     const runId = ++currentRunId;
 
     const startedAt = Date.now();
@@ -137,6 +149,7 @@ export const useAnalyzeStore = create<AnalyzeState>((set, get) => ({
     const canned = getCannedAnalysis(videoId, locale);
     if (!canned) return;
     stopProgressTimer();
+    clearAnalyzeExclusions();
     const runId = ++currentRunId;
 
     const startedAt = Date.now();

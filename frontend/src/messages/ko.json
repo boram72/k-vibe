@@ -181,7 +181,7 @@
     "popular_video_yeosu": "여수",
     "popular_video_mokpo": "목포",
     "tutorial_title": "이렇게 사용해요",
-    "tutorial_gif_alt": "URL을 붙여넣고 분석 결과에서 장소를 선택하는 SNS 분석기 사용 방법을 보여주는 GIF",
+    "tutorial_gif_alt": "URL을 붙여넣고 분석 결과에서 원하지 않는 장소를 빼고 루트에 추가하는 SNS 분석기 사용 방법을 보여주는 GIF",
     "tutorial_step1": "YouTube 링크를 검색창에 붙여 넣은 후, '스팟 분석' 버튼을 클릭해요.",
     "tutorial_step2": "분석이 진행되는 동안 K-Vibe의 다른 화면을 구경해도 좋아요! 완료되면 알려드릴게요.",
     "tutorial_step3": "분석이 완료되면, 담고 싶지 않은 장소는 [선택해제] 버튼으로 빼고, 지도 아이콘을 눌러 K-Vibe 지도에서 위치를 확인할 수 있어요.",
@@ -337,7 +337,7 @@
     "empty_guide_analyze_steps": [
       "메뉴에서 'SNS 분석기'를 클릭하세요.",
       "YouTube 링크를 붙여넣고 '스팟 분석' 버튼을 클릭하세요.",
-      "분석이 끝나면 '루트에 모두 추가' 버튼을 클릭해서 찾은 장소를 한 번에 저장하세요!"
+      "분석이 끝나면 '루트에 추가' 버튼을 클릭해서 찾은 장소를 한 번에 저장하세요! (원하지 않는 장소는 미리 빼둘 수 있어요)"
     ],
     "empty_guide_analyze_credit": "썸네일 사진 출처: 한국관광공사",
     "empty_guide_persona_label": "페르소나에서 추가하기",

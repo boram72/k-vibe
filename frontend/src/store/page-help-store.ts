@@ -3,7 +3,9 @@ import { create } from 'zustand'
 // 튜토리얼 시작 전에 화면을 되돌리는 종류 — 팝업 문구가 달라진다.
 // 'reset': 결과 화면(SNS 분석 결과, 페르소나 루트 결과)을 처음 상태로 초기화.
 // 'release': 지도에서 켜 둔 찜/관광지 추천 화면을 해제(기본 목록으로 복귀).
-export type TourResetKind = 'reset' | 'release'
+// 'closeSearch': 지도의 검색 결과 목록을 닫기(기본 목록으로 복귀).
+// 'closeAnalyzer': 다른 페이지(SNS 분석기 등)에서 들고 온 장소 목록을 닫기(기본 목록으로 복귀).
+export type TourResetKind = 'reset' | 'release' | 'closeSearch' | 'closeAnalyzer'
 
 interface PageHelpState {
   title: string | null

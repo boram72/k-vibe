@@ -9,9 +9,10 @@ import type { TourResetKind } from '@/store/page-help-store'
 // 먼저 "초기화 후 진행할까요?"를 묻고, 확인하면 화면을 처음 상태로 되돌린 뒤 투어를
 // 시작한다(help-button.tsx). 닫기를 누르면 아무 일도 없이 팝업만 닫힌다.
 //
-// 지도에서 찜/관광지 추천 화면을 켜 둔 채 "?"를 눌렀을 때도 같은 팝업을 쓴다(kind='release') —
-// 그 화면에서는 필터 탭이 숨겨져 있어서 투어가 중간(필터 단계)에 사라진다. 문구만 "해제 후
-// 진행"으로 바뀌고 모양·동작은 같다.
+// 지도에서 찜/관광지 추천/검색 결과/들고 온 장소 목록이 켜진 채 "?"를 눌렀을 때도 같은 팝업을
+// 쓴다(kind='release' | 'closeSearch' | 'closeAnalyzer') — 그 화면들에서는 필터 탭이 숨겨져
+// 있어서 투어가 중간(필터 단계)에 사라진다. 문구만 "해제 후 진행"/"닫고 진행"으로 바뀌고
+// 모양·동작은 같다.
 //
 // 버튼이 두 개라 버튼 줄에만 회색 배경(DialogFooter 기본 스타일)을 둔다(사용자 요청) —
 // "루트 초기화" 확인 팝업(RoutePage)과 같은 모양: 닫기(흰색) / 진행(빨간색).
@@ -25,6 +26,17 @@ const COPY = {
     title: 'tour.release_notice_title',
     body: 'tour.release_notice_body',
     confirm: 'tour.release_notice_confirm',
+  },
+  // 검색 결과 / 들고 온 장소 목록 — 제목만 다르고 본문·버튼("닫고 진행")은 같다.
+  closeSearch: {
+    title: 'tour.close_search_notice_title',
+    body: 'tour.close_notice_body',
+    confirm: 'tour.close_notice_confirm',
+  },
+  closeAnalyzer: {
+    title: 'tour.close_analyzer_notice_title',
+    body: 'tour.close_notice_body',
+    confirm: 'tour.close_notice_confirm',
   },
 } as const
 

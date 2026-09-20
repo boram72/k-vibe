@@ -11,7 +11,7 @@ import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
 import { resolveAdminOfficeCoords } from '@/lib/kakao-admin-region'
 import { fetchPersonaPlaces } from '@/api/personas'
-import { usePageHelpStore } from '@/store/page-help-store'
+import { usePageHelpStore, type TourResetKind } from '@/store/page-help-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { useCurrentLocation, SEOUL_CENTER } from '@/lib/use-current-location'
@@ -419,16 +419,24 @@ export default function MapPage() {
     return () => setTourPrepareAction(null)
   }, [setTourPrepareAction])
 
-  // 찜 목록/관광지 추천 화면을 켜 둔 채 "?"를 누르면, 그 화면에서는 필터 탭이 숨겨져 있어서
-  // (spot-list-panel의 searchAndFilter) 튜토리얼이 중간(필터 단계)에서 보이지 않게 사라졌다.
-  // 그래서 먼저 "해제 후 진행할까요?"를 묻고, 확인하면 기본 목록으로 되돌린 뒤 시작한다
-  // (초기화 안내와 같은 팝업, 문구만 'release'). 검색결과/SNS 분석기 화면은 원본 데이터가
-  // 달려 있어서 여기서 다루지 않는다.
-  const needsTourRelease = activeSection === 'saved' || activeSection === 'attractions'
+  // 찜 목록/관광지 추천/검색 결과/들고 온 장소(SNS 분석기 등) 목록이 켜진 채 "?"를 누르면,
+  // 그 화면들에서는 필터 탭이 숨겨져 있어서(spot-list-panel의 searchAndFilter) 튜토리얼이
+  // 중간(필터 단계)에서 보이지 않게 사라졌다. 그래서 먼저 "해제/닫고 진행할까요?"를 묻고,
+  // 확인하면 기본 목록으로 되돌린 뒤 시작한다(초기화 안내와 같은 팝업, 문구만 상태별로 다름).
+  // 닫아도 검색 결과/들고 온 장소의 원본 데이터(areaSearchLists/focusPlaces)는 그대로라 X 버튼으로
+  // 닫는 것과 같은 동작이다(closeActiveSection 참고).
+  const tourResetKind: TourResetKind | null =
+    activeSection === 'saved' || activeSection === 'attractions'
+      ? 'release'
+      : activeSection === 'searchResults'
+        ? 'closeSearch'
+        : activeSection === 'analyzer'
+          ? 'closeAnalyzer'
+          : null
   useEffect(() => {
-    setTourResetAction(needsTourRelease ? () => setActiveSection(null) : null, 'release')
+    setTourResetAction(tourResetKind ? () => setActiveSection(null) : null, tourResetKind ?? undefined)
     return () => setTourResetAction(null)
-  }, [needsTourRelease, setTourResetAction])
+  }, [tourResetKind, setTourResetAction])
 
   // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
   // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문

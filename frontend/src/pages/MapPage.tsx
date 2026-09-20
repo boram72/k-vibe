@@ -443,8 +443,19 @@ export default function MapPage() {
   // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
   // 이 페이지가 처음이어도 뜨지 않는다. 자동 시작도 랜딩이 끝난 뒤에 한다 — 스켈레톤
   // 위에서 시작하면 첫 단계(검색창)를 못 찾아서 화면 한가운데에 말풍선만 뜬다.
+  //
+  // 다른 페이지에서 장소를 들고 왔거나(SNS 분석기 등) 목록이 켜진 채 들어온 경우엔 자동으로
+  // 띄우지 않는다 — 그 화면에서는 필터 탭이 숨겨져 있어서 투어가 4단계(필터)에서 보이지 않게
+  // 사라진다(사용자 클릭이 아니라 팝업으로 물을 수도 없음). 그 경우 "?"를 누르면 위의 안내
+  // 팝업으로 목록을 닫고 진행할 수 있다. "시작하는 순간"의 값만 보고(ref) 이후 목록을 닫을 때
+  // 갑자기 뜨지는 않게 하며, "봤다"고 표시하지 않으니 다음에 목록 없이 들어오면 그때 자동으로 뜬다.
+  const activeSectionRef = useRef(activeSection)
   useEffect(() => {
-    if (!isResolvingLanding && canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
+    activeSectionRef.current = activeSection
+  }, [activeSection])
+  useEffect(() => {
+    if (isResolvingLanding || activeSectionRef.current !== null) return
+    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
   }, [isResolvingLanding, startTour])
 
   const didRequestLocationRef = useRef(false)

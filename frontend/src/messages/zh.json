@@ -330,7 +330,7 @@
     "empty_guide_map_label": "从地图添加",
     "empty_guide_map_steps": [
       "点击菜单中的“K-Vibe地图”。",
-      "点击想添加到路线中的地点。",
+      "点击想添加到我的路线中的地点。",
       "点击“添加到路线”按钮，地点就会保存到我的路线！"
     ],
     "empty_guide_analyze_label": "从SNS分析添加",
@@ -527,7 +527,7 @@
     "persona_exclude_title": "选择或排除地点试试看",
     "persona_exclude_body": "不想去的地点可点击X(取消选择)按钮排除，想重新加入时点击+(选择)按钮。打造属于你自己的路线吧!",
     "persona_add_title": "添加到路线",
-    "persona_add_body": "点击此按钮，即可把已选择的地点添加到路线。已排除的地点不会被添加。",
+    "persona_add_body": "点击此按钮，即可把已选择的地点添加到我的路线。已排除的地点不会被添加。",
     "route_drag_title": "拖动手柄调整顺序",
     "route_drag_body": "按住这个手柄上下拖动，即可调整拜访顺序。",
     "route_complete_title": "去过的地方可以打勾",

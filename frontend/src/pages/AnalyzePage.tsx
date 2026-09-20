@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { MapPin, PlayCircle, Plus, RotateCcw, Route } from 'lucide-react'
+import { MapPin, PlayCircle, RotateCcw, Route } from 'lucide-react'
 import { UrlInputCard } from '@/blocks/analyze/url-input-card'
 import { UsageTutorial } from '@/blocks/analyze/usage-tutorial'
 import { PopularVideos } from '@/blocks/analyze/popular-videos'
@@ -11,12 +11,13 @@ import { AnalysisProgress } from '@/blocks/analyze/analysis-progress'
 import { AnalysisResultList } from '@/blocks/analyze/analysis-result-list'
 import { ErrorBoundary } from '@/blocks/common/error-boundary'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { AnalysisPlace, AnalysisResult } from '@/api/analyze'
 import { detectSnsPlatform, extractVideoId } from '@/lib/youtube'
-import { addStopToRouteDraft, addStopsToRouteDraft, analysisStopId, readRouteDraftStopIds } from '@/lib/route-draft'
+import { addStopsToRouteDraft, analysisStopId, readRouteDraftStopIds } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
-import { useAnalyzeStore } from '@/store/analyze-store'
+import { useAnalyzeStore, analyzeExclusionScope } from '@/store/analyze-store'
+import { EMPTY_EXCLUDED, useExclusionStore } from '@/store/exclusion-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { ANALYZE_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import type { Locale } from '@/i18n'
@@ -31,7 +32,6 @@ export default function AnalyzePage() {
   const startTour = useTourStore((s) => s.start)
   const { url, result, status, progress, errorKind, setUrl, clearResult, reset, startAnalysis, startCannedAnalysis } =
     useAnalyzeStore()
-  const [choicePlace, setChoicePlace] = useState<AnalysisPlace | null>(null)
   const [tutorialOpen, setTutorialOpen] = useState(false)
   // 카드에 "추가됨" 표시를 하기 위한 상태 — 마운트 시점에 한 번 localStorage를
   // 읽어서 초기화한다. "내 루트" 탭에서 삭제하고 이 탭으로 돌아오면(라우트
@@ -57,6 +57,16 @@ export default function AnalyzePage() {
   // 계속 진행) 결과도 react-query가 아니라 store에서 바로 읽는다 — 이 컴포넌트가
   // 언마운트됐다 다시 마운트돼도(다른 탭 갔다 옴) store 상태를 그대로 이어받는다.
   const displayResult = result
+
+  // 대화 중 요청 — 결과 카드의 "선택해제"(제외) 상태. 기본은 전부 선택이고, 뺀 장소의 stop id만
+  // exclusion-store에 든다. 화면 useState가 아니라 store에 두는 이유: 카드의 지도 아이콘으로
+  // 지도에 갔다 "돌아가기"로 돌아오면 이 페이지가 새로 만들어져서, useState였다면 뺀 장소가
+  // 전부 되살아났다(분석 결과 자체는 analyze-store에 남아 있어 그대로인데 선택만 초기화).
+  // 새 분석/초기화 때는 analyze-store가 같이 비운다.
+  const exclusionScope = analyzeExclusionScope(displayResult?.videoId ?? '')
+  const excludedList = useExclusionStore((s) => s.excluded[exclusionScope]) ?? EMPTY_EXCLUDED
+  const toggleExcluded = useExclusionStore((s) => s.toggle)
+  const excludedPlaceIds = useMemo(() => new Set(excludedList), [excludedList])
 
   function runAnalysis(targetUrl: string) {
     const videoId = extractVideoId(targetUrl)
@@ -109,37 +119,45 @@ export default function AnalyzePage() {
     if (displayResult) viewOnMap(displayResult.places)
   }
 
-  function addAllToRoute() {
-    if (!displayResult || displayResult.places.length === 0) return
-    const stops = displayResult.places.map((place) => toRouteStop(displayResult, place))
-    const { addedCount } = addStopsToRouteDraft(stops)
+  function toggleExcludedPlace(place: AnalysisPlace) {
+    if (!displayResult) return
+    toggleExcluded(exclusionScope, analysisStopId(displayResult.videoId, place.name))
+  }
+
+  // 하단 "루트에 추가" — 선택 상태(제외하지 않았고 아직 루트에 없는) 장소만 담는다. 이미 루트에
+  // 있는 장소("추가됨")는 건너뛰고, 새로 담을 게 하나도 없으면 "이미 추가된 루트예요"만
+  // 띄우고 화면은 그대로 둔다(담은 게 있을 때만 내 루트로 이동).
+  function addSelectedToRoute() {
+    if (!displayResult) return
+    const stops = displayResult.places
+      .map((place) => toRouteStop(displayResult, place))
+      .filter((stop) => !addedPlaceIds.has(stop.id) && !excludedPlaceIds.has(stop.id))
+    if (stops.length === 0) {
+      toast.success(t('common.already_in_route'))
+      return
+    }
+    addStopsToRouteDraft(stops)
     setAddedPlaceIds((prev) => new Set([...prev, ...stops.map((s) => s.id)]))
-    toast.success(addedCount > 0 ? t('analyze.route_saved') : t('common.already_in_route'))
+    toast.success(t('analyze.route_saved'))
     navigate('../route')
   }
 
-  function addOneToRoute(place: AnalysisPlace) {
-    if (!displayResult) return
-    const stop = toRouteStop(displayResult, place)
-    const { added } = addStopToRouteDraft(stop)
-    setAddedPlaceIds((prev) => new Set(prev).add(stop.id))
-    toast.success(added ? t('analyze.route_saved') : t('common.already_in_route'))
-    setChoicePlace(null)
-  }
-
-  function viewOneOnMap(place: AnalysisPlace) {
-    setChoicePlace(null)
-    viewOnMap([place])
-  }
-
   const showActionBar = !isAnalyzing && displayResult && displayResult.places.length > 0
+
+  // 전부 제외했고 이미 담긴 것도 없으면 누를 게 없으므로 비활성. 담긴("추가됨") 장소가 하나라도
+  // 있으면 활성으로 두고, 눌렀을 때 위에서 "이미 추가된 루트예요"를 알려준다.
+  const canAddToRoute = Boolean(
+    displayResult?.places.some((place) => {
+      const stopId = analysisStopId(displayResult.videoId, place.name)
+      return addedPlaceIds.has(stopId) || !excludedPlaceIds.has(stopId)
+    }),
+  )
 
   // 되돌릴 게 있을 때만(URL이 채워졌거나 분석이 시작된 뒤) 초기화 버튼을 보인다
   // — 처음 화면에서는 눌러도 아무 일도 안 일어나는 버튼이라 숨긴다.
   const canReset = url !== '' || status !== 'idle'
 
   const handleReset = useCallback(() => {
-    setChoicePlace(null)
     reset()
   }, [reset])
 
@@ -218,7 +236,13 @@ export default function AnalyzePage() {
           )}
 
           {!isAnalyzing && !hasError && displayResult && (
-            <AnalysisResultList result={displayResult} onSelectPlace={setChoicePlace} addedPlaceIds={addedPlaceIds} />
+            <AnalysisResultList
+              result={displayResult}
+              addedPlaceIds={addedPlaceIds}
+              excludedPlaceIds={excludedPlaceIds}
+              onToggleExcluded={toggleExcludedPlace}
+              onViewOnMap={(place) => viewOnMap([place])}
+            />
           )}
 
           {!isAnalyzing && !hasError && !displayResult && (
@@ -250,31 +274,12 @@ export default function AnalyzePage() {
             <MapPin className="h-3.5 w-3.5" />
             {t('analyze.view_all_on_map')}
           </Button>
-          <Button onClick={addAllToRoute}>
+          <Button onClick={addSelectedToRoute} disabled={!canAddToRoute}>
             <Route className="h-3.5 w-3.5" />
             {t('analyze.build_route')}
           </Button>
         </div>
       )}
-
-      <Dialog open={!!choicePlace} onOpenChange={(open) => !open && setChoicePlace(null)}>
-        <DialogContent className="p-6 sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{choicePlace?.name}</DialogTitle>
-            <DialogDescription>{t('analyze.choose_action_hint')}</DialogDescription>
-          </DialogHeader>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <Button variant="outline" onClick={() => choicePlace && viewOneOnMap(choicePlace)}>
-              <MapPin className="h-3.5 w-3.5" />
-              {t('analyze.view_on_map')}
-            </Button>
-            <Button onClick={() => choicePlace && addOneToRoute(choicePlace)}>
-              <Plus className="h-3.5 w-3.5" />
-              {t('analyze.add_to_route')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">

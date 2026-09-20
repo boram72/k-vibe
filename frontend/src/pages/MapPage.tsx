@@ -11,7 +11,7 @@ import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
 import { resolveAdminOfficeCoords } from '@/lib/kakao-admin-region'
 import { fetchPersonaPlaces } from '@/api/personas'
-import { usePageHelpStore } from '@/store/page-help-store'
+import { usePageHelpStore, type TourResetKind } from '@/store/page-help-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { useCurrentLocation, SEOUL_CENTER } from '@/lib/use-current-location'
@@ -419,24 +419,43 @@ export default function MapPage() {
     return () => setTourPrepareAction(null)
   }, [setTourPrepareAction])
 
-  // 찜 목록/관광지 추천 화면을 켜 둔 채 "?"를 누르면, 그 화면에서는 필터 탭이 숨겨져 있어서
-  // (spot-list-panel의 searchAndFilter) 튜토리얼이 중간(필터 단계)에서 보이지 않게 사라졌다.
-  // 그래서 먼저 "해제 후 진행할까요?"를 묻고, 확인하면 기본 목록으로 되돌린 뒤 시작한다
-  // (초기화 안내와 같은 팝업, 문구만 'release'). 검색결과/SNS 분석기 화면은 원본 데이터가
-  // 달려 있어서 여기서 다루지 않는다.
-  const needsTourRelease = activeSection === 'saved' || activeSection === 'attractions'
+  // 찜 목록/관광지 추천/검색 결과/들고 온 장소(SNS 분석기 등) 목록이 켜진 채 "?"를 누르면,
+  // 그 화면들에서는 필터 탭이 숨겨져 있어서(spot-list-panel의 searchAndFilter) 튜토리얼이
+  // 중간(필터 단계)에서 보이지 않게 사라졌다. 그래서 먼저 "해제/닫고 진행할까요?"를 묻고,
+  // 확인하면 기본 목록으로 되돌린 뒤 시작한다(초기화 안내와 같은 팝업, 문구만 상태별로 다름).
+  // 닫아도 검색 결과/들고 온 장소의 원본 데이터(areaSearchLists/focusPlaces)는 그대로라 X 버튼으로
+  // 닫는 것과 같은 동작이다(closeActiveSection 참고).
+  const tourResetKind: TourResetKind | null =
+    activeSection === 'saved' || activeSection === 'attractions'
+      ? 'release'
+      : activeSection === 'searchResults'
+        ? 'closeSearch'
+        : activeSection === 'analyzer'
+          ? 'closeAnalyzer'
+          : null
   useEffect(() => {
-    setTourResetAction(needsTourRelease ? () => setActiveSection(null) : null, 'release')
+    setTourResetAction(tourResetKind ? () => setActiveSection(null) : null, tourResetKind ?? undefined)
     return () => setTourResetAction(null)
-  }, [needsTourRelease, setTourResetAction])
+  }, [tourResetKind, setTourResetAction])
 
   // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
   // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
   // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
   // 이 페이지가 처음이어도 뜨지 않는다. 자동 시작도 랜딩이 끝난 뒤에 한다 — 스켈레톤
   // 위에서 시작하면 첫 단계(검색창)를 못 찾아서 화면 한가운데에 말풍선만 뜬다.
+  //
+  // 다른 페이지에서 장소를 들고 왔거나(SNS 분석기 등) 목록이 켜진 채 들어온 경우엔 자동으로
+  // 띄우지 않는다 — 그 화면에서는 필터 탭이 숨겨져 있어서 투어가 4단계(필터)에서 보이지 않게
+  // 사라진다(사용자 클릭이 아니라 팝업으로 물을 수도 없음). 그 경우 "?"를 누르면 위의 안내
+  // 팝업으로 목록을 닫고 진행할 수 있다. "시작하는 순간"의 값만 보고(ref) 이후 목록을 닫을 때
+  // 갑자기 뜨지는 않게 하며, "봤다"고 표시하지 않으니 다음에 목록 없이 들어오면 그때 자동으로 뜬다.
+  const activeSectionRef = useRef(activeSection)
   useEffect(() => {
-    if (!isResolvingLanding && canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
+    activeSectionRef.current = activeSection
+  }, [activeSection])
+  useEffect(() => {
+    if (isResolvingLanding || activeSectionRef.current !== null) return
+    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
   }, [isResolvingLanding, startTour])
 
   const didRequestLocationRef = useRef(false)

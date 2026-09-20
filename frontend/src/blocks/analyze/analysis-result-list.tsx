@@ -104,71 +104,78 @@ export function AnalysisResultList({
         const isExcluded = !isAdded && excludedPlaceIds.has(stopId)
         const toggleLabel = isExcluded ? t('analyze.select_action') : t('analyze.deselect_action')
         return (
-          <div
-            key={`${place.name}-${idx}`}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-xl border p-3 transition-colors',
-              isAdded
-                ? 'border-pink-500 bg-pink-500/[0.06]'
-                : isExcluded
-                  ? 'border-dashed border-border bg-muted/40'
-                  : 'border-crowd-low/30 bg-crowd-low/5',
-            )}
-          >
+          <div key={`${place.name}-${idx}`} className="flex gap-3">
+            {/* 번호는 카드 테두리 밖 왼쪽에 두고 번호 사이를 세로선으로 잇는다 — 페르소나 결과 화면
+                (blocks/persona/route-result.tsx)과 같은 구조(번호 열 + 카드)와 같은 크기·색이다(사용자 요청). */}
+            <div className="flex flex-col items-center">
+              <div
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-primary-foreground',
+                  isExcluded ? 'bg-muted-foreground/40' : 'bg-primary',
+                )}
+              >
+                {idx + 1}
+              </div>
+              {idx < result.places.length - 1 && <div className="my-1 min-h-4 w-px flex-1 bg-border" />}
+            </div>
+
             <div
               className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-primary-foreground',
-                isExcluded ? 'bg-muted-foreground/40' : 'bg-primary',
+                'mb-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl border p-3 transition-colors',
+                isAdded
+                  ? 'border-pink-500 bg-pink-500/[0.06]'
+                  : isExcluded
+                    ? 'border-dashed border-border bg-muted/40'
+                    : 'border-crowd-low/30 bg-crowd-low/5',
               )}
             >
-              {idx + 1}
-            </div>
-            <div className={cn('min-w-0 flex-1', isExcluded && 'opacity-50')}>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p className={cn('text-sm font-semibold text-foreground', isExcluded && 'line-through')}>{place.name}</p>
-                {isExcluded && (
-                  <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {t('analyze.excluded_label')}
-                  </span>
-                )}
+              <div className={cn('min-w-0 flex-1', isExcluded && 'opacity-50')}>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className={cn('text-sm font-semibold text-foreground', isExcluded && 'line-through')}>{place.name}</p>
+                  {isExcluded && (
+                    <span className="rounded-full bg-muted-foreground/20 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {t('analyze.excluded_label')}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
               </div>
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{place.reason}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {/* 페르소나 카드/내 루트 카드의 지도 아이콘과 같은 자리·같은 모양(MapPin, h-7 w-7). */}
-              <button
-                type="button"
-                onClick={() => onViewOnMap(place)}
-                aria-label={t('analyze.view_place_on_map', { name: place.name })}
-                title={t('analyze.view_place_on_map', { name: place.name })}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent"
-              >
-                <MapPin className="h-4 w-4" />
-              </button>
-              {isAdded ? (
-                // "추가됨"은 상태 표시라 누를 수 없다 — 핑크는 기존 그대로.
-                <span className="flex h-7 shrink-0 items-center gap-1 rounded-lg bg-pink-500 px-2 text-[10px] font-semibold text-white">
-                  <Check className="h-3 w-3" />
-                  {t('analyze.added_label')}
-                </span>
-              ) : (
-                // 기본은 "선택"(민트 카드)이고 버튼 글자는 "누르면 일어날 동작"이다: 선택된 카드엔
-                // "선택해제"(회색), 제외된 카드엔 "선택"(민트 채움). 좁은 화면에선 아이콘만
-                // 보여주고 글자는 md 이상에서만 노출(페르소나 결과 화면과 동일).
+              <div className="flex shrink-0 items-center gap-1">
+                {/* 페르소나 카드/내 루트 카드의 지도 아이콘과 같은 자리·같은 모양(MapPin, h-7 w-7). */}
                 <button
                   type="button"
-                  onClick={() => onToggleExcluded(place)}
-                  aria-label={`${toggleLabel}: ${place.name}`}
-                  title={toggleLabel}
-                  className={cn(
-                    'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[10px] font-semibold transition-colors',
-                    isExcluded ? 'bg-crowd-low text-white' : 'bg-border text-foreground',
-                  )}
+                  onClick={() => onViewOnMap(place)}
+                  aria-label={t('analyze.view_place_on_map', { name: place.name })}
+                  title={t('analyze.view_place_on_map', { name: place.name })}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent"
                 >
-                  {isExcluded ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                  <span className="hidden md:inline">{toggleLabel}</span>
+                  <MapPin className="h-4 w-4" />
                 </button>
-              )}
+                {isAdded ? (
+                  // "추가됨"은 상태 표시라 누를 수 없다 — 핑크는 기존 그대로.
+                  <span className="flex h-7 shrink-0 items-center gap-1 rounded-lg bg-pink-500 px-2 text-[10px] font-semibold text-white">
+                    <Check className="h-3 w-3" />
+                    {t('analyze.added_label')}
+                  </span>
+                ) : (
+                  // 기본은 "선택"(민트 카드)이고 버튼 글자는 "누르면 일어날 동작"이다: 선택된 카드엔
+                  // "선택해제"(회색), 제외된 카드엔 "선택"(민트 채움). 좁은 화면에선 아이콘만
+                  // 보여주고 글자는 md 이상에서만 노출(페르소나 결과 화면과 동일).
+                  <button
+                    type="button"
+                    onClick={() => onToggleExcluded(place)}
+                    aria-label={`${toggleLabel}: ${place.name}`}
+                    title={toggleLabel}
+                    className={cn(
+                      'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[10px] font-semibold transition-colors',
+                      isExcluded ? 'bg-crowd-low text-white' : 'bg-border text-foreground',
+                    )}
+                  >
+                    {isExcluded ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    <span className="hidden md:inline">{toggleLabel}</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageOff, Plus, RotateCcw, Star, X } from 'lucide-react'
+import { Compass, ImageOff, MapPin, Plus, RotateCcw, Star, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
@@ -44,6 +44,15 @@ interface RouteResultProps {
   // 추가할 수 있도록, 이 화면에서 고른 스팟 목록을 인자로 넘긴다(DB/localStorage
   // 저장 없는 화면 로컬 state — 아래 excludedIds 참고).
   onAddToRoute: (stops: RouteStop[]) => void
+  // 대화 중 요청 — RouteStopCard(내 루트)의 지도 아이콘 버튼과 동일한 자리/
+  // 룩으로, 이 스팟 하나를 지도에서 보여준다(필터+상세팝업+돌아가기 버튼은
+  // PersonaPage.viewStopOnMap이 구성).
+  onViewOnMap: (stop: RouteStop) => void
+  // 대화 중 요청 — SNS 분석기의 "지도에서 모두 보기"(전체 focusPlaces 핸드오프)와
+  // 동일하게, 이 페르소나의 방문지 전체를 지도의 "페르소나별 탭"으로 보여준다
+  // (PersonaPage.viewAllOnMap이 initialFilterMode/initialStarFilter만 실어
+  // 보냄 — 개별 스팟용 onViewOnMap과 달리 특정 스팟 핀 강조는 없음).
+  onViewAllOnMap: () => void
 }
 
 // stop.characterImageUrl은 실제 스타 초상권 대신 "이 장소의 무드"를 전달하는
@@ -81,7 +90,7 @@ function StopCharacterImage({ stop }: { stop: RouteStop }) {
   )
 }
 
-export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
+export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAllOnMap }: RouteResultProps) {
   const { t } = useTranslation()
   // 페르소나 step2 스팟 추가/제거 — DB/localStorage 저장 없이 이 화면에서만
   // 사는 단발성 선택 상태. plan(prop)이 바뀌면(다른 페르소나 선택/재생성) 이
@@ -166,7 +175,7 @@ export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
               <div
                 className={cn(
                   'mb-1 flex flex-1 gap-3 rounded-xl border p-3',
-                  isExcluded ? 'border-dashed border-border bg-muted/40' : 'border-border bg-muted',
+                  isExcluded ? 'border-dashed border-border bg-muted/40' : 'border-crowd-low/30 bg-crowd-low/5',
                 )}
               >
                 <div className={cn('flex min-w-0 flex-1 gap-3', isExcluded && 'opacity-50')}>
@@ -200,33 +209,63 @@ export function RouteResult({ plan, onReset, onAddToRoute }: RouteResultProps) {
                     <p className="mt-2 text-xs leading-5 text-muted-foreground/90">{stop.description}</p>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  data-tour="persona-exclude"
-                  className={cn(
-                    'h-5 w-5 shrink-0 self-start rounded-full',
-                    isExcluded
-                      ? 'text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-500'
-                      : 'text-destructive hover:bg-destructive/10 hover:text-destructive',
-                  )}
-                  onClick={() => toggleStop(stop.id)}
-                  aria-label={isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
-                  title={isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
-                >
-                  {isExcluded ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                </Button>
+                <div className="flex shrink-0 items-start gap-1 self-start">
+                  {/* 대화 중 요청 — RouteStopCard(내 루트)의 지도 아이콘
+                      버튼과 동일한 자리/룩(MapPin, rounded-lg p-1.5). */}
+                  <button
+                    type="button"
+                    onClick={() => onViewOnMap(stop)}
+                    aria-label={t('persona.view_stop_on_map', { name: stop.name })}
+                    title={t('persona.view_stop_on_map', { name: stop.name })}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent"
+                  >
+                    <MapPin className="h-4 w-4" />
+                  </button>
+                  {/* 대화 중 요청 — SNS 분석기(analysis-result-list.tsx)의
+                      "선택"/"추가됨" 알약형 버튼과 동일한 룩으로 통일.
+                      아이콘은 X(선택해제)/+(선택) 그대로 유지. 초록색은
+                      RoutePage(route-stop-card.tsx)의 "완료" 표기와 동일한
+                      crowd-low 토큰으로 통일(테두리·버튼 fill 둘 다) —
+                      임의의 emerald-500 대신 이미 있는 시맨틱 색상 재사용. */}
+                  <button
+                    type="button"
+                    data-tour="persona-exclude"
+                    className={cn(
+                      'flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors',
+                      isExcluded ? 'bg-crowd-low text-white' : 'bg-border text-foreground',
+                    )}
+                    onClick={() => toggleStop(stop.id)}
+                    aria-label={isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
+                    title={isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
+                  >
+                    {isExcluded ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                    {isExcluded ? t('persona.include_stop') : t('persona.exclude_stop')}
+                  </button>
+                </div>
               </div>
             </div>
           )
         })}
       </div>
 
-      <Button className="w-full" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
-        <Plus className="h-3.5 w-3.5" />
-        {t('persona.add_to_route')}
-      </Button>
+      {/* 대화 중 요청 — SNS 분석기 하단 액션바(grid-cols-2: "지도에서 모두
+          보기" outline + "루트에 모두 추가" 채움)와 동일한 배치/아이콘/문구로
+          통일. "지도에서 모두 보기"는 PersonaPage.viewAllOnMap이 이미 있는
+          "페르소나별 탭"(filterMode: 'star')을 이 페르소나 라벨로 열어준다
+          (새 핸드오프 없음). 제외된 스팟이 하나라도 있으면(전체가 아니라
+          일부만 담기는 상태) "루트에 모두 추가"쪽 문구만 "선택 항목만
+          루트에 추가"로 바뀐다 — excludedIds는 이미 있는 state라 새로
+          만들 것 없이 그 크기만 참조. */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={onViewAllOnMap}>
+          <MapPin className="h-3.5 w-3.5" />
+          {t('persona.view_all_on_map')}
+        </Button>
+        <Button onClick={handleAddToRoute} disabled={includedStops.length === 0}>
+          <Compass className="h-3.5 w-3.5" />
+          {excludedIds.size > 0 ? t('persona.add_selected_to_route') : t('persona.add_all_to_route')}
+        </Button>
+      </div>
     </div>
   )
 }

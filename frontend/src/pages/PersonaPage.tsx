@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button'
 import { PersonaCard } from '@/blocks/persona/persona-card'
 import { usePersonaCardImages } from '@/lib/use-persona-card-images'
 import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona } from '@/api/personas'
-import { type RoutePlan } from '@/lib/route-timing'
+import { type RoutePlan, type RouteStop } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
 import { canAutoStartTour, useTourStore } from '@/store/tour-store'
 import { PERSONA_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import type { Locale } from '@/i18n'
+import type { Place } from '@/types/place'
+import type { MapFocusState } from './MapPage'
 
 const START_TIME = '10:00'
 
@@ -133,11 +135,69 @@ export default function PersonaPage() {
     navigate('../route')
   }
 
+  // AnalyzePage.toFocusPlace()와 동일한 이유로 여기서 완성된 Place를 직접
+  // 만들어 라우터 state에 실어보낸다 — MapPage가 personaPlaces(비동기 조회)
+  // 로드를 기다렸다가 id로 찾게 하면 useEffect+setState(react-hooks/
+  // set-state-in-effect) 또는 ref 렌더중조정(react-hooks/refs) 둘 다 이
+  // 프로젝트 lint 규칙에 걸린다.
+  function stopToFocusPlace(stop: RouteStop): Place {
+    return {
+      id: stop.id,
+      name: stop.name,
+      category: 'culture',
+      address: stop.address,
+      lat: stop.lat,
+      lng: stop.lng,
+      imageUrl: stop.imageUrl,
+      tags: stop.tags,
+    }
+  }
+
+  // 대화 중 요청 — RouteStopCard(내 루트)의 지도 아이콘과 동일한 자리에서,
+  // 이 스팟 하나를 지도로 보낸다. 새 핸드오프를 안 만들고 이미 있는
+  // "페르소나별 탭"(filterMode: 'star')을 그 페르소나 라벨로 미리 선택된
+  // 상태로 열어서(목록은 이 페르소나 방문지 전체) + initialSelectedPlace로
+  // 이 스팟 하나만 자동 선택+상세팝업. 지도 쪽에서 "돌아가기"를 누르면
+  // navigate(-1)로 정확히 이 결과 화면으로 되돌아온다(place-detail-sheet.tsx).
+  //
+  // 주의: personaPlaces(지도가 이 id를 찾는 대상)는 실제 location 테이블에
+  // 매핑된 스팟만 포함한다 — 하드코딩 카탈로그 폴백(place_id 없는 스팟)은
+  // 여기 없어서, 그 경우 목록은 정상 필터링되지만 이 스팟 자동선택/팝업만
+  // 조용히 안 열린다(personaRouteService.py _normalize_db_location 참고).
+  function viewStopOnMap(stop: RouteStop) {
+    if (!activePersona) return
+    const state: MapFocusState = {
+      initialFilterMode: 'star',
+      initialStarFilter: [activePersona.label],
+      initialSelectedPlace: stopToFocusPlace(stop),
+    }
+    navigate('../map', { state })
+  }
+
+  // 대화 중 요청 — SNS 분석기의 "지도에서 모두 보기"와 동일한 자리/역할.
+  // 개별 스팟용 viewStopOnMap과 달리 initialSelectedPlace를 안 보내서, 특정
+  // 스팟 자동선택/상세팝업 없이 이 페르소나의 방문지 전체가 필터링된 목록만
+  // 보여준다.
+  function viewAllOnMap() {
+    if (!activePersona) return
+    const state: MapFocusState = {
+      initialFilterMode: 'star',
+      initialStarFilter: [activePersona.label],
+    }
+    navigate('../map', { state })
+  }
+
   if (activePersonaId) {
     if (routeQuery.data) {
       return (
         <div className="mx-auto w-full space-y-4 px-4 py-4 md:max-w-2xl">
-          <RouteResult plan={routeQuery.data} onReset={reset} onAddToRoute={handleAddToRoute} />
+          <RouteResult
+            plan={routeQuery.data}
+            onReset={reset}
+            onAddToRoute={handleAddToRoute}
+            onViewOnMap={viewStopOnMap}
+            onViewAllOnMap={viewAllOnMap}
+          />
         </div>
       )
     }

@@ -26,10 +26,16 @@ interface PlaceDetailSheetProps {
   saved: boolean
   onClose: () => void
   onToggleSave: (id: string) => void
-  // 내 루트의 개별 스팟에서 지도 아이콘을 눌러 들어온 그 카드에서만 true —
-  // 다른 스팟을 눌러 상세카드가 바뀌면 다시 false가 된다(MapPage.tsx 참고).
-  showBackToRoute?: boolean
-  onBackToRoute?: () => void
+  // 대화 중 요청 — 내 루트/SNS분석기/페르소나 등 다른 화면에서 지도로
+  // "핸드오프"돼 들어온 방문에서만 true(MapPage.tsx가 계산해서 내려줌).
+  // 처음엔 "루트로 돌아가기"/"페르소나로 돌아가기"/"분석기로 돌아가기"를
+  // 출처별로 따로 만들려 했으나, 출처가 늘어날 때마다 라벨/타겟 경로를 계속
+  // 추가해야 해서(리스크·유지보수 둘 다 증가) — 대신 "직전 화면으로
+  // navigate(-1)"이라는 하나의 동작 + 하나의 공용 라벨("돌아가기")로 단순화.
+  // 어디서 왔든 그 전 화면이 실제 브라우저 히스토리상 바로 이전 항목이라
+  // 정확히 그 화면(페르소나면 그 결과 화면까지)으로 돌아간다.
+  showBackButton?: boolean
+  onBack?: () => void
 }
 
 export function PlaceDetailSheet({
@@ -37,8 +43,8 @@ export function PlaceDetailSheet({
   saved,
   onClose,
   onToggleSave,
-  showBackToRoute,
-  onBackToRoute,
+  showBackButton,
+  onBack,
 }: PlaceDetailSheetProps) {
   const { t } = useTranslation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -151,10 +157,10 @@ export function PlaceDetailSheet({
         <Heart className={saved ? 'fill-current' : ''} />
         {saved ? t('common.unsave') : t('common.save')}
       </Button>
-      {showBackToRoute && onBackToRoute ? (
-        <Button variant="outline" className="flex-1" onClick={onBackToRoute}>
+      {showBackButton && onBack ? (
+        <Button variant="outline" className="flex-1" onClick={onBack}>
           <ArrowLeft />
-          {t('placeDetail.back_to_route')}
+          {t('placeDetail.go_back')}
         </Button>
       ) : (
         <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>

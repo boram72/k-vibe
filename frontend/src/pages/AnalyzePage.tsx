@@ -96,8 +96,12 @@ export default function AnalyzePage() {
     }
   }
 
-  function viewOnMap(places: AnalysisPlace[], openDetail = false) {
-    const state: MapFocusState = { focusPlaces: places.map(toFocusPlace), openDetail }
+  // 대화 중 요청 — 개별 장소든 전체든 지도로 보낼 때 상세 팝업은 자동으로 열지 않는다
+  // (페르소나 진입과 동일). 분석기에서 넘어온 focusPlaces는 지도에서 전부 빨간 핀이라
+  // 팝업 없이도 그 장소가 표시되고, 사용자가 핀/목록을 눌렀을 때만 팝업이 뜬다.
+  // 돌아가기는 지도 위 버튼(MapCanvas)이 맡는다.
+  function viewOnMap(places: AnalysisPlace[]) {
+    const state: MapFocusState = { focusPlaces: places.map(toFocusPlace) }
     navigate('../map', { state })
   }
 
@@ -125,7 +129,7 @@ export default function AnalyzePage() {
 
   function viewOneOnMap(place: AnalysisPlace) {
     setChoicePlace(null)
-    viewOnMap([place], true)
+    viewOnMap([place])
   }
 
   const showActionBar = !isAnalyzing && displayResult && displayResult.places.length > 0

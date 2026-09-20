@@ -193,6 +193,7 @@ export default function PersonaPage() {
         <div className="mx-auto w-full space-y-4 px-4 py-4 md:max-w-2xl">
           <RouteResult
             plan={routeQuery.data}
+            personaId={activePersonaId}
             onReset={reset}
             onAddToRoute={handleAddToRoute}
             onViewOnMap={viewStopOnMap}

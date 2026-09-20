@@ -51,9 +51,15 @@ export const MAP_TOUR_STEPS: TourStep[] = [
   { target: 'map-list', titleKey: 'tour.map_list_title', bodyKey: 'tour.map_list_body' },
 ]
 
+// 페르소나 결과 화면 안내(4단계): 카드 고르기 -> 지도 아이콘 -> 선택/제외 -> 루트에 추가.
+// 지도 아이콘·루트에 추가 단계는 설명만 하는 단계라 clickThrough를 안 켠다 — 어두운 배경이 클릭을
+// 막아서 실제 지도 화면으로 넘어가거나 루트에 담기지 않고 "다음"/닫기/건너뛰기로만 진행된다.
+// 선택/제외 단계는 실제로 눌러보게(clickThrough) 둔다.
 export const PERSONA_TOUR_STEPS: TourStep[] = [
   { target: 'persona-grid', titleKey: 'tour.persona_grid_title', bodyKey: 'tour.persona_grid_body', clickThrough: true, nextPressesTarget: true },
+  { target: 'persona-map', titleKey: 'tour.persona_map_title', bodyKey: 'tour.persona_map_body' },
   { target: 'persona-exclude', titleKey: 'tour.persona_exclude_title', bodyKey: 'tour.persona_exclude_body', clickThrough: true },
+  { target: 'persona-add-route', titleKey: 'tour.persona_add_title', bodyKey: 'tour.persona_add_body' },
 ]
 
 // 드래그(순서 바꾸기)는 클릭 이벤트가 안 나므로(dnd-kit이 실제 드래그 후엔

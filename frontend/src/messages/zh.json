@@ -104,6 +104,7 @@
   "placeDetail": {
     "add_to_route": "添加到路线",
     "added_to_route": "已添加到路线",
+    "added_label": "已添加",
     "info_unavailable": "服务筹备中",
     "go_back": "返回",
     "tab_detail": "详情",

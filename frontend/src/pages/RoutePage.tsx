@@ -183,9 +183,15 @@ export default function RoutePage() {
     // place-detail-sheet.tsx의 사진은 GET /places/{id}가 아니라 이 Place.imageUrl을
     // 그대로 쓰므로, 여기서 안 넘기면 phone/hours/리뷰는 정상인데 사진만 항상 빈
     // 플레이스홀더로 보이는 버그가 있었다.
+    const place = { id: stop.placeId ?? stop.id, name: stop.name, category: 'culture' as const, address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags, imageUrl: stop.imageUrl }
+    // 대화 중 요청 — 지도로 넘어가도 상세 팝업은 자동으로 열지 않는다(페르소나·SNS 분석기 진입과
+    // 동일). openDetail 대신 initialSelectedPlace로 그 장소를 "선택된 상태"(빨간 마커 강조 + 카메라
+    // 이동)로만 열고, MapPage가 이 값이 있으면 최초 진입에서 팝업을 억제한다(suppressInitialDetail).
+    // 사용자가 마커/목록을 직접 누르면 그때부터 평범한 선택처럼 상세 팝업이 뜬다. 돌아가기는
+    // 지도 위 버튼(MapCanvas)이 맡는다.
     const state: MapFocusState = {
-      focusPlaces: [{ id: stop.placeId ?? stop.id, name: stop.name, category: 'culture', address: stop.address, lat: stop.lat, lng: stop.lng, tags: stop.tags, imageUrl: stop.imageUrl }],
-      openDetail: true,
+      focusPlaces: [place],
+      initialSelectedPlace: place,
       returnToRoute: true,
     }
     navigate('../map', { state })

@@ -763,7 +763,10 @@ export default function MapPage() {
   // 스팟을 클릭해 재진입하면 focusState 자체가 새로 채워지므로 자동으로
   // 갱신되고, 그 사이 목록을 스크롤하다 필터를 껐다 켜도 다시 계산될 뿐
   // 별도로 "리셋"하는 코드가 필요 없다.
-  const personaOriginPlaceId = focusState?.initialSelectedPlace?.id ?? null
+  // 내 루트 진입(returnToRoute)도 팝업 억제·마커 강조를 위해 initialSelectedPlace를 쓰지만
+  // 페르소나에서 온 게 아니므로 "페르소나" 태그/맨 위 정렬은 적용하지 않는다("내 루트" 태그만).
+  const personaOriginPlaceId =
+    focusState?.initialSelectedPlace && !focusState.returnToRoute ? focusState.initialSelectedPlace.id : null
 
   const nearbySpotListPlaces = useMemo(() => {
     const base =

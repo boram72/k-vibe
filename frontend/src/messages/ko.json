@@ -104,6 +104,7 @@
   "placeDetail": {
     "add_to_route": "루트에 추가",
     "added_to_route": "루트에 추가됐어요",
+    "added_label": "추가됨",
     "info_unavailable": "서비스 준비중",
     "go_back": "돌아가기",
     "tab_detail": "상세",

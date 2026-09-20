@@ -1,4 +1,5 @@
-import { Clock, Heart, MapPin, Phone, Route } from 'lucide-react'
+import { useMemo } from 'react'
+import { Check, Clock, Heart, MapPin, Phone, Route } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -16,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
 import { RatingBadge } from '@/blocks/common/rating-badge'
 import { PlaceReviewTab } from '@/blocks/map/place-review-tab'
-import { addStopToRouteDraft } from '@/lib/route-draft'
+import { addStopToRouteDraft, isPlaceInRouteDraft } from '@/lib/route-draft'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { fetchPlaceDetail } from '@/api/places'
 import { getCategoryLabelKey, type Place } from '@/types/place'
@@ -30,10 +31,16 @@ interface PlaceDetailSheetProps {
 
 // 대화 중 요청 — 핸드오프(페르소나/내 루트/SNS 분석기)로 들어온 방문의 "돌아가기"는
 // 이 팝업 안이 아니라 지도 위 버튼(MapCanvas의 GoBackButton)이 맡는다. 그래서
-// 이 팝업의 하단은 어디서 왔든 항상 [찜][루트에 추가]다.
+// 이 팝업의 하단은 어디서 왔든 [찜] + [루트에 추가]이고, 이미 내 루트에 담긴 장소면
+// [루트에 추가] 자리에 비활성 "추가됨"이 나온다(내 루트에서 넘어온 장소는 항상 그렇다).
 export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceDetailSheetProps) {
   const { t } = useTranslation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
+
+  // 이미 루트에 있는 장소에서 [루트에 추가]를 다시 누르면 토스트만 "이미 추가된 루트예요"인데도
+  // 루트 순서가 바뀌던 문제가 있어서, 담긴 장소는 아예 누를 수 없게 한다. 팝업은 열릴 때마다
+  // place가 null → 장소로 바뀌므로(담고 나면 onClose) 그때마다 다시 계산된다.
+  const inRoute = useMemo(() => (place ? isPlaceInRouteDraft({ ...place, placeId: place.id }) : false), [place])
 
   // Fetched on demand per place (not part of the list response) — see
   // PLACE_DETAIL_INTEGRATION_REQUEST.md. Hook must run unconditionally
@@ -143,10 +150,18 @@ export function PlaceDetailSheet({ place, saved, onClose, onToggleSave }: PlaceD
         <Heart className={saved ? 'fill-current' : ''} />
         {saved ? t('common.unsave') : t('common.save')}
       </Button>
-      <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>
-        <Route />
-        {t('placeDetail.add_to_route')}
-      </Button>
+      {inRoute ? (
+        // 누를 수 없는 상태 표시 — SNS 결과 카드의 핑크 "추가됨"과 같은 색. disabled의 흐림(opacity-50)은 끈다.
+        <Button variant="outline" className="flex-1 border-pink-500 bg-pink-500 text-white disabled:opacity-100" disabled>
+          <Check />
+          {t('placeDetail.added_label')}
+        </Button>
+      ) : (
+        <Button variant="outline" className="flex-1" onClick={handleAddToRoute}>
+          <Route />
+          {t('placeDetail.add_to_route')}
+        </Button>
+      )}
     </>
   )
 

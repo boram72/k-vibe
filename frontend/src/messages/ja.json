@@ -104,6 +104,7 @@
   "placeDetail": {
     "add_to_route": "ルートに追加",
     "added_to_route": "ルートに追加しました",
+    "added_label": "追加済み",
     "info_unavailable": "サービス準備中",
     "go_back": "戻る",
     "tab_detail": "詳細",

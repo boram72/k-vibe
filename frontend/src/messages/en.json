@@ -104,6 +104,7 @@
   "placeDetail": {
     "add_to_route": "Add to Route",
     "added_to_route": "Added to your route",
+    "added_label": "Added",
     "info_unavailable": "Service coming soon",
     "go_back": "Go Back",
     "tab_detail": "Details",

@@ -83,7 +83,9 @@ function normalizePlaceName(name: string): string {
 // 판단한다. 2026-09 태스크보드 8번 — 그것만으로는 서로 다른 진입점끼리는
 // 여전히 못 잡아서(위 주석 참고), id/placeId가 다르더라도 이름+좌표가
 // 가까우면 같은 장소로 판정하는 보조 조건을 추가.
-function isSamePlace(a: RouteStop, b: RouteStop): boolean {
+type PlaceIdentity = Pick<RouteStop, 'id' | 'placeId' | 'name' | 'lat' | 'lng'>
+
+function isSamePlace(a: PlaceIdentity, b: PlaceIdentity): boolean {
   if ((a.placeId ?? a.id) === (b.placeId ?? b.id)) return true
   if (!Number.isFinite(a.lat) || !Number.isFinite(a.lng) || !Number.isFinite(b.lat) || !Number.isFinite(b.lng)) {
     return false
@@ -114,13 +116,24 @@ export interface AddStopOutcome {
   added: boolean
 }
 
+// 지도 상세 팝업이 "이 장소가 이미 내 루트에 있는지" 보여줄 때 쓴다(있으면 [루트에 추가] 대신
+// 비활성 "추가됨"). 판정 기준은 추가할 때와 같은 isSamePlace(placeId/id 또는 이름+좌표 근접)라서
+// SNS 분석·페르소나·지도 등 어느 진입점에서 담았든 같은 장소로 인식된다.
+export function isPlaceInRouteDraft(place: PlaceIdentity): boolean {
+  return readRouteDraft().some((stop) => isSamePlace(stop, place))
+}
+
 export function addStopToRouteDraft(stop: RouteStop): AddStopOutcome {
   const existing = readRouteDraft()
-  const added = !existing.some((s) => isSamePlace(s, stop))
-  const next = [...existing.filter((s) => !isSamePlace(s, stop)), stop]
+  // 이미 있는 장소는 아무것도 바꾸지 않는다. 예전에는 기존 항목을 지우고 정보가 적은 새 항목을
+  // 맨 뒤에 붙여서, 이미 담긴 장소에서 다시 [루트에 추가]를 누르면(토스트는 "이미 추가된
+  // 루트예요"인데) 루트 순서가 바뀌고 설명·사진이 사라졌다. 여러 개를 한 번에 담는
+  // addStopsToRouteDraft는 일부러 upsert라 그대로 둔다.
+  if (existing.some((s) => isSamePlace(s, stop))) return { stops: existing, added: false }
+  const next = [...existing, stop]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   scheduleDraftSync(next)
-  return { stops: next, added }
+  return { stops: next, added: true }
 }
 
 export interface AddStopsOutcome {

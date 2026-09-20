@@ -1,13 +1,12 @@
 import { useRef, type Dispatch, type KeyboardEvent, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search, Sparkles, X } from 'lucide-react'
+import { Heart, Loader2, PanelRightClose, PanelRightOpen, Search, Sparkles, Star, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { CategoryFilter } from '@/blocks/map/category-filter'
 import { StarFilter } from '@/blocks/map/star-filter'
 import { RelatedAttractionsList } from '@/blocks/map/related-attractions-list'
 import { LoadingSkeleton } from '@/blocks/common/loading-skeleton'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
-import { RatingBadge } from '@/blocks/common/rating-badge'
 import { Button } from '@/components/ui/button'
 import { getCategoryLabelKey, type Place, type PlaceCategory } from '@/types/place'
 import type { ActiveSection } from '@/pages/MapPage'
@@ -183,7 +182,18 @@ export function SpotListPanel({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-semibold text-foreground">{place.name}</p>
-            <RatingBadge placeId={place.id} />
+            {/* 8-2(대화 중 발견) — 카드마다 GET /reviews/{placeId}를 개별
+                호출하던 RatingBadge 대신, 목록 API가 이미 같이 내려주는
+                place.rating(location.rating, 리뷰 작성 시마다 미리 계산됨)을
+                그대로 표시만 한다 — 별도 요청 없음. 리뷰가 없으면(null/
+                undefined) 아무것도 안 보여줘 기존 RatingBadge와 동일한
+                "리뷰 있을 때만 표시" 동작을 유지한다. */}
+            {place.rating != null && (
+              <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
+                <Star className="h-3 w-3 fill-primary text-primary" />
+                {place.rating.toFixed(1)}
+              </span>
+            )}
             {/* 5-2(plan.md, 대화로 확정) — "내 루트"에서 지도 아이콘을 눌러 온
                 경우는 자기만의 섹션을 안 만들고 이 "주변 스팟" 목록에 그대로
                 섞이므로, 해당 행에만 태그를 붙여 구분한다. */}

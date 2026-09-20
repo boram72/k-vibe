@@ -31,6 +31,11 @@ export interface Place {
   distanceM?: number
   crowdLevel?: CrowdLevel
   tags?: string[]
+  // 8-2(대화 중 발견) — 백엔드가 리뷰 작성/삭제 때마다 location.rating에 미리
+  // 계산해둔 평균 평점을 GET /places 응답에 같이 내려준다(place_id로 병합).
+  // 카드마다 GET /reviews/{placeId}를 개별 호출하지 않아도 되게 하기 위함 —
+  // 리뷰가 하나도 없으면 null/undefined.
+  rating?: number | null
 }
 
 export interface PlaceCategoryMeta {

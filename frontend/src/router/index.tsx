@@ -7,7 +7,6 @@ import MapPage from '@/pages/MapPage'
 import AnalyzePage from '@/pages/AnalyzePage'
 import PersonaPage from '@/pages/PersonaPage'
 import RoutePage from '@/pages/RoutePage'
-import RadarPage from '@/pages/RadarPage'
 import ProfilePage from '@/pages/ProfilePage'
 import OAuthCallbackPage from '@/pages/OAuthCallbackPage'
 
@@ -43,7 +42,13 @@ export const router = createBrowserRouter([
           { path: 'analyze', element: <AnalyzePage /> },
           { path: 'persona', element: <PersonaPage /> },
           { path: 'route', element: <RoutePage /> },
-          { path: 'radar', element: <RadarPage /> },
+          // 대화 중 요청(2026-09-20) — RadarPage는 이미 내비게이션 메뉴에서
+          // 숨겨져 있었지만(CLAUDE.md, 정확도/컨셉 불일치 사유) 라우터엔 계속
+          // 등록돼 있어서 URL을 직접 알면 여전히 들어갈 수 있었음. Radar가
+          // 실측 GPS 원본 좌표를 그대로 백엔드로 보내는(관할구역 우회 로직
+          // 미적용) 게 발견돼서, 그 경로 자체를 막기 위해 라우트 등록만
+          // 제거 — 페이지/컴포넌트/로직은 전부 그대로 보존(컨셉이 되돌아오면
+          // 이 줄만 복구하면 됨).
           { path: 'profile', element: <ProfilePage /> },
         ],
       },

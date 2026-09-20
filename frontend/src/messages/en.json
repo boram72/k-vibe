@@ -97,6 +97,7 @@
     "persona_visited_places_title": "Persona Visited Places",
     "close_analyzer_results": "Close SNS analyzer results",
     "from_my_route_tag": "My Route",
+    "from_persona_tag": "Persona",
     "close_saved_list": "Close saved list",
     "close_attractions": "Close attraction recommendations"
   },
@@ -241,8 +242,7 @@
     "stop_excluded": "Excluded",
     "no_stops_selected": "No stops selected",
     "view_all_on_map": "View All on Map",
-    "add_all_to_route": "Add All to Route",
-    "add_selected_to_route": "Add Selected to Route",
+    "add_to_route": "Add to Route",
     "route_generated": "Route preview ready",
     "route_saved": "Added to route",
     "stay_duration": "{{minutes}}min",

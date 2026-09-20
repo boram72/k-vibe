@@ -97,6 +97,7 @@
     "persona_visited_places_title": "페르소나 방문 장소",
     "close_analyzer_results": "SNS 분석 결과 닫기",
     "from_my_route_tag": "내 루트",
+    "from_persona_tag": "페르소나",
     "close_saved_list": "찜 목록 닫기",
     "close_attractions": "관광지 추천 닫기"
   },
@@ -241,8 +242,7 @@
     "stop_excluded": "제외됨",
     "no_stops_selected": "포함된 장소가 없어요",
     "view_all_on_map": "지도에서 모두 보기",
-    "add_all_to_route": "루트에 모두 추가",
-    "add_selected_to_route": "선택 항목만 루트에 추가",
+    "add_to_route": "루트에 추가",
     "route_generated": "루트 미리보기가 준비됐어요",
     "route_saved": "루트에 추가했어요",
     "stay_duration": "{{minutes}}분",

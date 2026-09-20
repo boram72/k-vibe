@@ -249,13 +249,13 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
       </div>
 
       {/* 대화 중 요청 — SNS 분석기 하단 액션바(grid-cols-2: "지도에서 모두
-          보기" outline + "루트에 모두 추가" 채움)와 동일한 배치/아이콘/문구로
-          통일. "지도에서 모두 보기"는 PersonaPage.viewAllOnMap이 이미 있는
+          보기" outline + "루트에 추가" 채움)와 동일한 배치/아이콘으로 통일.
+          "지도에서 모두 보기"는 PersonaPage.viewAllOnMap이 이미 있는
           "페르소나별 탭"(filterMode: 'star')을 이 페르소나 라벨로 열어준다
-          (새 핸드오프 없음). 제외된 스팟이 하나라도 있으면(전체가 아니라
-          일부만 담기는 상태) "루트에 모두 추가"쪽 문구만 "선택 항목만
-          루트에 추가"로 바뀐다 — excludedIds는 이미 있는 state라 새로
-          만들 것 없이 그 크기만 참조. */}
+          (새 핸드오프 없음). 문구는 제외 여부와 무관하게 항상 "루트에
+          추가" 고정 — 실제로 담기는 대상(includedStops, excludedIds로 걸러진
+          결과)은 그대로 동작하고, 버튼 문구만 상태에 따라 바뀌지 않는다
+          (대화 중 요청). */}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" onClick={onViewAllOnMap}>
           <MapPin className="h-3.5 w-3.5" />
@@ -263,7 +263,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
         </Button>
         <Button onClick={handleAddToRoute} disabled={includedStops.length === 0}>
           <Compass className="h-3.5 w-3.5" />
-          {excludedIds.size > 0 ? t('persona.add_selected_to_route') : t('persona.add_all_to_route')}
+          {t('persona.add_to_route')}
         </Button>
       </div>
     </div>

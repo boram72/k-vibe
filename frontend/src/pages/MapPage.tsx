@@ -141,6 +141,16 @@ export default function MapPage() {
       ? focusPlaces[0]
       : (focusState?.initialSelectedPlace ?? null),
   )
+  // 대화 중 요청 — 페르소나 결과 화면에서 스팟 하나의 지도 아이콘을 눌러
+  // 들어온 경우, 위 selectedPlace 초기값이 그 스팟으로 채워져 핀 강조/카메라
+  // 이동은 기존 선택 메커니즘 그대로 정상 작동하지만, 상세팝업 자체는 "최초
+  // 자동 진입"에서는 뜨지 않아야 한다(사용자가 그 자리를 스스로 다시 클릭한
+  // 게 아니라서). handleSelectPlace(실제 클릭)가 호출되는 순간 false로
+  // 풀리므로, 그 이후엔 평범한 선택과 완전히 동일하게 동작(상세팝업+
+  // "돌아가기" 정상 노출).
+  const [suppressInitialDetail, setSuppressInitialDetail] = useState(() =>
+    Boolean(focusState?.initialSelectedPlace),
+  )
   // 버그 수정 — 지도 핀의 빨간 강조(선택 표시)가 상세시트의 열림/닫힘과 같은
   // state(selectedPlace)를 공유하고 있어서, 상세시트를 닫으면(`onClose`가
   // `setSelectedPlace(null)`) 핀 강조까지 같이 사라졌음. 검색 결과 핀이
@@ -161,6 +171,10 @@ export default function MapPage() {
   const [selectionSeq, setSelectionSeq] = useState(0)
 
   function handleSelectPlace(place: Place) {
+    // 대화 중 요청 — 페르소나 핸드오프로 자동 선택된 스팟은 최초엔 상세팝업이
+    // 억제돼 있는데, 사용자가 그 자리를 "직접" 클릭하는 순간부터는(이 함수가
+    // 항상 실제 클릭에서만 호출됨) 평범한 선택과 똑같이 취급한다.
+    setSuppressInitialDetail(false)
     setSelectedPlace(place)
     setHighlightedPlaceId(place.id)
     setSelectionSeq((n) => n + 1)
@@ -243,9 +257,16 @@ export default function MapPage() {
 
   // Focus-place handoffs (Analyze/Persona/Radar → "view on map") re-center the
   // search around that place instead of the user's literal current location.
+  // 대화 중 발견 — 페르소나 개별 스팟 핸드오프(initialSelectedPlace)도 같은
+  // 이유로 여기 안 넣으면, 핀 강조는 되는데 카메라는 계속 "페르소나 전체
+  // 방문지를 다 담는" bounds-fit(personaFocusPlaces) 기준으로만 잡혀서 그
+  // 스팟 하나로 확대가 안 되는 문제가 있었음(실사용 확인) — focusPlaces와
+  // 동일한 우선순위로 취급.
   const effectiveCoords = focusPlaces[0] && !viewIgnoresFocus
     ? { lat: focusPlaces[0].lat, lng: focusPlaces[0].lng }
-    : (searchCenter ?? coords)
+    : focusState?.initialSelectedPlace && !viewIgnoresFocus
+      ? { lat: focusState.initialSelectedPlace.lat, lng: focusState.initialSelectedPlace.lng }
+      : (searchCenter ?? coords)
 
   // 2026-09 — 위치기반서비스사업자 등록 없이 배포하려면 실측 GPS를 백엔드로
   // 보내면 안 됨(plan.md 6번). effectiveCoords(위)는 지도 뷰 중심·카카오
@@ -393,6 +414,7 @@ export default function MapPage() {
         // 이유: 그 함수 내부의 "이전 검색결과 그룹 정리" 로직이 클로저로 옛
         // kakaoSearchResults를 참조해서, 방금 위에서 새로 채운 값을 같은
         // 실행 안에서 곧바로 지워버릴 수 있음 — 여기선 선택 상태만 직접 세팅.
+        setSuppressInitialDetail(false)
         setSelectedPlace(primary)
         setHighlightedPlaceId(primary.id)
         setSelectionSeq((n) => n + 1)
@@ -660,12 +682,22 @@ export default function MapPage() {
   // 버튼이나 "이 지역에서 검색"으로 명시적으로 딴 곳을 보려 해도 bounds-fit
   // effect(map-canvas.tsx)가 계속 focusPlaces 기준으로 다시 맞춰버려서 실제로
   // 안 움직이는 것처럼 보였음(effectiveCoords/queryCoords와 동일한 가드 필요).
-  const fitPlaces = focusPlaces.length && !viewIgnoresFocus ? focusPlaces : personaFocusPlaces
+  // 대화 중 발견 — 페르소나 개별 스팟 핸드오프(initialSelectedPlace)도
+  // focusPlaces와 동일하게 "그 한 장소만" 기준으로 bounds-fit해야 확대가
+  // 된다 — personaFocusPlaces(그 페르소나 전체 방문지)를 그대로 두면 항상
+  // 전체를 다 담는 넓은 뷰로만 맞춰져서 그 스팟 하나로 확대가 안 됐음
+  // (실사용 확인).
+  const fitPlaces = focusPlaces.length && !viewIgnoresFocus
+    ? focusPlaces
+    : focusState?.initialSelectedPlace
+      ? [focusState.initialSelectedPlace]
+      : personaFocusPlaces
   // 5-3/7번(plan.md) — fitPlaces가 페르소나별 bounds-fit용일 때만 true.
-  // SNS 분석기(focusPlaces) 핸드오프일 땐 false로 내려가 기존처럼 GPS 안
-  // 섞고 분석된 스팟만 기준으로 동작(위 map-canvas.tsx의 includeCameraInFit
-  // 주석 참고).
-  const fitPlacesIncludeCamera = !focusPlaces.length && personaFocusPlaces.length > 0
+  // SNS 분석기(focusPlaces) 핸드오프나 페르소나 개별 스팟 핸드오프일 땐
+  // false로 내려가 기존처럼 GPS 안 섞고 그 스팟(들)만 기준으로 동작(위
+  // map-canvas.tsx의 includeCameraInFit 주석 참고).
+  const fitPlacesIncludeCamera =
+    !focusPlaces.length && !focusState?.initialSelectedPlace && personaFocusPlaces.length > 0
 
   // 8번(plan.md) — `tags` 필드가 두 가지 다른 용도로 같이 쓰여서(일반
   // 카테고리 장소의 설명용 태그 예: 경복궁의 ['한복','궁궐','역사'] vs
@@ -711,11 +743,27 @@ export default function MapPage() {
   // 보여줌). SNS 분석기 섹션을 닫으면(activeSection이 'analyzer'가 아니게
   // 되면) 그 항목들이 다시 "주변 스팟"에 합쳐져 보여야 하므로 activeSection도
   // 같이 체크.
-  const nearbySpotListPlaces = useMemo(
-    () =>
-      activeSection === 'analyzer' ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered,
-    [filtered, focusPlaces, activeSection],
-  )
+  // 대화 중 요청 — 페르소나 핸드오프로 자동 선택된 스팟을 "페르소나 방문
+  // 장소" 목록에서도 쉽게 찾을 수 있도록, 그 항목만 맨 위로 올리고 태그를
+  // 붙인다(routeOriginPlaceId의 "내 루트에서 옴" 태그와 동일한 판별 패턴,
+  // 다만 이쪽은 정렬까지 추가). 판별 조건이 "돌아가기" 버튼과 동일한
+  // focusState.initialSelectedPlace.id 비교라 별도 state 불필요 — 다른
+  // 스팟을 클릭해 재진입하면 focusState 자체가 새로 채워지므로 자동으로
+  // 갱신되고, 그 사이 목록을 스크롤하다 필터를 껐다 켜도 다시 계산될 뿐
+  // 별도로 "리셋"하는 코드가 필요 없다.
+  const personaOriginPlaceId = focusState?.initialSelectedPlace?.id ?? null
+
+  const nearbySpotListPlaces = useMemo(() => {
+    const base =
+      activeSection === 'analyzer' ? filtered.filter((p) => !focusPlaces.some((f) => f.id === p.id)) : filtered
+    if (!personaOriginPlaceId) return base
+    const originIndex = base.findIndex((p) => p.id === personaOriginPlaceId)
+    if (originIndex <= 0) return base
+    const next = [...base]
+    const [origin] = next.splice(originIndex, 1)
+    next.unshift(origin)
+    return next
+  }, [filtered, focusPlaces, activeSection, personaOriginPlaceId])
 
   // 5-2(plan.md, 대화 중 요청) — 지도에 표시되는 핀은 항상 "지금 화면에 보이는
   // 목록"과 정확히 일치해야 한다(찜/연관관광지/SNS분석기/검색결과/주변 스팟
@@ -871,6 +919,7 @@ export default function MapPage() {
           analyzerPlaces={focusPlaces}
           onCloseAnalyzerSection={closeActiveSection}
           routeOriginPlaceId={routeOriginPlaceId}
+          personaOriginPlaceId={personaOriginPlaceId}
           savedPlaces={savedPlaces}
           places={nearbySpotListPlaces}
           isLoading={isLoading}
@@ -881,20 +930,30 @@ export default function MapPage() {
       )}
 
       <PlaceDetailSheet
-        place={selectedPlace}
+        // 대화 중 요청 — 페르소나 핸드오프로 자동 선택된 스팟은 최초
+        // 진입에서만 상세팝업 자체를 안 띄운다(suppressInitialDetail). 핀
+        // 강조/카메라 이동은 selectedPlace/highlightedPlaceId가 정상적으로
+        // 채워져 있어 영향 없음 — 여기서 화면에 실제로 넘길 place만 null로
+        // 가린다. 사용자가 그 자리를 직접 클릭하면(handleSelectPlace)
+        // suppressInitialDetail이 즉시 풀려서 이후엔 평범한 선택과 동일.
+        place={suppressInitialDetail ? null : selectedPlace}
         saved={selectedPlace ? savedIds.has(selectedPlace.id) : false}
         onClose={() => setSelectedPlace(null)}
         onToggleSave={toggleSave}
         // 대화 중 요청 — 내 루트/SNS분석기는 focusPlaces 자체가 "핸드오프로
-        // 넘어온 장소들"이라 그 안의 무엇을 봐도 "돌아가기"가 맞다. 페르소나는
-        // "페르소나별 탭" 전체(그 스타의 모든 방문지)를 재사용하는 방식이라
-        // 범위가 넓어서, 핸드오프로 들어온 정확히 그 스팟(initialSelectedPlace)
-        // 을 사용자가 직접 다시 선택했을 때만 뜨도록 좁힌다 — 탭 안의 다른
-        // 장소를 봐도 뜨지 않는다(실사용 확인된 버그, 이전에 한 번 고침).
-        showBackButton={
-          hasAnalyzerFocus ||
-          (Boolean(focusState?.initialSelectedPlace) && selectedPlace?.id === focusState?.initialSelectedPlace?.id)
-        }
+        // 넘어온 장소들"이라 그 안의 무엇을 봐도 상세팝업 하단에 "돌아가기"가
+        // 뜨는 게 맞다(이미 루트에 담겨있는 스팟이라 "루트에 추가"를 또
+        // 보여줄 필요가 없음 — 내 루트 케이스. 분석기 쪽은 지도 화면 자체에
+        // 별도의 "돌아가기" 배너를 새로 만드는 작업이 진행 중이라 여기는
+        // 손 안 댐). 페르소나는 그 배너가 대신 처리하기로 해서, 여기(상세팝업
+        // 하단)는 다시 평범한 "루트에 추가"로 되돌린다 — 아직 루트에 없는
+        // 장소를 지도에서 둘러보는 거라 "추가"가 더 맞는 동작.
+        //
+        // 페르소나 관련 다른 기능(핀 강조/카메라 확대/목록 정렬+태그,
+        // suppressInitialDetail로 상세팝업 최초 억제)은 전부
+        // focusState.initialSelectedPlace를 그대로 계속 참조하므로 이 조건
+        // 하나만 빼도 서로 안 얽힌다 — 상태 꼬임 없음.
+        showBackButton={hasAnalyzerFocus}
         onBack={() => navigate(-1)}
       />
     </div>

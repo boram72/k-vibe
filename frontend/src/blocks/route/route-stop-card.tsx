@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CheckCircle2, ExternalLink, GripVertical, Headphones, MapPin, X } from 'lucide-react'
+import { CheckCircle2, GripVertical, Headphones, MapPin, X } from 'lucide-react'
 import { CrowdBadge } from '@/blocks/common/crowd-badge'
 import type { RouteStop } from '@/lib/route-draft'
-import { buildGoogleMapsPlaceUrl } from '@/lib/route-share'
 import { cn } from '@/lib/utils'
 
 interface RouteStopCardProps {
@@ -56,18 +55,6 @@ export function RouteStopCard({
     >
       <MapPin className="h-4.5 w-4.5" />
     </button>
-  )
-
-  const externalLinkBtn = (
-    <a
-      href={buildGoogleMapsPlaceUrl(stop)}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={t('route.open_stop_map', { name: stop.name })}
-      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent"
-    >
-      <ExternalLink className="h-4.5 w-4.5" />
-    </a>
   )
 
   const removeBtn = (
@@ -152,7 +139,6 @@ export function RouteStopCard({
             {docentBtn}
             {completeBtn}
             {viewOnMapBtn}
-            {externalLinkBtn}
             {removeBtn}
           </div>
         </div>
@@ -177,7 +163,6 @@ export function RouteStopCard({
           {docentBtn}
           {completeBtn}
           {viewOnMapBtn}
-          {externalLinkBtn}
           {removeBtn}
         </div>
       </div>

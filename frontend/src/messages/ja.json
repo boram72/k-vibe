@@ -97,6 +97,7 @@
     "persona_visited_places_title": "ペルソナの訪問スポット",
     "close_analyzer_results": "SNS分析結果を閉じる",
     "from_my_route_tag": "マイルート",
+    "from_persona_tag": "ペルソナ",
     "close_saved_list": "お気に入りリストを閉じる",
     "close_attractions": "おすすめ観光地を閉じる"
   },
@@ -241,8 +242,7 @@
     "stop_excluded": "除外済み",
     "no_stops_selected": "選択されたスポットがありません",
     "view_all_on_map": "すべて地図で見る",
-    "add_all_to_route": "すべてルートに追加",
-    "add_selected_to_route": "選択項目のみルートに追加",
+    "add_to_route": "ルートに追加",
     "route_generated": "ルートプレビューができました",
     "route_saved": "ルートに追加しました",
     "stay_duration": "{{minutes}}分",

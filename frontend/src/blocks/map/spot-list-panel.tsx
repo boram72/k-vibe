@@ -102,6 +102,11 @@ interface SpotListPanelProps {
   // 이 "주변 스팟" 목록에 그대로 포함시키되, 그 장소 행에만 태그를 붙여
   // 구분한다. null이면 그런 핸드오프가 아니라는 뜻이라 아무 행도 태그 안 붙임.
   routeOriginPlaceId: string | null
+  // 대화 중 요청 — 페르소나 결과 화면에서 스팟 하나의 지도 아이콘을 눌러
+  // 들어온 경우, 그 스팟만 이 목록 맨 위로 올리고(정렬은 MapPage가 이미
+  // 해서 내려줌) 태그를 붙여 구분한다 — routeOriginPlaceId와 판별 방식은
+  // 동일(id 비교), 정렬까지 추가된 점만 다르다.
+  personaOriginPlaceId: string | null
   // 5-3(plan.md) — 페르소나별 탭일 때는 이 목록이 "주변"이 아니라 "페르소나
   // 방문지"라 다른 문구를 써야 함 — 어떤 문구를 쓸지는 MapPage가 결정해서
   // 그대로 내려준다.
@@ -145,6 +150,7 @@ export function SpotListPanel({
   onSelectPlace,
   center,
   routeOriginPlaceId,
+  personaOriginPlaceId,
   listTitle,
 }: SpotListPanelProps) {
   const { t } = useTranslation()
@@ -200,6 +206,16 @@ export function SpotListPanel({
             {place.id === routeOriginPlaceId && (
               <span className="inline-block shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                 {t('map.from_my_route_tag')}
+              </span>
+            )}
+            {/* 대화 중 요청 — 페르소나 결과 화면에서 지도 아이콘을 눌러 온
+                스팟도 위 "내 루트에서 옴"과 동일한 판별 방식(id 비교)으로
+                태그를 붙인다. 이 항목의 목록 내 정렬(맨 위로) 자체는
+                MapPage.nearbySpotListPlaces가 이미 처리해서 내려주므로
+                여기서는 태그 표시만 담당. */}
+            {place.id === personaOriginPlaceId && (
+              <span className="inline-block shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                {t('map.from_persona_tag')}
               </span>
             )}
           </div>

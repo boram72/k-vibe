@@ -34,8 +34,7 @@ export interface MapFocusState {
   initialSearch?: string
   // 내 루트의 개별 스팟에서 지도 아이콘을 눌러 들어온 경우에만 true — 그
   // 스팟이 "주변 스팟" 목록에서 태그로 구분되는 데 쓰인다(routeOriginPlaceId).
-  // "돌아가기" 버튼 노출 여부는 이제 이 값과 무관하게 hasAnalyzerFocus/
-  // cameFromHandoff로 통합 판단한다(place-detail-sheet.tsx 참고).
+  // "돌아가기" 버튼(지도 위)은 이 값과 무관하게 cameFromHandoff로 통합 판단한다.
   returnToRoute?: boolean
   // 대화 중 요청 — 페르소나 결과 화면("지도에서 보기")에서 들어올 때, 이미
   // 있는 "페르소나별 탭"(filterMode: 'star')을 그대로 재사용해 그 스타가
@@ -582,6 +581,19 @@ export default function MapPage() {
   // SNS 분석기 핸드오프가 있는 동안은 항상 노출.
   const hasAnalyzerFocus = focusPlaces.length > 0
 
+  // 대화 중 요청 — 페르소나/내 루트/SNS 분석기의 "지도에서 보기"로 넘어온 방문
+  // 인지 여부. 이 방문 동안은 지도 위에 "돌아가기"를 계속 보여준다(상세 팝업
+  // 안이 아니라 MapCanvas 우측 상단 — 장소를 하나도 안 눌러도 돌아갈 수 있게).
+  // 눌렀을 때 동작은 출처별 경로를 따로 두지 않고 "직전 화면으로 navigate(-1)"
+  // 하나로 통일한다 — 어디서 왔든 브라우저 히스토리상 바로 이전 항목이 그 화면
+  // (페르소나면 그 결과 화면까지)이라 정확히 거기로 돌아간다. 라우터 state는
+  // 이 진입 한 번에만 실려 있으므로, 하단 탭으로 다시 들어오면 false가 된다.
+  const cameFromHandoff =
+    focusPlaces.length > 0 ||
+    Boolean(focusState?.returnToRoute) ||
+    Boolean(focusState?.initialSelectedPlace) ||
+    Boolean(focusState?.initialFilterMode)
+
   // 5-3(plan.md) — "주변 스팟" 목록의 타이틀. 페르소나별(스타별) 탭일 때는
   // "주변"이 아니라 "페르소나 방문 장소"가 더 정확한 설명이라 그 문구로 바꾼다.
   // (SNS 분석기 결과는 더 이상 이 타이틀/목록에 안 섞임 — 아래 analyzerPlaces
@@ -787,6 +799,7 @@ export default function MapPage() {
             onRequestLocation={handleRequestLocation}
             hasAnalyzerFocus={hasAnalyzerFocus}
             onShowAnalysisResult={handleShowAnalysisResult}
+            onGoBack={cameFromHandoff ? () => navigate(-1) : undefined}
             onSearchArea={(coord) => {
               // 9번(plan.md) — 페르소나별 탭에서 지도를 드래그해 "이 지역에서
               // 검색"을 확정하면, center가 바뀌며 focusCenter가 리셋되고
@@ -885,17 +898,6 @@ export default function MapPage() {
         saved={selectedPlace ? savedIds.has(selectedPlace.id) : false}
         onClose={() => setSelectedPlace(null)}
         onToggleSave={toggleSave}
-        // 대화 중 요청 — 내 루트/SNS분석기는 focusPlaces 자체가 "핸드오프로
-        // 넘어온 장소들"이라 그 안의 무엇을 봐도 "돌아가기"가 맞다. 페르소나는
-        // "페르소나별 탭" 전체(그 스타의 모든 방문지)를 재사용하는 방식이라
-        // 범위가 넓어서, 핸드오프로 들어온 정확히 그 스팟(initialSelectedPlace)
-        // 을 사용자가 직접 다시 선택했을 때만 뜨도록 좁힌다 — 탭 안의 다른
-        // 장소를 봐도 뜨지 않는다(실사용 확인된 버그, 이전에 한 번 고침).
-        showBackButton={
-          hasAnalyzerFocus ||
-          (Boolean(focusState?.initialSelectedPlace) && selectedPlace?.id === focusState?.initialSelectedPlace?.id)
-        }
-        onBack={() => navigate(-1)}
       />
     </div>
   )

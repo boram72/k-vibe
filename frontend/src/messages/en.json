@@ -181,7 +181,7 @@
     "popular_video_yeosu": "Yeosu",
     "popular_video_mokpo": "Mokpo",
     "tutorial_title": "Quick guide",
-    "tutorial_gif_alt": "GIF showing how to use the SNS analyzer: paste a URL, then pick a place from the results",
+    "tutorial_gif_alt": "GIF showing how to use the SNS analyzer: paste a URL, leave out unwanted places from the results, then add the rest to your route",
     "tutorial_step1": "Paste a YouTube link into the search box, then tap 'Analyze Spots'.",
     "tutorial_step2": "Feel free to browse around K-Vibe while it's analyzing — we'll let you know when it's done!",
     "tutorial_step3": "Once it's done, tap [Deselect] to leave out places you don't want, and tap the map icon to see a place on the K-Vibe map.",
@@ -337,7 +337,7 @@
     "empty_guide_analyze_steps": [
       "Click 'SNS Analyzer' in the menu.",
       "Paste a YouTube link and tap 'Analyze Spots'.",
-      "Once it's done, tap [Add All to Route] to save every spot at once!"
+      "Once it's done, tap 'Add to Route' to save the spots at once! (You can leave out any you don't want first.)"
     ],
     "empty_guide_analyze_credit": "Thumbnail photo: Korea Tourism Organization",
     "empty_guide_persona_label": "Add from Persona",

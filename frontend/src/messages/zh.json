@@ -181,7 +181,7 @@
     "popular_video_yeosu": "丽水",
     "popular_video_mokpo": "木浦",
     "tutorial_title": "使用指南",
-    "tutorial_gif_alt": "展示SNS分析器使用方法的GIF：粘贴链接后从分析结果中选择地点",
+    "tutorial_gif_alt": "展示SNS分析器使用方法的GIF：粘贴链接后从分析结果中排除不需要的地点，再添加到路线",
     "tutorial_step1": "将YouTube链接粘贴到搜索框后，点击“分析地点”按钮。",
     "tutorial_step2": "分析进行时，你可以随意逛逛K-Vibe的其他页面！完成后会通知你。",
     "tutorial_step3": "分析完成后，不想加入的地点可点击[取消选择]按钮排除，点击地图图标即可在K-Vibe地图中查看位置。",
@@ -337,7 +337,7 @@
     "empty_guide_analyze_steps": [
       "点击菜单中的“SNS分析”。",
       "粘贴YouTube链接后点击“分析地点”按钮。",
-      "分析完成后，点击“全部添加到路线”一次性保存所有地点！"
+      "分析完成后，点击“添加到路线”一次性保存找到的地点！（不需要的地点可以先排除）"
     ],
     "empty_guide_analyze_credit": "缩略图照片来源：韩国观光公社",
     "empty_guide_persona_label": "从角色添加",

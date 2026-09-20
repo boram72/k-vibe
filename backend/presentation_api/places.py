@@ -27,6 +27,24 @@ def find_nearby_places(
     except Exception:
         # 캐싱 실패가 지도 검색 응답 자체를 막으면 안 된다.
         logger.exception("장소 검색결과 location 캐싱 실패")
+
+    # 대화 중 발견(8-2) — 리뷰 작성/삭제 시마다 그 장소의 평균 평점을 이미
+    # location.rating에 반영해두고 있는데(reviewinfo._recompute_location_rating),
+    # 이 목록 응답은 그 값을 안 읽고 TourAPI 원본만 내려주고 있었음. 그래서
+    # 프론트가 카드마다 GET /reviews/{placeId}를 개별 호출해 평점을 계산해야
+    # 했고, 반경검색 결과가 30~40개면 그만큼 동시 요청이 몰려 503을 유발했다.
+    # 이미 캐싱된 place_id로 location을 다시 조회해 rating만 합쳐주면 그
+    # 개별 호출 자체가 필요 없어진다.
+    try:
+        locations = locationinfo.get_locations_by_place_ids([place["id"] for place in places])
+        for place in places:
+            location = locations.get(place["id"])
+            place["rating"] = location.get("rating") if location else None
+    except Exception:
+        logger.exception("장소 평점(location.rating) 병합 실패")
+        for place in places:
+            place["rating"] = None
+
     return places
 
 

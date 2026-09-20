@@ -31,6 +31,7 @@ export default function PersonaPage() {
   const location = useLocation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const setTourResetAction = usePageHelpStore((s) => s.setTourResetAction)
   const startTour = useTourStore((s) => s.start)
 
   const locale = i18n.language as Locale
@@ -53,6 +54,18 @@ export default function PersonaPage() {
     setHelp(t('persona.help_title'), t('persona.help_body'))
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
+
+  // 결과/생성 중/오류 화면(step2)에서는 투어가 가리킬 카드 목록이 안 보여서, "?"를 눌러도
+  // 어두운 배경 위에 말풍선만 떠서 오류처럼 보였다(사용자 지적). 이 상태에서는 헤더 "?"가
+  // "초기화 후 진행할까요?"를 먼저 묻고, 확인하면 카드 목록(step1)으로 되돌린 뒤 투어를
+  // 시작한다. 되돌리기는 "다른 루트 만들기"(navigate(-1))가 아니라 이 페이지의 카드 목록
+  // state로 직접 이동한다 — 홈에서 카드를 눌러 들어온 경우 -1은 홈으로 가버려서 "첫 번째
+  // 페이지"(카드 목록)가 아니다. push라서 뒤로가기를 누르면 방금 보던 결과로 돌아온다.
+  const needsTourReset = Boolean(activePersonaId)
+  useEffect(() => {
+    setTourResetAction(needsTourReset ? () => navigate('.', { state: null }) : null)
+    return () => setTourResetAction(null)
+  }, [needsTourReset, navigate, setTourResetAction])
 
   // 카드 목록(step1)일 때만 투어를 띄운다 — 홈에서 카드를 눌러 결과 화면으로
   // 바로 들어온 경우(activePersonaId 있음)는 하이라이트할 그리드 자체가

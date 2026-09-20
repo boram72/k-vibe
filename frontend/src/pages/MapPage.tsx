@@ -11,7 +11,7 @@ import { fetchSavedPlaces, toggleSavedPlace } from '@/lib/saved-places'
 import { searchKakaoArea } from '@/lib/kakao-area-search'
 import { resolveAdminOfficeCoords } from '@/lib/kakao-admin-region'
 import { fetchPersonaPlaces } from '@/api/personas'
-import { usePageHelpStore } from '@/store/page-help-store'
+import { usePageHelpStore, type TourResetKind } from '@/store/page-help-store'
 import { useTourStore, canAutoStartTour } from '@/store/tour-store'
 import { MAP_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import { useCurrentLocation, SEOUL_CENTER } from '@/lib/use-current-location'
@@ -71,6 +71,9 @@ export default function MapPage() {
   const { t, i18n } = useTranslation()
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
+  const setTourReady = usePageHelpStore((s) => s.setTourReady)
+  const setTourPrepareAction = usePageHelpStore((s) => s.setTourPrepareAction)
+  const setTourResetAction = usePageHelpStore((s) => s.setTourResetAction)
   const startTour = useTourStore((s) => s.start)
   // 대화 중 요청 — "현재위치" 버튼 라벨을 이제 map-canvas.tsx가 항상 고정
   // 텍스트로 표시해서(실제 GPS 성공/폴백 여부와 무관), 이 훅의 locationLabel은
@@ -420,14 +423,6 @@ export default function MapPage() {
     return () => clearHelp()
   }, [setHelp, clearHelp, t])
 
-  // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
-  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
-  // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
-  // 이 페이지가 처음이어도 뜨지 않는다.
-  useEffect(() => {
-    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
-  }, [startTour])
-
   // Guards against StrictMode's dev-only double-invoke of mount effects —
   // without this, requestLocation() fires twice on a denied/unavailable
   // geolocation request, producing two identical toasts. The ref persists
@@ -445,6 +440,65 @@ export default function MapPage() {
   // Date.now()는 렌더 중엔 못 부르는 impure 호출(react-hooks/purity)이라,
   // 렌더 바디가 아니라 아래 effect 안에서만 채운다.
   const landingStartRef = useRef<number | null>(null)
+
+  // 지도 랜딩이 끝나기 전(스켈레톤이 떠 있는 동안)에는 튜토리얼이 가리킬 요소(검색창,
+  // 목록 등)가 아직 없어서, "?"를 눌러도 어두운 배경 위에 말풍선만 덩그러니 떴다(사용자
+  // 지적). 그동안은 헤더 "?" 버튼을 잠갔다가 랜딩이 확정되면 풀어준다.
+  useEffect(() => {
+    setTourReady(!isResolvingLanding)
+    return () => setTourReady(true)
+  }, [isResolvingLanding, setTourReady])
+
+  // 패널을 접어 둔 채(데스크탑 접힘 / 모바일 최소화) "?"를 누르면 튜토리얼이 가리킬
+  // 검색창·필터·목록이 화면에 없어서, 투어가 보이지 않은 채로 대기만 했다(사용자 지적 —
+  // 눌러도 반응이 없어 오류처럼 보임). 그래서 시작 직전에 패널을 강제로 펼친다. 데스크탑은
+  // 접힘 해제, 모바일은 최소화일 때만 기본 상태로(전체화면은 이미 펼쳐져 있으니 그대로).
+  useEffect(() => {
+    setTourPrepareAction(() => {
+      setIsPanelCollapsed(false)
+      setMobilePanelState((state) => (state === 'minimized' ? 'default' : state))
+    })
+    return () => setTourPrepareAction(null)
+  }, [setTourPrepareAction])
+
+  // 찜 목록/관광지 추천/검색 결과/들고 온 장소(SNS 분석기 등) 목록이 켜진 채 "?"를 누르면,
+  // 그 화면들에서는 필터 탭이 숨겨져 있어서(spot-list-panel의 searchAndFilter) 튜토리얼이
+  // 중간(필터 단계)에서 보이지 않게 사라졌다. 그래서 먼저 "해제/닫고 진행할까요?"를 묻고,
+  // 확인하면 기본 목록으로 되돌린 뒤 시작한다(초기화 안내와 같은 팝업, 문구만 상태별로 다름).
+  // 닫아도 검색 결과/들고 온 장소의 원본 데이터(areaSearchLists/focusPlaces)는 그대로라 X 버튼으로
+  // 닫는 것과 같은 동작이다(closeActiveSection 참고).
+  const tourResetKind: TourResetKind | null =
+    activeSection === 'saved' || activeSection === 'attractions'
+      ? 'release'
+      : activeSection === 'searchResults'
+        ? 'closeSearch'
+        : activeSection === 'analyzer'
+          ? 'closeAnalyzer'
+          : null
+  useEffect(() => {
+    setTourResetAction(tourResetKind ? () => setActiveSection(null) : null, tourResetKind ?? undefined)
+    return () => setTourResetAction(null)
+  }, [tourResetKind, setTourResetAction])
+
+  // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
+  // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문
+  // 기간이 이미 끝났거나(canAutoStartTour) "다시 보지 않기"를 눌렀으면
+  // 이 페이지가 처음이어도 뜨지 않는다. 자동 시작도 랜딩이 끝난 뒤에 한다 — 스켈레톤
+  // 위에서 시작하면 첫 단계(검색창)를 못 찾아서 화면 한가운데에 말풍선만 뜬다.
+  //
+  // 다른 페이지에서 장소를 들고 왔거나(SNS 분석기 등) 목록이 켜진 채 들어온 경우엔 자동으로
+  // 띄우지 않는다 — 그 화면에서는 필터 탭이 숨겨져 있어서 투어가 4단계(필터)에서 보이지 않게
+  // 사라진다(사용자 클릭이 아니라 팝업으로 물을 수도 없음). 그 경우 "?"를 누르면 위의 안내
+  // 팝업으로 목록을 닫고 진행할 수 있다. "시작하는 순간"의 값만 보고(ref) 이후 목록을 닫을 때
+  // 갑자기 뜨지는 않게 하며, "봤다"고 표시하지 않으니 다음에 목록 없이 들어오면 그때 자동으로 뜬다.
+  const activeSectionRef = useRef(activeSection)
+  useEffect(() => {
+    activeSectionRef.current = activeSection
+  }, [activeSection])
+  useEffect(() => {
+    if (isResolvingLanding || activeSectionRef.current !== null) return
+    if (canAutoStartTour(MAP_TOUR_KEY)) startTour(MAP_TOUR_KEY)
+  }, [isResolvingLanding, startTour])
 
   const didRequestLocationRef = useRef(false)
   useEffect(() => {

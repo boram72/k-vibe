@@ -718,50 +718,64 @@ export default function MapPage() {
             SDK 로딩(useKakaoLoader)이 이 컴포넌트 안에서 일어나므로, 스켈레톤이
             이걸 통째로 가려버리면 SDK 자체가 안 떠서 5초 타임아웃 후 항상
             서울로만 폴백되는 버그가 있었음(실사용 재현으로 발견). 스켈레톤은
-            그 위에 겹쳐서 SDK가 백그라운드에서 계속 로드되게 한다. */}
-        <MapCanvas
-          center={effectiveCoords}
-          places={mapPlaces}
-          fitPlaces={fitPlaces}
-          includeCameraInFit={fitPlacesIncludeCamera}
-          selectedPlaceId={highlightedPlaceId ?? undefined}
-          selectionSeq={selectionSeq}
-          onSelectPlace={handleSelectPlace}
-          onRequestLocation={handleRequestLocation}
-          hasAnalyzerFocus={hasAnalyzerFocus}
-          onShowAnalysisResult={handleShowAnalysisResult}
-          onSearchArea={(coord) => {
-            // 9번(plan.md) — 페르소나별 탭에서 지도를 드래그해 "이 지역에서
-            // 검색"을 확정하면, center가 바뀌며 focusCenter가 리셋되고
-            // boundsKey(페르소나 카탈로그, 안 바뀜)로 인해 bounds-fit이
-            // 재실행되어 다시 전체 페르소나 목록으로 줌아웃돼버림 — 정작
-            // 사용자가 원한 "이 지역 주변 검색 결과"는 카탈로그에 파묻혀 안
-            // 보였음(대화 중 발견). 카테고리별로 전환하면 그 지역의 실제
-            // 위치 기반 검색 결과가 정상적으로 보임 — starFilter(예: IU
-            // 선택 상태)는 안 지워지고 기억되어, 나중에 페르소나별로 다시
-            // 돌아가면 그대로 복원됨(기존 탭 전환 시 선택값 유지 원칙과 동일).
-            setFilterMode('category')
-            // 대화 중 발견 — SNS 분석기 핸드오프 중엔 위 카테고리 전환만으론
-            // 안 됨(personaFocusPlaces와 달리 focusPlaces는 filterMode와
-            // 무관한 라우터 핸드오프 데이터라 그걸론 안 비워짐). "현재위치"
-            // 버튼과 동일한 viewIgnoresFocus로 focusPlaces 우선순위를 해제해야
-            // effectiveCoords/queryCoords/fitPlaces가 전부 이 새 좌표를 따름 —
-            // 안 그러면 검색 자체가(카메라도 /places 재조회도) 계속
-            // focusPlaces 기준으로 되돌아가 버림(대화 중 재현). 분석결과
-            // 버튼을 다시 누르면 그대로 복원됨(handleShowAnalysisResult).
-            setViewIgnoresFocus(true)
-            setActiveSection(null)
-            setSearchCenter(coord)
-            setQueryCenter(coord)
-          }}
-          onCameraCenterChange={setRealCameraCenter}
-          myLocation={isPrecise ? coords : null}
-          highlightIds={mapHighlightIds}
-          compact={!isDesktop && mobilePanelState === 'full'}
-        />
+            그 위에 겹쳐서 SDK가 백그라운드에서 계속 로드되게 한다.
+
+            테스트용 — 실기기(크롬/사파리)에서 이 z-index 오버레이가 지도를
+            못 가리는 현상이 보고됨(데스크탑 헤드리스 Chromium에서는 재현 안
+            됨). 카카오 SDK가 GPU 가속 레이어(transform/will-change)로 자체
+            stacking context를 만들어 부모의 z-index 순서를 무시하는
+            케이스로 추정 — 확실히 검증하려면 실기기 디버깅이 필요해서
+            단정은 못 함. visibility:hidden은 페인팅 자체를 막아 자식이
+            내부적으로 어떤 stacking context를 만들든 영향받지 않으므로,
+            원인 확정 없이도 더 안전한 대안이라 테스트 중. 마운트는
+            유지(위 주석의 SDK 타임아웃 버그 재발 방지). */}
+        <div className={cn('h-full w-full', isResolvingLanding && 'invisible')}>
+          <MapCanvas
+            center={effectiveCoords}
+            places={mapPlaces}
+            fitPlaces={fitPlaces}
+            includeCameraInFit={fitPlacesIncludeCamera}
+            selectedPlaceId={highlightedPlaceId ?? undefined}
+            selectionSeq={selectionSeq}
+            onSelectPlace={handleSelectPlace}
+            onRequestLocation={handleRequestLocation}
+            hasAnalyzerFocus={hasAnalyzerFocus}
+            onShowAnalysisResult={handleShowAnalysisResult}
+            onSearchArea={(coord) => {
+              // 9번(plan.md) — 페르소나별 탭에서 지도를 드래그해 "이 지역에서
+              // 검색"을 확정하면, center가 바뀌며 focusCenter가 리셋되고
+              // boundsKey(페르소나 카탈로그, 안 바뀜)로 인해 bounds-fit이
+              // 재실행되어 다시 전체 페르소나 목록으로 줌아웃돼버림 — 정작
+              // 사용자가 원한 "이 지역 주변 검색 결과"는 카탈로그에 파묻혀 안
+              // 보였음(대화 중 발견). 카테고리별로 전환하면 그 지역의 실제
+              // 위치 기반 검색 결과가 정상적으로 보임 — starFilter(예: IU
+              // 선택 상태)는 안 지워지고 기억되어, 나중에 페르소나별로 다시
+              // 돌아가면 그대로 복원됨(기존 탭 전환 시 선택값 유지 원칙과 동일).
+              setFilterMode('category')
+              // 대화 중 발견 — SNS 분석기 핸드오프 중엔 위 카테고리 전환만으론
+              // 안 됨(personaFocusPlaces와 달리 focusPlaces는 filterMode와
+              // 무관한 라우터 핸드오프 데이터라 그걸론 안 비워짐). "현재위치"
+              // 버튼과 동일한 viewIgnoresFocus로 focusPlaces 우선순위를 해제해야
+              // effectiveCoords/queryCoords/fitPlaces가 전부 이 새 좌표를 따름 —
+              // 안 그러면 검색 자체가(카메라도 /places 재조회도) 계속
+              // focusPlaces 기준으로 되돌아가 버림(대화 중 재현). 분석결과
+              // 버튼을 다시 누르면 그대로 복원됨(handleShowAnalysisResult).
+              setViewIgnoresFocus(true)
+              setActiveSection(null)
+              setSearchCenter(coord)
+              setQueryCenter(coord)
+            }}
+            onCameraCenterChange={setRealCameraCenter}
+            myLocation={isPrecise ? coords : null}
+            highlightIds={mapHighlightIds}
+            compact={!isDesktop && mobilePanelState === 'full'}
+          />
+        </div>
         {/* z-30 — 카카오 지도 SDK가 내부적으로 위치버튼/줌컨트롤/현재위치 핀에
             z-10~20을 쓰고 있어서, 그보다 확실히 위여야 실측 GPS 위치가 잠깐
-            비쳐 보이는 일 없이 스켈레톤이 완전히 가린다(실사용 확인 후 조정). */}
+            비쳐 보이는 일 없이 스켈레톤이 완전히 가린다(실사용 확인 후 조정).
+            현재는 위 visibility:hidden이 먼저 지도를 안 그려주므로 이
+            z-index는 사실상 안전망 역할만 함. */}
         {isResolvingLanding && (
           <>
             <Skeleton className="absolute inset-0 z-30 h-full w-full rounded-none" />

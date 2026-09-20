@@ -24,14 +24,18 @@ interface AnalysisResultListProps {
 
 // AI(모델)가 실제로 추론해서 만든 결과인 소스들 — worker(규칙기반 매칭)/mock은
 // 제외. "AI로 분석한 루트라 부정확할 수 있다"는 면책 문구는 이 소스일 때만 보여줌.
-const AI_SOURCES = new Set(['groq', 'gemini', 'openai'])
+// popular(인기 영상 미리보기)도 포함: 실제로는 이 영상들을 진짜 Gemini 분석기로
+// 돌려서 나온 결과를 캐싱해둔 것이라(popular-videos.data.ts 참고) 실제 분석
+// 화면과 동일한 디자인(면책문구/배지/reason 문구)으로 보여주기로 함(사용자 요청).
+const AI_SOURCES = new Set(['groq', 'gemini', 'openai', 'popular'])
 
 const SOURCE_LABEL_KEYS: Record<string, string> = {
   groq: 'analyze.source_groq',
   gemini: 'analyze.source_gemini',
   openai: 'analyze.source_openai',
   mock: 'analyze.source_mock',
-  popular: 'analyze.source_popular',
+  // popular도 실제 분석 화면과 동일하게 "Gemini AI" 배지로 표시(위 AI_SOURCES 주석 참고)
+  popular: 'analyze.source_gemini',
 }
 
 // Note: bulk "View All on Map" / "Add All to Route" actions live in AnalyzePage as a

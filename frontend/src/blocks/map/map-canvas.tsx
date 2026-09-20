@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LocateFixed, MapPin, ScanSearch } from 'lucide-react'
+import { ArrowLeft, LocateFixed, MapPin, ScanSearch } from 'lucide-react'
 import { Map as KakaoMap, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { CurrentLocationPin } from '@/blocks/common/current-location-pin'
 import { cn } from '@/lib/utils'
@@ -52,6 +52,12 @@ interface MapCanvasProps {
   // 바뀌지 않는 순수 "현재위치" 버튼(라벨 고정, 아이콘 고정).
   hasAnalyzerFocus?: boolean
   onShowAnalysisResult?: () => void
+  // 대화 중 요청 — 페르소나/내 루트/SNS 분석기에서 "지도에서 보기"로 넘어온
+  // 방문 동안 지도 위(우측 상단)에 계속 떠 있는 "돌아가기" 버튼. MapPage가
+  // 핸드오프로 들어온 방문일 때만 이 콜백을 내려주고(navigate(-1)), 없으면
+  // 버튼 자체를 그리지 않는다. 상세 팝업 안이 아니라 지도 위에 두는 이유는
+  // 장소를 하나도 안 눌러도(팝업 없이 지도만 볼 때도) 돌아갈 수 있게 하려는 것.
+  onGoBack?: () => void
   // 팀 태스크보드 5번 — 지도를 드래그해서 옮긴 뒤 "이 지역에서 검색"을 누르면
   // 그 위치를 새 검색 중심으로 승격한다. 실제 카카오 지도(드래그 가능)에서만
   // 의미가 있어 PercentMapCanvas(정적 미리보기) 쪽은 이 prop을 쓰지 않는다.
@@ -200,11 +206,48 @@ function AnalysisResultButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       title={t('map.analysis_result')}
-      className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
+      className="flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
     >
       <ScanSearch className="h-3.5 w-3.5 text-primary" />
       <span className="text-xs font-semibold text-popover-foreground">{t('map.analysis_result')}</span>
     </button>
+  )
+}
+
+// 대화 중 요청 — 핸드오프로 들어온 방문에서 지도 위에 계속 떠 있는 "돌아가기".
+// 모양은 AnalysisResultButton/LocationOverlay와 같은 알약 버튼. 라벨은 상세
+// 팝업에서 쓰던 공용 문구(placeDetail.go_back)를 그대로 재사용한다.
+function GoBackButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 rounded-xl border border-border bg-popover/90 px-3 py-2 backdrop-blur transition-colors hover:bg-popover"
+    >
+      <ArrowLeft className="h-3.5 w-3.5 text-primary" />
+      <span className="text-xs font-semibold text-popover-foreground">{t('placeDetail.go_back')}</span>
+    </button>
+  )
+}
+
+// 우측 상단 컨트롤 묶음 — "분석 결과"(SNS 분석기에서 온 방문)와 "돌아가기"(핸드오프로
+// 온 방문 전체)가 동시에 필요할 수 있어서, 각자 absolute로 두면 겹치므로 하나의
+// 세로 스택으로 묶는다. z-10은 카카오 SDK 자체 레이어에 가려지지 않게 하려는
+// 기존 오버레이들과 같은 이유(위 LocationOverlay 주석 참고).
+function TopRightControls({
+  onShowAnalysisResult,
+  onGoBack,
+}: {
+  onShowAnalysisResult?: () => void
+  onGoBack?: () => void
+}) {
+  if (!onShowAnalysisResult && !onGoBack) return null
+  return (
+    <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-2">
+      {onShowAnalysisResult && <AnalysisResultButton onClick={onShowAnalysisResult} />}
+      {onGoBack && <GoBackButton onClick={onGoBack} />}
+    </div>
   )
 }
 
@@ -247,6 +290,7 @@ function PercentMapCanvas({
   onRequestLocation,
   hasAnalyzerFocus,
   onShowAnalysisResult,
+  onGoBack,
   myLocation,
   compact,
   highlightIds,
@@ -302,7 +346,10 @@ function PercentMapCanvas({
       )}
 
       <LocationOverlay onRequestLocation={onRequestLocation} />
-      {hasAnalyzerFocus && onShowAnalysisResult && <AnalysisResultButton onClick={onShowAnalysisResult} />}
+      <TopRightControls
+        onShowAnalysisResult={hasAnalyzerFocus ? onShowAnalysisResult : undefined}
+        onGoBack={onGoBack}
+      />
     </div>
   )
 }
@@ -334,6 +381,7 @@ function KakaoMapCanvas(props: MapCanvasProps) {
     onRequestLocation,
     hasAnalyzerFocus,
     onShowAnalysisResult,
+    onGoBack,
     onSearchArea,
     onCameraCenterChange,
     myLocation,
@@ -569,7 +617,10 @@ function KakaoMapCanvas(props: MapCanvasProps) {
       </KakaoMap>
 
       <LocationOverlay onRequestLocation={handleRequestLocation} />
-      {hasAnalyzerFocus && onShowAnalysisResult && <AnalysisResultButton onClick={handleShowAnalysisResult} />}
+      <TopRightControls
+        onShowAnalysisResult={hasAnalyzerFocus && onShowAnalysisResult ? handleShowAnalysisResult : undefined}
+        onGoBack={onGoBack}
+      />
       {onSearchArea && pendingCenter && <SearchAreaButton onClick={handleSearchArea} />}
     </div>
   )

@@ -25,11 +25,18 @@ export const POPULAR_VIDEOS: PopularVideo[] = [
 // 2026-09). 직접 URL을 붙여넣는 경우는 이 데이터를 타지 않고 그대로 실제
 // /analyze를 호출한다 — AnalyzePage.tsx의 runAnalysis에서 videoId가 아래
 // CANNED_ANALYSIS에 있을 때만 이 경로를 탄다.
+//
+// 2026-09 (사용자 요청): 장소명/좌표는 실제로 이 영상들을 진짜 분석기로 돌려서
+// 나온 결과(위 CANNED_CITIES 주석 참고)라 그대로 두고, 화면 문구만 실제 분석
+// 결과 화면(source: groq/gemini/openai)과 동일하게 맞춘다 — 이 reason 텍스트는
+// backend/business_services/snsAnalysisService.py의 실제 AI 분석 reason
+// ("AI가 영상에서 추출한 장소 후보입니다." / "Candidate extracted from the
+// video by AI.")과 문구를 그대로 일치시킨 것.
 const REASON_TEXT: Record<Locale, string> = {
-  ko: '한국관광공사 영상에 등장한 대표 스팟으로, 방문객들이 즐겨 찾는 곳입니다.',
-  en: 'A signature spot featured in the Korea Tourism Organization video, popular with visitors.',
-  ja: '韓国観光公社の映像に登場した代表スポットで、観光客に人気があります。',
-  zh: '出现在韩国观光公社视频中的代表景点，深受游客喜爱。',
+  ko: 'AI가 영상에서 추출한 장소 후보입니다.',
+  en: 'Candidate extracted from the video by AI.',
+  ja: 'AIが映像から抽出した場所の候補です。',
+  zh: '这是AI从视频中提取的地点候选。',
 }
 
 interface CannedPlaceSeed {

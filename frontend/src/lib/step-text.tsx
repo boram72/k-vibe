@@ -24,8 +24,17 @@ function buttonChip(key: number, children: string) {
   )
 }
 
+// 영어 축약형·소유격의 아포스트로피(it's, we'll, don't)는 버튼 표기용 홑따옴표 '...'와 글자 모양이 같아서,
+// 그대로 두면 두 아포스트로피 사이가 통째로 버튼 칩으로 묶인다("it's analyzing — we'll"의 가운데가 칩이 되고,
+// "it's done, tap [Deselect] ... don't"에서는 [Deselect]까지 그 칩 안으로 먹힌다). 영문자 사이의 '만 ’(U+2019,
+// 모양이 같은 typographic apostrophe)로 바꿔 구분자 판정에서 뺀다. 한국어 조사가 바로 붙는 닫는 따옴표
+// ('루트에 추가'를)는 앞뒤가 영문자가 아니라서 영향이 없다.
+function protectApostrophes(text: string) {
+  return text.replace(/([A-Za-z])'([A-Za-z])/g, '$1’$2')
+}
+
 export function renderStepText(text: string) {
-  return text
+  return protectApostrophes(text)
     .split(BUTTON_REF_SPLIT)
     .map((part, idx) => (BUTTON_REF_TEST.test(part) ? buttonChip(idx, part.slice(1, -1)) : <span key={idx}>{part}</span>))
 }

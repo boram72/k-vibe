@@ -532,6 +532,8 @@
     "route_drag_body": "このハンドルを押して上下に動かすと訪問順を変えられます。",
     "route_complete_title": "行った場所にチェックを入れましょう",
     "route_complete_body": "このボタンを押すと完了マークが付きます。",
+    "route_map_title": "地図で位置を確認しましょう",
+    "route_map_body": "このボタンを押すと、この場所の位置を地図で確認できます。",
     "route_location_title": "次の場所までの距離を確認しましょう",
     "route_location_body": "ここを押すと、今いる場所から次の場所までの距離がわかります。",
     "route_actions_title": "ルートを共有したりリセットしたりできます",

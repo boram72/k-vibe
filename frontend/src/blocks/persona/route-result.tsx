@@ -219,6 +219,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
                       동일한 자리/룩(MapPin). */}
                   <button
                     type="button"
+                    data-tour="persona-map"
                     onClick={() => onViewOnMap(stop)}
                     aria-label={t('persona.view_stop_on_map', { name: stop.name })}
                     title={t('persona.view_stop_on_map', { name: stop.name })}
@@ -268,7 +269,7 @@ export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAl
           <MapPin className="h-3.5 w-3.5" />
           {t('persona.view_all_on_map')}
         </Button>
-        <Button onClick={handleAddToRoute} disabled={includedStops.length === 0}>
+        <Button data-tour="persona-add-route" onClick={handleAddToRoute} disabled={includedStops.length === 0}>
           <Route className="h-3.5 w-3.5" />
           {t('persona.add_to_route')}
         </Button>

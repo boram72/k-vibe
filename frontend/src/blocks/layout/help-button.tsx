@@ -31,7 +31,7 @@ const PATH_TOUR_KEY: Record<string, string> = {
 
 export function HelpButton() {
   const { t } = useTranslation()
-  const { title, body, tourReady, tourResetAction } = usePageHelpStore()
+  const { title, body, tourReady, tourResetAction, tourPrepareAction } = usePageHelpStore()
   const location = useLocation()
   const startTour = useTourStore((s) => s.start)
   const [emptyRouteNoticeOpen, setEmptyRouteNoticeOpen] = useState(false)
@@ -39,6 +39,14 @@ export function HelpButton() {
 
   const pageKey = tourPageOf(location.pathname)
   const tourKey = PATH_TOUR_KEY[pageKey]
+
+  // 화면이 닫혀 있으면(지도의 접힌 패널 등) 먼저 펼친 뒤 튜토리얼을 시작한다 — 같은
+  // 클릭 이벤트 안이라 상태가 한 번에 반영되고, 투어의 첫 대상이 바로 잡힌다.
+  // "?"로 직접 다시 여는 투어라 "다시 보지 않기"는 숨긴다(replay).
+  function beginTour() {
+    tourPrepareAction?.()
+    startTour(tourKey, { replay: true })
+  }
 
   function handleTourClick() {
     // 화면이 아직 준비 중이면(지도 랜딩 전) 버튼 자체가 잠겨 있지만, 혹시 모를
@@ -58,8 +66,7 @@ export function HelpButton() {
       setResetNoticeOpen(true)
       return
     }
-    // "?"로 직접 다시 여는 투어라 "다시 보지 않기"는 숨긴다(replay).
-    startTour(tourKey, { replay: true })
+    beginTour()
   }
 
   // "초기화 후 진행" — 페이지가 등록해 둔 초기화(처음 화면으로 되돌리기)를 먼저 하고
@@ -68,7 +75,7 @@ export function HelpButton() {
   function handleResetAndStart() {
     setResetNoticeOpen(false)
     tourResetAction?.()
-    startTour(tourKey, { replay: true })
+    beginTour()
   }
 
   // 이 페이지에 등록된 투어가 있으면 "?" 도움말 대신 투어 재생 버튼으로 바뀐다.

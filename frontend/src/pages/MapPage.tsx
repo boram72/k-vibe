@@ -59,6 +59,7 @@ export default function MapPage() {
   const setHelp = usePageHelpStore((s) => s.setHelp)
   const clearHelp = usePageHelpStore((s) => s.clearHelp)
   const setTourReady = usePageHelpStore((s) => s.setTourReady)
+  const setTourPrepareAction = usePageHelpStore((s) => s.setTourPrepareAction)
   const startTour = useTourStore((s) => s.start)
   const { coords, locationLabel, requestLocation, isPrecise } = useCurrentLocation()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -404,6 +405,18 @@ export default function MapPage() {
     setTourReady(!isResolvingLanding)
     return () => setTourReady(true)
   }, [isResolvingLanding, setTourReady])
+
+  // 패널을 접어 둔 채(데스크탑 접힘 / 모바일 최소화) "?"를 누르면 튜토리얼이 가리킬
+  // 검색창·필터·목록이 화면에 없어서, 투어가 보이지 않은 채로 대기만 했다(사용자 지적 —
+  // 눌러도 반응이 없어 오류처럼 보임). 그래서 시작 직전에 패널을 강제로 펼친다. 데스크탑은
+  // 접힘 해제, 모바일은 최소화일 때만 기본 상태로(전체화면은 이미 펼쳐져 있으니 그대로).
+  useEffect(() => {
+    setTourPrepareAction(() => {
+      setIsPanelCollapsed(false)
+      setMobilePanelState((state) => (state === 'minimized' ? 'default' : state))
+    })
+    return () => setTourPrepareAction(null)
+  }, [setTourPrepareAction])
 
   // 처음 지도 화면에 들어온 사용자에게만 자동으로 투어를 띄운다 — 재방문
   // 시에는 "?" 자리의 투어 버튼을 눌러야만 다시 보인다. 사이트 첫 방문

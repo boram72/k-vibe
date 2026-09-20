@@ -16,6 +16,13 @@ interface PageHelpState {
   // 먼저 묻는다 — 확인하면 이 함수를 호출한 뒤 튜토리얼을 시작한다.
   tourResetAction: (() => void) | null
   setTourResetAction: (action: (() => void) | null) => void
+  // 화면이 "닫혀 있어서" 튜토리얼이 가리킬 요소가 안 보일 때(예: 지도의 접힌/최소화된
+  // 패널) 페이지가 "그 화면을 펼치는 함수"를 등록한다. "?"를 누르면 튜토리얼을 시작하기
+  // 직전에 이 함수를 호출한다 — 안 그러면 대상이 없어서 튜토리얼이 보이지 않은 채로
+  // 대기만 해서 눌러도 아무 반응이 없는 것처럼 보인다. 초기화 안내(위)와 달리 묻지 않고
+  // 바로 펼친다(잃는 상태가 없으므로).
+  tourPrepareAction: (() => void) | null
+  setTourPrepareAction: (action: (() => void) | null) => void
 }
 
 export const usePageHelpStore = create<PageHelpState>((set) => ({
@@ -30,4 +37,6 @@ export const usePageHelpStore = create<PageHelpState>((set) => ({
   setTourReady: (ready) => set({ tourReady: ready }),
   tourResetAction: null,
   setTourResetAction: (action) => set({ tourResetAction: action }),
+  tourPrepareAction: null,
+  setTourPrepareAction: (action) => set({ tourPrepareAction: action }),
 }))

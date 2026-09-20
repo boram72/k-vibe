@@ -12,6 +12,7 @@ import { fetchKContentPersonas, fetchKContentPersonaRoute, type KContentPersona 
 import { type RoutePlan, type RouteStop } from '@/lib/route-timing'
 import { addStopsToRouteDraft, savePersonaRoutePlan } from '@/lib/route-draft'
 import { usePageHelpStore } from '@/store/page-help-store'
+import { usePersonaSelectionStore } from '@/store/persona-selection-store'
 import { canAutoStartTour, useTourStore } from '@/store/tour-store'
 import { PERSONA_TOUR_KEY } from '@/blocks/tour/tour-steps'
 import type { Locale } from '@/i18n'
@@ -111,11 +112,15 @@ export default function PersonaPage() {
     navigate('.', { state: { selectedPersonaId: persona.id } })
   }
 
-  // "다른 루트 만들기" 버튼 = 브라우저 뒤로가기와 완전히 동일한 동작으로
-  // 통일 — 홈에서 왔으면 홈으로, 이 페이지 카드 목록에서 왔으면 그
-  // 목록으로, 어느 경로로 들어왔든 항상 "그 직전 화면"으로 돌아간다.
+  // "다른 루트 만들기"(↻) 버튼 = 어느 경로로 들어왔든 항상 "지금 언어의 카드 선택 화면"으로 간다.
+  // 예전에는 navigate(-1)(브라우저 뒤로가기와 동일)이라 홈에서 왔으면 홈으로 갔고, 결과 화면에서
+  // 언어를 바꾼 뒤 누르면 직전 히스토리 항목의 URL 로케일(바꾸기 전 언어)로 열려서 UI 언어가 되돌아갔다.
+  // 지금 경로(/{지금 언어}/persona)에 state 없이 push하면 카드 목록이 지금 언어로 열리고, 뒤로가기를
+  // 누르면 방금 보던 결과 화면으로 돌아온다(위 투어 초기화와 같은 방식).
+  // "새로 시작"이므로 스팟 제외 선택도 함께 비운다(같은 페르소나를 다시 골라도 이전 제외가 안 남게).
   function reset() {
-    navigate(-1)
+    usePersonaSelectionStore.getState().clear()
+    navigate('.', { state: null })
   }
 
   // 팀 태스크보드 — 페르소나 step2에서 스팟별로 추가/제거를 골랐다면(route-result.tsx의

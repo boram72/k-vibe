@@ -13,6 +13,9 @@ interface PersonaSelectionState {
   // personaId가 이전과 다르면(다른 페르소나 결과로 전환) 빈 집합에서부터
   // 다시 시작 — 같은 페르소나로 돌아온 경우에만 기존 선택을 이어간다.
   toggleStop: (personaId: string, stopId: string) => void
+  // "다른 루트 만들기"(↻)는 처음부터 다시 시작하는 동작이라 제외 선택도 비운다 — 같은 페르소나를 다시
+  // 골라도 이전 제외가 남지 않게. 지도 왕복·언어 전환에서는 호출하지 않으므로 그때는 그대로 유지된다.
+  clear: () => void
 }
 
 export const usePersonaSelectionStore = create<PersonaSelectionState>((set, get) => ({
@@ -26,4 +29,5 @@ export const usePersonaSelectionStore = create<PersonaSelectionState>((set, get)
     else next.add(stopId)
     set({ personaId, excludedIds: next })
   },
+  clear: () => set({ personaId: null, excludedIds: new Set() }),
 }))

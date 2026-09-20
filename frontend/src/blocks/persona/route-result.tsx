@@ -7,6 +7,7 @@ import { CrowdBadge } from '@/blocks/common/crowd-badge'
 import { ZoomableImage } from '@/blocks/common/zoomable-image'
 import { haversineKm } from '@/lib/haversine'
 import type { RoutePlan, RouteStop } from '@/lib/route-timing'
+import { usePersonaSelectionStore } from '@/store/persona-selection-store'
 import { cn } from '@/lib/utils'
 
 function formatDistance(meters: number) {
@@ -39,10 +40,14 @@ function totalRouteDistanceM(stops: RouteStop[]): number {
 
 interface RouteResultProps {
   plan: RoutePlan
+  // 2026-09 버그 수정 — 스팟 제외 선택(excludedIds)을 이 컴포넌트 로컬 state가
+  // 아니라 persona-selection-store에 personaId로 보관하기 위해 필요(아래
+  // 참고). PersonaPage.activePersonaId를 그대로 내려받는다.
+  personaId: string
   onReset: () => void
   // 팀 태스크보드 — 페르소나 방문 루트 중 필요한 스팟만 선별해서 내 루트에
   // 추가할 수 있도록, 이 화면에서 고른 스팟 목록을 인자로 넘긴다(DB/localStorage
-  // 저장 없는 화면 로컬 state — 아래 excludedIds 참고).
+  // 저장 없는 세션 메모리 state — 아래 excludedIds 참고).
   onAddToRoute: (stops: RouteStop[]) => void
   // 대화 중 요청 — RouteStopCard(내 루트)의 지도 아이콘 버튼과 동일한 자리/
   // 룩으로, 이 스팟 하나를 지도에서 보여준다(필터+상세팝업+돌아가기 버튼은
@@ -90,24 +95,22 @@ function StopCharacterImage({ stop }: { stop: RouteStop }) {
   )
 }
 
-export function RouteResult({ plan, onReset, onAddToRoute, onViewOnMap, onViewAllOnMap }: RouteResultProps) {
+export function RouteResult({ plan, personaId, onReset, onAddToRoute, onViewOnMap, onViewAllOnMap }: RouteResultProps) {
   const { t } = useTranslation()
-  // 페르소나 step2 스팟 추가/제거 — DB/localStorage 저장 없이 이 화면에서만
-  // 사는 단발성 선택 상태. plan(prop)이 바뀌면(다른 페르소나 선택/재생성) 이
-  // 컴포넌트 자체가 새 plan으로 리마운트되는 게 아니라 값만 갱신되므로, 진짜
-  // "다른 페이지 갔다 돌아오면 리셋"은 PersonaPage 쪽에서 plan을 null로
-  // 되돌렸다가 다시 채우는 것으로 보장된다(RouteResult는 plan이 있을 때만
-  // 렌더링됨 — PersonaPage.tsx 참고). 원본 plan.stops는 건드리지 않고 "제외된
-  // id" 집합만 들고 있다가 필요한 곳에서 걸러 쓴다.
-  const [excludedIds, setExcludedIds] = useState<Set<string>>(() => new Set())
+  // 2026-09 버그 수정 — 원래 이 컴포넌트 로컬 useState였는데, "지도에서
+  // 보기"/"지도에서 모두 보기"로 /map(다른 라우트)에 다녀오면 PersonaPage
+  // 전체가 언마운트됐다 재마운트되면서 선택이 매번 초기화되는 버그가
+  // 있었다(사용자 리포트로 확인). AnalyzePage가 동일한 문제를 겪고
+  // analyze-store.ts로 옮겨 고쳤던 것과 같은 방식으로, 세션 메모리 store로
+  // 옮겨서 라우트 왕복에도 유지되게 한다 — personaId가 바뀌면(다른 페르소나
+  // 결과로 전환) store가 알아서 빈 집합부터 다시 시작한다.
+  const storePersonaId = usePersonaSelectionStore((s) => s.personaId)
+  const storeExcludedIds = usePersonaSelectionStore((s) => s.excludedIds)
+  const toggleStopInStore = usePersonaSelectionStore((s) => s.toggleStop)
+  const excludedIds = storePersonaId === personaId ? storeExcludedIds : new Set<string>()
 
   function toggleStop(id: string) {
-    setExcludedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    toggleStopInStore(personaId, id)
   }
 
   const includedStops = plan.stops.filter((stop) => !excludedIds.has(stop.id))

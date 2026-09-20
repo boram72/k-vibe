@@ -532,6 +532,8 @@
     "route_drag_body": "Press and drag this handle up or down to change the visit order.",
     "route_complete_title": "Check off places you've visited",
     "route_complete_body": "Tap this button to mark a stop as complete.",
+    "route_map_title": "Check it on the map",
+    "route_map_body": "Tap this button to see where this spot is on the map.",
     "route_location_title": "Check the distance to your next stop",
     "route_location_body": "Tap here to see how far you are from the next place.",
     "route_actions_title": "Share or reset your route",

@@ -532,6 +532,8 @@
     "route_drag_body": "按住这个手柄上下拖动，即可调整拜访顺序。",
     "route_complete_title": "去过的地方可以打勾",
     "route_complete_body": "点击这个按钮即可标记为已完成。",
+    "route_map_title": "在地图中查看位置",
+    "route_map_body": "点击此按钮，即可在地图中查看这个地点的位置。",
     "route_location_title": "查看到下一个地点的距离",
     "route_location_body": "点击这里即可查看从当前位置到下一个地点的距离。",
     "route_actions_title": "可以分享或重置路线",

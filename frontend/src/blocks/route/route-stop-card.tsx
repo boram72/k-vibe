@@ -49,6 +49,7 @@ export function RouteStopCard({
   const viewOnMapBtn = (
     <button
       type="button"
+      data-tour="route-map"
       onClick={onViewOnMap}
       aria-label={t('route.open_stop_detail', { name: stop.name })}
       className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent"

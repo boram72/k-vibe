@@ -67,9 +67,13 @@ export const PERSONA_TOUR_STEPS: TourStep[] = [
 // handleDragEnd가 성공 시 직접 useTourStore().next(...)를 호출해서 넘긴다.
 // pointer-events는 clickThrough:true로 계속 실제 손잡이에 전달되므로 진짜
 // 드래그 자체는 그대로 동작한다.
+// 지도 아이콘 단계는 페르소나 투어(persona-map)와 같은 방식 — 설명만 하는 단계라 clickThrough를 안
+// 켠다. 어두운 배경이 클릭을 막아서 실제로 눌러도 지도 화면으로 넘어가지 않고 "다음"/닫기/건너뛰기로만
+// 진행된다.
 export const ROUTE_TOUR_STEPS: TourStep[] = [
   { target: 'route-drag-handle', titleKey: 'tour.route_drag_title', bodyKey: 'tour.route_drag_body', clickThrough: true, advanceOnClick: false, dragHint: true },
   { target: 'route-complete', titleKey: 'tour.route_complete_title', bodyKey: 'tour.route_complete_body', clickThrough: true },
+  { target: 'route-map', titleKey: 'tour.route_map_title', bodyKey: 'tour.route_map_body' },
   { target: 'route-location-check', titleKey: 'tour.route_location_title', bodyKey: 'tour.route_location_body' },
   { target: 'route-actions', titleKey: 'tour.route_actions_title', bodyKey: 'tour.route_actions_body' },
 ]

@@ -15,7 +15,11 @@ export function AnalysisProgress({ percent }: AnalysisProgressProps) {
   return (
     <div role="status" aria-live="polite" className="space-y-1.5 rounded-xl border border-border bg-muted p-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-primary" />
+        <Sparkles
+          className="h-3.5 w-3.5 shrink-0 animate-pulse"
+          color="url(#kvibe-sparkle-gradient)"
+          fill="url(#kvibe-sparkle-gradient)"
+        />
         <p className="flex-1 text-xs font-semibold text-foreground">{t('analyze.loading_title')}</p>
         <p className="shrink-0 text-xs font-semibold text-primary">{percent}%</p>
       </div>

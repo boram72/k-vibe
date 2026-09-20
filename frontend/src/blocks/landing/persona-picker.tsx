@@ -47,7 +47,11 @@ export function PersonaPicker({ onSelect }: PersonaPickerProps) {
     <section data-tour="home-persona" className="w-full space-y-3">
       <div>
         <h2 className="mt-0.5 flex items-center gap-1.5 text-lg font-bold text-foreground">
-          <Sparkles className="h-4.5 w-4.5 text-primary" />
+          <Sparkles
+            className="h-4.5 w-4.5"
+            color="url(#kvibe-sparkle-gradient)"
+            fill="url(#kvibe-sparkle-gradient)"
+          />
           {t('persona.k_content_title')}
         </h2>
         <div className="mt-1 flex items-center justify-between gap-2">

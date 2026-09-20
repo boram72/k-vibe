@@ -269,7 +269,11 @@ export function SpotListPanel({
       aria-label={t('map.show_attractions')}
       className="shrink-0"
     >
-      <Sparkles className="h-4 w-4" />
+      <Sparkles
+        className="h-4 w-4"
+        color="url(#kvibe-sparkle-gradient)"
+        fill="url(#kvibe-sparkle-gradient)"
+      />
     </Button>
   )
 

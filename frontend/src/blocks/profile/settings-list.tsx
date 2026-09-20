@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, Languages } from 'lucide-react'
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SUPPORTED_LOCALES, LOCALE_META, type Locale } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { useSwitchLocale } from '@/lib/use-switch-locale'
 
 // 2026-09 태스크보드 10번: 알림 설정 삭제(웹이라 실제로 만들 수 없는 기능 —
 // LanguageDropdown 주석 참고 스타일과 동일하게, 아예 항목 자체를 뺌). 언어
@@ -21,14 +22,8 @@ import { cn } from '@/lib/utils'
 export function SettingsList() {
   const { t } = useTranslation()
   const location = useLocation()
-  const navigate = useNavigate()
-  const segments = location.pathname.split('/')
-  const current = segments[1] as Locale
-
-  function switchLocale(code: Locale) {
-    segments[1] = code
-    navigate(segments.join('/'))
-  }
+  const current = location.pathname.split('/')[1] as Locale
+  const switchLocale = useSwitchLocale()
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">

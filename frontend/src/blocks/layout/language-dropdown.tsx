@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,17 +9,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SUPPORTED_LOCALES, LOCALE_META, type Locale } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { useSwitchLocale } from '@/lib/use-switch-locale'
 
 export function LanguageDropdown() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const segments = location.pathname.split('/')
-  const current = segments[1] as Locale
-
-  function switchLocale(code: Locale) {
-    segments[1] = code
-    navigate(segments.join('/'))
-  }
+  const current = location.pathname.split('/')[1] as Locale
+  const switchLocale = useSwitchLocale()
 
   return (
     <DropdownMenu>

@@ -33,8 +33,23 @@ export interface MapFocusState {
   openDetail?: boolean
   initialSearch?: string
   // 내 루트의 개별 스팟에서 지도 아이콘을 눌러 들어온 경우에만 true — 그
-  // 스팟의 상세카드에 "루트로 돌아가기" 버튼을 보여줄지 판단하는 데 쓴다.
+  // 스팟이 "주변 스팟" 목록에서 태그로 구분되는 데 쓰인다(routeOriginPlaceId).
+  // "돌아가기" 버튼 노출 여부는 이제 이 값과 무관하게 hasAnalyzerFocus/
+  // cameFromHandoff로 통합 판단한다(place-detail-sheet.tsx 참고).
   returnToRoute?: boolean
+  // 대화 중 요청 — 페르소나 결과 화면("지도에서 보기")에서 들어올 때, 이미
+  // 있는 "페르소나별 탭"(filterMode: 'star')을 그대로 재사용해 그 스타가
+  // 방문한 장소만 미리 필터링된 상태로 보여준다. SNS분석기의 focusPlaces
+  // 핸드오프와 달리 새 표시 방식을 만들지 않고 기존 탭을 초기값만 다르게
+  // 열어주는 것 — 이래야 두 진입 경로의 지도 화면이 완전히 동일해진다.
+  initialFilterMode?: 'category' | 'star'
+  initialStarFilter?: string[]
+  // 페르소나 결과 화면에서 스팟 하나의 지도 아이콘을 눌러 들어온 경우 —
+  // 자동 선택+상세팝업 오픈 대상. focusPlaces와 동일하게 라우터 state에
+  // 이미 완성된 값이 있어 lazy initializer로 동기 처리 가능(AnalyzePage의
+  // toFocusPlace()와 동일한 이유로 PersonaPage가 이 Place 객체를 직접 만들어
+  // 넘긴다).
+  initialSelectedPlace?: Place
 }
 
 // 5-2(plan.md) — 검색결과/찜/연관관광지/SNS분석기/주변 스팟(또는 페르소나
@@ -98,8 +113,14 @@ export default function MapPage() {
   // (다시 돌아왔을 때 그대로 유지되는 게 자연스럽다고 판단). 다중선택(대화 중
   // 요청) — 빈 배열이 "전체"를 의미(CategoryFilter의 'all' 리터럴 대신 빈
   // 배열을 쓰는 이유는 star-filter.tsx 주석 참고).
-  const [filterMode, setFilterMode] = useState<'category' | 'star'>('category')
-  const [starFilter, setStarFilter] = useState<string[]>([])
+  // 페르소나 결과 화면의 "지도에서 보기"에서 들어온 경우, focusState의
+  // initialFilterMode/initialStarFilter로 이 탭이 처음부터 그 스타 선택
+  // 상태로 열린다(search와 동일하게 router state가 첫 렌더에서 이미
+  // 동기적으로 있으니 lazy initializer로 충분, effect 불필요).
+  const [filterMode, setFilterMode] = useState<'category' | 'star'>(
+    () => focusState?.initialFilterMode ?? 'category',
+  )
+  const [starFilter, setStarFilter] = useState<string[]>(() => focusState?.initialStarFilter ?? [])
   // Lazy initializer for the same reason as `selectedPlace` below — the
   // trending-keyword handoff (LandingPage → `navigate('../map', { state })`)
   // is router state available synchronously at first render.
@@ -116,7 +137,9 @@ export default function MapPage() {
   // available synchronously at first render (it's router state, not async),
   // so there's no need to "react" to it after the fact.
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(() =>
-    focusPlaces.length === 1 && focusState?.openDetail ? focusPlaces[0] : null,
+    focusPlaces.length === 1 && focusState?.openDetail
+      ? focusPlaces[0]
+      : (focusState?.initialSelectedPlace ?? null),
   )
   // 버그 수정 — 지도 핀의 빨간 강조(선택 표시)가 상세시트의 열림/닫힘과 같은
   // state(selectedPlace)를 공유하고 있어서, 상세시트를 닫으면(`onClose`가
@@ -590,8 +613,31 @@ export default function MapPage() {
       ? [...withKakaoResults, ...areaSearchListPlaces.filter((p) => !withKakaoIds.has(p.id))]
       : withKakaoResults
     if (filterMode !== 'star') return withAreaSearchList
-    const withAreaSearchIds = new Set(withAreaSearchList.map((p) => p.id))
-    return [...withAreaSearchList, ...personaPlaces.filter((p) => !withAreaSearchIds.has(p.id))]
+    // 대화 중 발견한 버그 — 페르소나 스팟이 우연히 반경검색 결과와 같은
+    // place_id를 가지면(예: "라칸티나"가 제니 방문지이면서 동시에 현재 위치
+    // 반경 안에도 있음), 기존엔 반경검색 쪽 버전만 남기고 페르소나 쪽을
+    // 통째로 버려서 페르소나 태그가 사라졌다 — 그 스팟이 페르소나별 탭에서
+    // 안 보이는 버그로 이어짐(실사용 확인, GPS 위치에 따라 재현 여부가
+    // 달라짐). 장소를 중복으로 만들지 않으면서 태그만 합친다.
+    // personaPlaces 자체도 같은 place_id를 여러 스타가 공유해 중복으로 가질
+    // 수 있어서(get_persona_places가 스팟 행마다 만들어 반환) 먼저 id별로
+    // 태그를 다 모아 하나로 합친 뒤 병합한다.
+    const personaById = new Map<string, Place>()
+    for (const p of personaPlaces) {
+      const existing = personaById.get(p.id)
+      if (existing) {
+        existing.tags = [...new Set([...(existing.tags ?? []), ...(p.tags ?? [])])]
+      } else {
+        personaById.set(p.id, { ...p, tags: [...(p.tags ?? [])] })
+      }
+    }
+    const merged = withAreaSearchList.map((place) => {
+      const personaMatch = personaById.get(place.id)
+      if (!personaMatch) return place
+      personaById.delete(place.id) // 병합해서 소비했으니 아래서 또 안 붙인다.
+      return { ...place, tags: [...new Set([...(place.tags ?? []), ...(personaMatch.tags ?? [])])] }
+    })
+    return [...merged, ...personaById.values()]
   }, [places, focusPlaces, filterMode, personaPlaces, kakaoSearchResults, areaSearchListPlaces])
 
   // 2026-09 QA 8번 — 상호명 검색 결과 핀을 빨간색으로 강조하기 위한 id 집합.
@@ -839,8 +885,17 @@ export default function MapPage() {
         saved={selectedPlace ? savedIds.has(selectedPlace.id) : false}
         onClose={() => setSelectedPlace(null)}
         onToggleSave={toggleSave}
-        showBackToRoute={Boolean(selectedPlace) && selectedPlace?.id === routeOriginPlaceId}
-        onBackToRoute={() => navigate('../route')}
+        // 대화 중 요청 — 내 루트/SNS분석기는 focusPlaces 자체가 "핸드오프로
+        // 넘어온 장소들"이라 그 안의 무엇을 봐도 "돌아가기"가 맞다. 페르소나는
+        // "페르소나별 탭" 전체(그 스타의 모든 방문지)를 재사용하는 방식이라
+        // 범위가 넓어서, 핸드오프로 들어온 정확히 그 스팟(initialSelectedPlace)
+        // 을 사용자가 직접 다시 선택했을 때만 뜨도록 좁힌다 — 탭 안의 다른
+        // 장소를 봐도 뜨지 않는다(실사용 확인된 버그, 이전에 한 번 고침).
+        showBackButton={
+          hasAnalyzerFocus ||
+          (Boolean(focusState?.initialSelectedPlace) && selectedPlace?.id === focusState?.initialSelectedPlace?.id)
+        }
+        onBack={() => navigate(-1)}
       />
     </div>
   )

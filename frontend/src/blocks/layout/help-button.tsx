@@ -11,7 +11,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { usePageHelpStore } from '@/store/page-help-store'
+import { usePageHelpStore, type TourResetKind } from '@/store/page-help-store'
 import { tourPageOf, useTourStore } from '@/store/tour-store'
 import { HOME_TOUR_KEY, MAP_TOUR_KEY, PERSONA_TOUR_KEY, ROUTE_TOUR_KEY, ANALYZE_TOUR_KEY, TOUR_REGISTRY } from '@/blocks/tour/tour-steps'
 import { EmptyRouteNotice } from '@/blocks/route/empty-route-notice'
@@ -31,11 +31,15 @@ const PATH_TOUR_KEY: Record<string, string> = {
 
 export function HelpButton() {
   const { t } = useTranslation()
-  const { title, body, tourReady, tourResetAction, tourPrepareAction } = usePageHelpStore()
+  const { title, body, tourReady, tourResetAction, tourResetKind, tourPrepareAction } = usePageHelpStore()
   const location = useLocation()
   const startTour = useTourStore((s) => s.start)
   const [emptyRouteNoticeOpen, setEmptyRouteNoticeOpen] = useState(false)
   const [resetNoticeOpen, setResetNoticeOpen] = useState(false)
+  // 팝업을 열 때의 종류를 붙잡아 둔다 — "해제 후 진행"을 누르면 페이지가 등록해 둔 해제
+  // 함수가 사라지면서(kind가 기본 'reset'으로 돌아감) 닫히는 동안 팝업 문구가 바뀌어
+  // 보이는 걸 막는다.
+  const [resetNoticeKind, setResetNoticeKind] = useState<TourResetKind>('reset')
 
   const pageKey = tourPageOf(location.pathname)
   const tourKey = PATH_TOUR_KEY[pageKey]
@@ -63,6 +67,7 @@ export function HelpButton() {
     // 결과 화면(SNS 분석 결과, 페르소나 루트 결과)처럼 투어가 가리킬 요소가 없는
     // 상태면 바로 띄우지 않고 "초기화 후 진행할까요?"를 먼저 묻는다.
     if (tourResetAction) {
+      setResetNoticeKind(tourResetKind)
       setResetNoticeOpen(true)
       return
     }
@@ -99,7 +104,7 @@ export function HelpButton() {
           </Button>
         </span>
         {tourKey === ROUTE_TOUR_KEY && <EmptyRouteNotice open={emptyRouteNoticeOpen} onOpenChange={setEmptyRouteNoticeOpen} />}
-        <TourResetNotice open={resetNoticeOpen} onOpenChange={setResetNoticeOpen} onConfirm={handleResetAndStart} />
+        <TourResetNotice open={resetNoticeOpen} onOpenChange={setResetNoticeOpen} onConfirm={handleResetAndStart} kind={resetNoticeKind} />
       </>
     )
   }

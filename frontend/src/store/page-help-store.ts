@@ -1,5 +1,10 @@
 import { create } from 'zustand'
 
+// 튜토리얼 시작 전에 화면을 되돌리는 종류 — 팝업 문구가 달라진다.
+// 'reset': 결과 화면(SNS 분석 결과, 페르소나 루트 결과)을 처음 상태로 초기화.
+// 'release': 지도에서 켜 둔 찜/관광지 추천 화면을 해제(기본 목록으로 복귀).
+export type TourResetKind = 'reset' | 'release'
+
 interface PageHelpState {
   title: string | null
   body: string | null
@@ -15,7 +20,8 @@ interface PageHelpState {
   // 있으면 "?"를 눌렀을 때 바로 튜토리얼을 띄우지 않고 "초기화 후 진행할까요?"를
   // 먼저 묻는다 — 확인하면 이 함수를 호출한 뒤 튜토리얼을 시작한다.
   tourResetAction: (() => void) | null
-  setTourResetAction: (action: (() => void) | null) => void
+  tourResetKind: TourResetKind
+  setTourResetAction: (action: (() => void) | null, kind?: TourResetKind) => void
   // 화면이 "닫혀 있어서" 튜토리얼이 가리킬 요소가 안 보일 때(예: 지도의 접힌/최소화된
   // 패널) 페이지가 "그 화면을 펼치는 함수"를 등록한다. "?"를 누르면 튜토리얼을 시작하기
   // 직전에 이 함수를 호출한다 — 안 그러면 대상이 없어서 튜토리얼이 보이지 않은 채로
@@ -36,7 +42,8 @@ export const usePageHelpStore = create<PageHelpState>((set) => ({
   tourReady: true,
   setTourReady: (ready) => set({ tourReady: ready }),
   tourResetAction: null,
-  setTourResetAction: (action) => set({ tourResetAction: action }),
+  tourResetKind: 'reset',
+  setTourResetAction: (action, kind = 'reset') => set({ tourResetAction: action, tourResetKind: kind }),
   tourPrepareAction: null,
   setTourPrepareAction: (action) => set({ tourPrepareAction: action }),
 }))
